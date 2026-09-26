@@ -7,12 +7,6 @@
 
 #include "TX_3D_c.h"
 
-typedef struct SubCanvasRenderData {
-    ECS_Handle *rasterizer;
-    int canvas_bounds[2];
-    int scanline_padding;
-} SubCanvasRenderData;
-
 static inline vec3 intersect_near(vec3 from, vec3 to, float near) {
     vec3 path = vec3_sub(to, from);
     vec3 slope = vec3_div(path, path.z);
@@ -392,9 +386,8 @@ static void TX_Rasterizer_DrawBatch(ECS_Handle *self, List(TX_RenderInstance *) 
     });
 }
 
-static int RenderToSubCanvas(void *data) {
-    SubCanvasRenderData *render = data;
-    TX_Rasterizer *rasterizer = ECS_Entity_GetComponent(render->rasterizer, TX_Components.Rasterizer);
+static int RenderToSubCanvas(TX_RasterWorkerData *wd) {
+    TX_Rasterizer *rasterizer = ECS_Entity_GetComponent(wd->rasterizer, TX_Components.Rasterizer);
     TX_World *world = ECS_Entity_GetComponent(rasterizer->world, TX_Components.World);
     TX_Canvas *canvas = ECS_Entity_GetComponent(rasterizer->target, TX_Components.Canvas);
     size_t sd_width = sd_bounding_length(canvas->width);
@@ -407,7 +400,7 @@ static int RenderToSubCanvas(void *data) {
      */
 
     /* Reset depth */
-    for (size_t i = sd_width * render->canvas_bounds[0]; i < sd_width * render->canvas_bounds[1]; ++i)
+    for (size_t i = sd_width * wd->canvas_bounds[0]; i < sd_width * wd->canvas_bounds[1]; ++i)
         sd_float_store(canvas->depth, i, sd_float_zero());
 
     /* Draw geometry in batches, according to render order and rasterizer flags */
@@ -416,10 +409,25 @@ static int RenderToSubCanvas(void *data) {
             List(TX_RenderInstance *) *flag_batch = List_Get(world->render_batches, i)[flags];
 
             if (flag_batch)
-                TX_Rasterizer_DrawBatch(render->rasterizer, flag_batch, flags, render->canvas_bounds, render->scanline_padding);
+                TX_Rasterizer_DrawBatch(wd->rasterizer, flag_batch, flags, wd->canvas_bounds, wd->scanline_padding);
         }
     }
 
+    return 0;
+}
+
+int SD_VARIANT(TX_RasterWorker)(void *data) {
+    TX_RasterWorkerData *wd = data;
+loop:
+    SDL_WaitSemaphore(wd->worker_wake);
+
+    if (wd->exit)
+        goto exit;
+
+    RenderToSubCanvas(wd);
+    SDL_SignalSemaphore(wd->worker_rest);
+    goto loop;
+exit:
     return 0;
 }
 
@@ -475,34 +483,41 @@ void SD_VARIANT(TX_Rasterizer_Render)(ECS_Handle *self) {
         }
     });
 
-    /* Render to sub-canvases in parallel */
-    int parallelism = SDL_GetNumLogicalCPUCores();
-    SDL_Thread **threads = SDL_malloc(sizeof(SDL_Thread *) * parallelism);
-    SubCanvasRenderData *render_data = SDL_malloc(sizeof(SubCanvasRenderData) * parallelism);
+    // Current threading approach is naive, with each thread being given one large vertical slice of the canvas
+    // The thread with the most geometry to render will become the bottleneck for the whole render cycle
+    // A tiling approach with a thread pool will improve load balancing
+    //
+    // Some considerations:
+    // - Scanlines
+    //      - Each tile needs scanline boundary buffers
+    // - Tile dimensions
+    //      - Find a good heuristic; too low = expensive overhead, too high = poor load balancing
+    //      - Should be a multiple of sd_length() to always use full SIMD width
+    //      - The size of a horizontal row of pixels should be a multiple of 64 bytes (assumed cache line size)
+    //          - 1 pixel in the color buffer is 12 bytes
+    //          - lcf(12, 64) = 192 bytes, which is 16 pixels
+    //      - We support scalable vectors, so the dimensions have to be determined at runtime
+    //      - MIN_TILE_SIZE = 16, or higher, depends on testing
+    //      - tile_size = max(MIN_TILE_SIZE, sd_length())
+    // - Overflow
+    //      - Tiles may extend beyond the canvas bounds, both horizontally and vertically
 
-    int qot = canvas->height / parallelism;
-    int rem = canvas->height % parallelism;
+    int nproc = SDL_GetNumLogicalCPUCores();
+    int qot = canvas->height / nproc;
+    int rem = canvas->height % nproc;
+    TX_RasterThreadPool *pool = rasterizer->thread_pool;
 
-    // TODO: Use thread pooling to avoid per frame thread creation overhead
-
-    for (int i = 0; i < parallelism; ++i) {
-        render_data[i] = (SubCanvasRenderData) {
-            .rasterizer = self,
-            .canvas_bounds = {
-                i * qot + SDL_min(i, rem),
-                (i + 1) * qot + SDL_min(i + 1, rem)
-            },
-            .scanline_padding = SDL_min(i, rem) * sd_rem(sd_length() - qot - 1) + SDL_max(i - rem, 0) * sd_rem(sd_length() - qot)
-        };
-
-        threads[i] = SDL_CreateThread(RenderToSubCanvas, "rendersc", render_data + i);
+    for (int i = 0; i < nproc; ++i) {
+        pool->worker_data[i].canvas_bounds[0] = i * qot + SDL_min(i, rem);
+        pool->worker_data[i].canvas_bounds[1] = (i + 1) * qot + SDL_min(i + 1, rem);
+        pool->worker_data[i].scanline_padding = SDL_min(i, rem) * sd_rem(sd_length() - qot - 1) + SDL_max(i - rem, 0) * sd_rem(sd_length() - qot);
     }
 
-    for (int i = 0; i < parallelism; ++i)
-        SDL_WaitThread(threads[i], nullptr);
+    for (int i = 0; i < nproc; ++i)
+        SDL_SignalSemaphore(pool->worker_wake);
 
-    SDL_free(render_data);
-    SDL_free(threads);
+    for (int i = 0; i < nproc; ++i)
+        SDL_WaitSemaphore(pool->worker_rest);
 }
 
 #ifndef SD_SRC_VARIANT
@@ -511,6 +526,45 @@ void TX_Rasterizer_Attach(ECS_Handle *self, ECS_Component(void) *component) {
     TX_Rasterizer *rasterizer = ECS_Entity_GetComponent(self, component);
     rasterizer->world = ECS_Entity_AncestorWithComponent(self, TX_Components.World, true);
     rasterizer->target = ECS_Entity_AncestorWithComponent(self, TX_Components.Canvas, true);
+
+    int nproc = SDL_GetNumLogicalCPUCores();
+    TX_RasterThreadPool *pool = SDL_malloc(sizeof(TX_RasterThreadPool));
+    rasterizer->thread_pool = pool;
+    pool->threads = SDL_malloc(sizeof(SDL_Thread *) * nproc);
+    pool->worker_data = SDL_malloc(sizeof(TX_RasterWorkerData) * nproc);
+    pool->worker_wake = SDL_CreateSemaphore(0);
+    pool->worker_rest = SDL_CreateSemaphore(0);
+
+    for (int i = 0; i < nproc; ++i) {
+        pool->worker_data[i] = (TX_RasterWorkerData) {
+            .rasterizer = self,
+            .worker_wake = pool->worker_wake,
+            .worker_rest = pool->worker_rest,
+            .exit = false
+        };
+
+        pool->threads[i] = SDL_CreateThread(SD_SELECT(TX_RasterWorker), "rasterworker", pool->worker_data + i);
+    }
+}
+
+void TX_Rasterizer_Detach(ECS_Handle *self, ECS_Component(void) *component) {
+    TX_Rasterizer *rasterizer = ECS_Entity_GetComponent(self, component);
+    int nproc = SDL_GetNumLogicalCPUCores();
+
+    for (int i = 0; i < nproc; ++i)
+        rasterizer->thread_pool->worker_data[i].exit = true;
+
+    for (int i = 0; i < nproc; ++i)
+        SDL_SignalSemaphore(rasterizer->thread_pool->worker_wake);
+
+    for (int i = 0; i < nproc; ++i)
+        SDL_WaitThread(rasterizer->thread_pool->threads[i], nullptr);
+
+    SDL_DestroySemaphore(rasterizer->thread_pool->worker_rest);
+    SDL_DestroySemaphore(rasterizer->thread_pool->worker_wake);
+    SDL_free(rasterizer->thread_pool->worker_data);
+    SDL_free(rasterizer->thread_pool->threads);
+    SDL_free(rasterizer->thread_pool);
 }
 
 void TX_Rasterizer_Init(void *component, void *args) {

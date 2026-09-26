@@ -63,9 +63,26 @@ typedef struct TX_ModelInstance {
     TX_RasterizerFlags flags;
 } TX_ModelInstance;
 
+typedef struct TX_RasterWorkerData {
+    ECS_Handle *rasterizer;
+    SDL_Semaphore *worker_wake;
+    SDL_Semaphore *worker_rest;
+    int canvas_bounds[2];
+    int scanline_padding;
+    bool exit;
+} TX_RasterWorkerData;
+
+typedef struct TX_RasterThreadPool {
+    SDL_Thread **threads;
+    TX_RasterWorkerData *worker_data;
+    SDL_Semaphore *worker_wake;
+    SDL_Semaphore *worker_rest;
+} TX_RasterThreadPool;
+
 typedef struct TX_Rasterizer {
     ECS_Handle *world;
     ECS_Handle *target;
+    TX_RasterThreadPool *thread_pool;
     TX_VertexProjector project;
     TX_RasterScanner scan;
     float near;
@@ -117,7 +134,10 @@ void TX_World_Free(void *component);
 
 SD_DECLARE_VOID_RETURN(TX_Rasterizer_Render, ECS_Handle *, self)
 void TX_Rasterizer_Attach(ECS_Handle *self, ECS_Component(void) *component);
+void TX_Rasterizer_Detach(ECS_Handle *self, ECS_Component(void) *component);
 void TX_Rasterizer_Init(void *component, void *args);
+
+SD_DECLARE(int, TX_RasterWorker, void *, data)
 
 void TX_PerspectiveFOV_Init(void *component, void *args);
 
