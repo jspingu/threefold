@@ -17,10 +17,10 @@ static int PresentThread(void *data) {
     int rem = sd_rem(canvas->width);
 
     for (int i = pd->start; i < pd->end; ++i) {
-        int base = i * sd_bounding_length(canvas->width);
+        int sd_base = i * sd_bounding_length(canvas->width);
 
         for (int j = 0; j < qot; ++j) {
-            sd_vec3 col = sd_vec3_load(canvas->color, base + j);
+            sd_vec3 col = sd_vec3_load(canvas->color, sd_base + j);
             col = sd_vec3_clamp(col, sd_float_zero(), sd_float_one());
             col = sd_vec3_muls(col, sd_float_set(0xFFFF));
 
@@ -42,13 +42,13 @@ static int PresentThread(void *data) {
         }
 
         for (int j = 0; j < rem; ++j) {
-            sd_vec3_scalar col = sd_vec3_loads(canvas->color, qot * sd_length() + j);
+            sd_vec3_scalar col = sd_vec3_loads(canvas->color, (sd_base + qot) * sd_length() + j);
 
-            uint16_t r = col.x * 0xFFFF;
+            uint16_t r = SDL_clamp(col.x, 0, 1) * 0xFFFF;
                      r = gamma_encode_lut[r];
-            uint16_t g = col.y * 0xFFFF;
+            uint16_t g = SDL_clamp(col.y, 0, 1) * 0xFFFF;
                      g = gamma_encode_lut[g];
-            uint16_t b = col.z * 0xFFFF;
+            uint16_t b = SDL_clamp(col.z, 0, 1) * 0xFFFF;
                      b = gamma_encode_lut[b];
 
             pd->pixels[i * canvas->width + qot * sd_length() + j] = (r << 16) | (g << 8) | b;
@@ -70,6 +70,9 @@ void SD_VARIANT(TX_Canvas_Present)(ECS_Handle *self) {
     // Canvas present is broken on MSYS2 builds with odd window resolutions
     // Maybe pitch is not always canvas->width * sizeof(uint32_t) on all platforms
     // See https://github.com/libsdl-org/SDL/blob/main/src/render/SDL_render.c
+
+    // TODO: Use thread pooling to avoid per frame thread creation overhead
+    // Current workload distribution approach is fine for canvas present
 
     int parallelism = SDL_GetNumLogicalCPUCores();
     SDL_Thread **threads = SDL_malloc(sizeof(SDL_Thread *) * parallelism);
