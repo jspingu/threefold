@@ -386,7 +386,7 @@ static void TX_Rasterizer_DrawBatch(ECS_Handle *self, List(TX_RenderInstance *) 
     });
 }
 
-static int RenderToSubCanvas(TX_RasterWorkerData *wd) {
+static void RenderToSubCanvas(TX_RasterWorkerData *wd) {
     TX_Rasterizer *rasterizer = ECS_Entity_GetComponent(wd->rasterizer, TX_Components.Rasterizer);
     TX_World *world = ECS_Entity_GetComponent(rasterizer->world, TX_Components.World);
     TX_Canvas *canvas = ECS_Entity_GetComponent(rasterizer->target, TX_Components.Canvas);
@@ -412,8 +412,6 @@ static int RenderToSubCanvas(TX_RasterWorkerData *wd) {
                 TX_Rasterizer_DrawBatch(wd->rasterizer, flag_batch, flags, wd->canvas_bounds, wd->scanline_padding);
         }
     }
-
-    return 0;
 }
 
 int SD_VARIANT(TX_RasterWorker)(void *data) {

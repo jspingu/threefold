@@ -79,6 +79,7 @@ typedef struct TX_RasterThreadPool {
     SDL_Semaphore *worker_rest;
 } TX_RasterThreadPool;
 
+// TODO: Move to public header
 typedef struct TX_Rasterizer {
     ECS_Handle *world;
     ECS_Handle *target;

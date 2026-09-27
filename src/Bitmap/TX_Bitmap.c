@@ -6,6 +6,8 @@
 
 void TX_Bitmap_RegisterToECS(ECS *ecs) {
     TX_Components.Canvas = ECS_RegisterComponent(ecs, TX_Canvas, {
+        .attach = TX_Canvas_Attach,
+        .detach = TX_Canvas_Detach,
         .init = SD_SELECT(TX_Canvas_Init),
         .free = TX_Canvas_Free
     });

@@ -5,6 +5,8 @@
 #include <TX/ECS.h>
 #include <TX/Math/stride.h>
 
+typedef struct TX_CanvasThreadPool TX_CanvasThreadPool;
+
 typedef struct TX_Viewport {
     SDL_Window *window;
     SDL_Renderer *renderer;
@@ -18,7 +20,7 @@ typedef struct TX_ViewportArgs {
 } TX_ViewportArgs;
 
 typedef struct TX_Canvas {
-    ECS_Handle *vp;
+    TX_CanvasThreadPool *thread_pool;
     sd_vec3 *color;
     sd_float *depth;
     sd_int *scanlines[2];
