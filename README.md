@@ -3,6 +3,8 @@
 ### Requirements
 
 - C23 Clang
+- Make
+- pkg-config
 - SDL3
 
 ### Clone, Build, & Run
@@ -36,4 +38,4 @@ Supported extensions:
 
 Software-rendered scene — [Utah teapot](https://users.cs.utah.edu/~dejohnso/models/teapot.html) (22,855 triangles), skybox, lights, phong shading, cubemap reflections, gamma correction
 
-1920x1200@~50FPS on my X1P42100
+1920x1200@~60FPS on my X1P42100
