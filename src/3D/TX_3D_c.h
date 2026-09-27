@@ -75,7 +75,6 @@ typedef struct TX_RasterWorkerData {
 typedef struct TX_RasterThreadPool {
     SDL_Thread **threads;
     TX_RasterWorkerData *worker_data;
-    SDL_Semaphore *worker_wake;
     SDL_Semaphore *worker_rest;
 } TX_RasterThreadPool;
 

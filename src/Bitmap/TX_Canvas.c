@@ -90,7 +90,7 @@ void SD_VARIANT(TX_Canvas_Present)(ECS_Handle *self) {
     }
 
     for (int i = 0; i < nproc; ++i)
-        SDL_SignalSemaphore(pool->worker_wake);
+        SDL_SignalSemaphore(pool->worker_data[i].worker_wake);
 
     for (int i = 0; i < nproc; ++i)
         SDL_WaitSemaphore(pool->worker_rest);
@@ -126,13 +126,12 @@ void TX_Canvas_Attach(ECS_Handle *self, ECS_Component(void) *component) {
     canvas->thread_pool = pool;
     pool->threads = SDL_malloc(sizeof(SDL_Thread *) * nproc);
     pool->worker_data = SDL_malloc(sizeof(TX_CanvasWorkerData) * nproc);
-    pool->worker_wake = SDL_CreateSemaphore(0);
     pool->worker_rest = SDL_CreateSemaphore(0);
 
     for (int i = 0; i < nproc; ++i) {
         pool->worker_data[i] = (TX_CanvasWorkerData) {
             .canvas = self,
-            .worker_wake = pool->worker_wake,
+            .worker_wake = SDL_CreateSemaphore(0),
             .worker_rest = pool->worker_rest,
             .exit = false
         };
@@ -143,22 +142,24 @@ void TX_Canvas_Attach(ECS_Handle *self, ECS_Component(void) *component) {
 
 void TX_Canvas_Detach(ECS_Handle *self, ECS_Component(void) *component) {
     TX_Canvas *canvas = ECS_Entity_GetComponent(self, component);
+    TX_CanvasThreadPool *pool = canvas->thread_pool;
     int nproc = SDL_GetNumLogicalCPUCores();
 
     for (int i = 0; i < nproc; ++i)
-        canvas->thread_pool->worker_data[i].exit = true;
+        pool->worker_data[i].exit = true;
 
     for (int i = 0; i < nproc; ++i)
-        SDL_SignalSemaphore(canvas->thread_pool->worker_wake);
+        SDL_SignalSemaphore(pool->worker_data[i].worker_wake);
 
-    for (int i = 0; i < nproc; ++i)
-        SDL_WaitThread(canvas->thread_pool->threads[i], nullptr);
+    for (int i = 0; i < nproc; ++i) {
+        SDL_WaitThread(pool->threads[i], nullptr);
+        SDL_DestroySemaphore(pool->worker_data[i].worker_wake);
+    }
 
-    SDL_DestroySemaphore(canvas->thread_pool->worker_rest);
-    SDL_DestroySemaphore(canvas->thread_pool->worker_wake);
-    SDL_free(canvas->thread_pool->worker_data);
-    SDL_free(canvas->thread_pool->threads);
-    SDL_free(canvas->thread_pool);
+    SDL_DestroySemaphore(pool->worker_rest);
+    SDL_free(pool->worker_data);
+    SDL_free(pool->threads);
+    SDL_free(pool);
 }
 
 void TX_Canvas_Free(void *component) {

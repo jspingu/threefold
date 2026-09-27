@@ -512,7 +512,7 @@ void SD_VARIANT(TX_Rasterizer_Render)(ECS_Handle *self) {
     }
 
     for (int i = 0; i < nproc; ++i)
-        SDL_SignalSemaphore(pool->worker_wake);
+        SDL_SignalSemaphore(pool->worker_data[i].worker_wake);
 
     for (int i = 0; i < nproc; ++i)
         SDL_WaitSemaphore(pool->worker_rest);
@@ -530,13 +530,12 @@ void TX_Rasterizer_Attach(ECS_Handle *self, ECS_Component(void) *component) {
     rasterizer->thread_pool = pool;
     pool->threads = SDL_malloc(sizeof(SDL_Thread *) * nproc);
     pool->worker_data = SDL_malloc(sizeof(TX_RasterWorkerData) * nproc);
-    pool->worker_wake = SDL_CreateSemaphore(0);
     pool->worker_rest = SDL_CreateSemaphore(0);
 
     for (int i = 0; i < nproc; ++i) {
         pool->worker_data[i] = (TX_RasterWorkerData) {
             .rasterizer = self,
-            .worker_wake = pool->worker_wake,
+            .worker_wake = SDL_CreateSemaphore(0),
             .worker_rest = pool->worker_rest,
             .exit = false
         };
@@ -547,22 +546,24 @@ void TX_Rasterizer_Attach(ECS_Handle *self, ECS_Component(void) *component) {
 
 void TX_Rasterizer_Detach(ECS_Handle *self, ECS_Component(void) *component) {
     TX_Rasterizer *rasterizer = ECS_Entity_GetComponent(self, component);
+    TX_RasterThreadPool *pool = rasterizer->thread_pool;
     int nproc = SDL_GetNumLogicalCPUCores();
 
     for (int i = 0; i < nproc; ++i)
-        rasterizer->thread_pool->worker_data[i].exit = true;
+        pool->worker_data[i].exit = true;
 
     for (int i = 0; i < nproc; ++i)
-        SDL_SignalSemaphore(rasterizer->thread_pool->worker_wake);
+        SDL_SignalSemaphore(pool->worker_data[i].worker_wake);
 
-    for (int i = 0; i < nproc; ++i)
-        SDL_WaitThread(rasterizer->thread_pool->threads[i], nullptr);
+    for (int i = 0; i < nproc; ++i) {
+        SDL_WaitThread(pool->threads[i], nullptr);
+        SDL_DestroySemaphore(pool->worker_data[i].worker_wake);
+    }
 
-    SDL_DestroySemaphore(rasterizer->thread_pool->worker_rest);
-    SDL_DestroySemaphore(rasterizer->thread_pool->worker_wake);
-    SDL_free(rasterizer->thread_pool->worker_data);
-    SDL_free(rasterizer->thread_pool->threads);
-    SDL_free(rasterizer->thread_pool);
+    SDL_DestroySemaphore(pool->worker_rest);
+    SDL_free(pool->worker_data);
+    SDL_free(pool->threads);
+    SDL_free(pool);
 }
 
 void TX_Rasterizer_Init(void *component, void *args) {

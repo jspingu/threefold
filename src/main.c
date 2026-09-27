@@ -58,7 +58,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                             .scale = { .x=0.5, .y=0.5 }
                         }},
                         { TX_Components.PerspectiveFOV, &(float) { SDL_PI_F / 2 } },
-                        { TX_Components.Rasterizer, &(TX_RasterizerArgs) {
+                        { TX_Components.Rasterizer, &(TX_Rasterizer) {
                             .project = SD_SELECT(TX_ProjectPerspective),
                             .scan = SD_SELECT(TX_ScanPerspective),
                             .near = 1

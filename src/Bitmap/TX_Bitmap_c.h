@@ -16,7 +16,6 @@ typedef struct TX_CanvasWorkerData {
 typedef struct TX_CanvasThreadPool {
     SDL_Thread **threads;
     TX_CanvasWorkerData *worker_data;
-    SDL_Semaphore *worker_wake;
     SDL_Semaphore *worker_rest;
 } TX_CanvasThreadPool;
 
