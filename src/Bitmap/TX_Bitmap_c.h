@@ -8,7 +8,8 @@ typedef struct TX_CanvasWorkerData {
     ECS_Handle *canvas;
     SDL_Semaphore *worker_wake;
     SDL_Semaphore *worker_rest;
-    uint32_t *pixels;
+    unsigned char *pixels;
+    int pitch;
     int start, end;
     bool exit;
 } TX_CanvasWorkerData;

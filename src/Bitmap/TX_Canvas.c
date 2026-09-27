@@ -13,6 +13,7 @@ static void PresentSubCanvas(TX_CanvasWorkerData *wd) {
 
     for (int i = wd->start; i < wd->end; ++i) {
         int sd_base = i * sd_bounding_length(canvas->width);
+        int32_t *pixel_base = (int32_t *)(wd->pixels + i * wd->pitch);
 
         for (int j = 0; j < qot; ++j) {
             sd_vec3 col = sd_vec3_load(canvas->color, sd_base + j);
@@ -33,7 +34,7 @@ static void PresentSubCanvas(TX_CanvasWorkerData *wd) {
                    b = sd_int_and(b, byte);
 
             sd_int out = sd_int_or(r, sd_int_or(g, b));
-            sd_int_storeu((int32_t *)wd->pixels + i * canvas->width + j * sd_length(), out);
+            sd_int_storeu(pixel_base + j * sd_length(), out);
         }
 
         for (int j = 0; j < rem; ++j) {
@@ -46,7 +47,7 @@ static void PresentSubCanvas(TX_CanvasWorkerData *wd) {
             uint16_t b = SDL_clamp(col.z, 0, 1) * 0xFFFF;
                      b = gamma_encode_lut[b];
 
-            wd->pixels[i * canvas->width + qot * sd_length() + j] = (r << 16) | (g << 8) | b;
+            pixel_base[qot * sd_length() + j] = (r << 16) | (g << 8) | b;
         }
     }
 }
@@ -69,15 +70,10 @@ exit:
 void SD_VARIANT(TX_Canvas_Present)(ECS_Handle *self) {
     TX_Canvas *canvas = ECS_Entity_GetComponent(self, TX_Components.Canvas);
     TX_Viewport *vp = ECS_Entity_GetComponent(self, TX_Components.Viewport);
-    uint32_t *pixels;
+    void *pixels;
     int pitch;
 
     SDL_LockTexture(vp->texture, nullptr, (void **)&pixels, &pitch);
-
-    // Canvas present is broken on MSYS2 builds with odd window resolutions
-    // Maybe pitch is not always canvas->width * sizeof(uint32_t) on all platforms
-    // See https://github.com/libsdl-org/SDL/blob/main/src/render/SDL_render.c
-
     TX_CanvasThreadPool *pool = canvas->thread_pool;
     int nproc = SDL_GetNumLogicalCPUCores();
     int qot = canvas->height / nproc;
@@ -85,6 +81,7 @@ void SD_VARIANT(TX_Canvas_Present)(ECS_Handle *self) {
 
     for (int i = 0; i < nproc; ++i) {
         pool->worker_data[i].pixels = pixels;
+        pool->worker_data[i].pitch = pitch;
         pool->worker_data[i].start = i * qot + SDL_min(i, rem);
         pool->worker_data[i].end = (i + 1) * qot + SDL_min(i + 1, rem);
     }
