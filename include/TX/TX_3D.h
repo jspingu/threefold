@@ -27,7 +27,7 @@ typedef struct TX_RenderInstance TX_RenderInstance;
 typedef struct TX_World TX_World;
 typedef struct TX_Model TX_Model;
 typedef struct TX_ModelInstance TX_ModelInstance;
-typedef struct TX_Rasterizer TX_Rasterizer;
+typedef struct TX_RasterThreadPool TX_RasterThreadPool;
 typedef struct TX_TriangleDraw TX_TriangleDraw;
 typedef struct TX_ShaderParams TX_ShaderParams;
 
@@ -65,11 +65,14 @@ typedef struct TX_TriangleDraw {
     vec2 ss_verts[3];
 } TX_TriangleDraw;
 
-typedef struct TX_RasterizerArgs {
+typedef struct TX_Rasterizer {
+    ECS_Handle *world;
+    ECS_Handle *target;
+    TX_RasterThreadPool *thread_pool;
     TX_VertexProjector project;
     TX_RasterScanner scan;
     float near;
-} TX_RasterizerArgs;
+} TX_Rasterizer;
 
 typedef struct TX_ParallelProjector {
     vec2 slope;

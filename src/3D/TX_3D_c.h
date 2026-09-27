@@ -79,16 +79,6 @@ typedef struct TX_RasterThreadPool {
     SDL_Semaphore *worker_rest;
 } TX_RasterThreadPool;
 
-// TODO: Move to public header
-typedef struct TX_Rasterizer {
-    ECS_Handle *world;
-    ECS_Handle *target;
-    TX_RasterThreadPool *thread_pool;
-    TX_VertexProjector project;
-    TX_RasterScanner scan;
-    float near;
-} TX_Rasterizer;
-
 void TX_3D_RegisterToECS(ECS *ecs);
 
 void TX_LightEnvironment_Attach(ECS_Handle *self, ECS_Component(void) *component);

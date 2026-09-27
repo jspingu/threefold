@@ -566,8 +566,7 @@ void TX_Rasterizer_Detach(ECS_Handle *self, ECS_Component(void) *component) {
 }
 
 void TX_Rasterizer_Init(void *component, void *args) {
-    TX_Rasterizer *rasterizer = component;
-    TX_RasterizerArgs *rasterizer_args = args;
+    TX_Rasterizer *rasterizer = component, *rasterizer_args = args;
 
     *rasterizer = (TX_Rasterizer) {
         .project = rasterizer_args->project,
