@@ -392,7 +392,7 @@ static void RenderToCanvasTile(TX_RasterWorkerData *wd, TX_CanvasTile tile) {
 
     /* Reset depth */
     for (int i = tile.top; i < tile.bottom; ++i)
-        for (size_t j = sd_qot(tile.left); j < sd_qot(tile.right); ++j)
+        for (size_t j = sd_qot(tile.left); j < sd_bounding_length(tile.right); ++j)
             sd_float_store(wd->canvas->depth, i * sd_width + j, sd_float_zero());
 
     /* Draw geometry in batches, according to render order and rasterizer flags */
