@@ -6,6 +6,8 @@
 
 #include "TX_Bitmap_c.h"
 
+static constexpr int MIN_TILE_SIZE = 128;
+
 static void PresentSubCanvas(TX_CanvasWorkerData *wd) {
     TX_Canvas *canvas = ECS_Entity_GetComponent(wd->canvas, TX_Components.Canvas);
     int qot = sd_qot(canvas->width);
@@ -106,12 +108,24 @@ void SD_VARIANT(TX_Canvas_Init)(void *component, void *args) {
     canvas->color = SDL_aligned_alloc(SD_ALIGN, sd_size * 3);
     canvas->depth = SDL_aligned_alloc(SD_ALIGN, sd_size);
     
-    int nproc = SDL_GetNumLogicalCPUCores();
-    int qot = canvas->height / nproc;
-    int rem = canvas->height % nproc;
-    size_t sd_scanlines_size = sd_bounding_size(qot + 1) * rem + sd_bounding_size(qot) * (nproc - rem);
-    canvas->scanlines[0] = SDL_aligned_alloc(SD_ALIGN, sd_scanlines_size);
-    canvas->scanlines[1] = SDL_aligned_alloc(SD_ALIGN, sd_scanlines_size);
+    int tile_size = SDL_max(MIN_TILE_SIZE, sd_length());
+    int htiles = (canvas->width + tile_size - 1) / tile_size;
+    int vtiles = (canvas->height + tile_size - 1) / tile_size;
+    canvas->ntiles = htiles * vtiles;
+    canvas->tiles = SDL_malloc(sizeof(TX_CanvasTile) * canvas->ntiles);
+
+    for (int i = 0; i < vtiles; ++i)
+        for (int j = 0; j < htiles; ++j)
+            canvas->tiles[i * htiles + j] = (TX_CanvasTile) {
+                .left = j * tile_size,
+                .right = SDL_min((j + 1) * tile_size, canvas->width),
+                .top = i * tile_size,
+                .bottom = SDL_min((i + 1) * tile_size, canvas->height),
+                .scanlines = {
+                    SDL_aligned_alloc(SD_ALIGN, sizeof(int32_t) * tile_size),
+                    SDL_aligned_alloc(SD_ALIGN, sizeof(int32_t) * tile_size)
+                }
+            };
 }
 
 #ifndef SD_SRC_VARIANT
@@ -164,8 +178,13 @@ void TX_Canvas_Free(void *component) {
 
     SDL_aligned_free(canvas->color);
     SDL_aligned_free(canvas->depth);
-    SDL_aligned_free(canvas->scanlines[0]);
-    SDL_aligned_free(canvas->scanlines[1]);
+
+    for (int i = 0; i < canvas->ntiles; ++i) {
+        SDL_aligned_free(canvas->tiles[i].scanlines[0]);
+        SDL_aligned_free(canvas->tiles[i].scanlines[1]);
+    }
+
+    SDL_free(canvas->tiles);
 }
 
 #endif /* SD_SRC_VARIANT */

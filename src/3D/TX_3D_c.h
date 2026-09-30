@@ -64,18 +64,22 @@ typedef struct TX_ModelInstance {
 } TX_ModelInstance;
 
 typedef struct TX_RasterWorkerData {
-    ECS_Handle *rasterizer;
+    ECS_Handle *entity;
+    TX_Rasterizer *rasterizer;
+    TX_Canvas *canvas;
+    TX_World *world;
     SDL_Semaphore *worker_wake;
     SDL_Semaphore *worker_rest;
-    int canvas_bounds[2];
-    int scanline_padding;
+    SDL_AtomicInt *tile_ref;
     bool exit;
 } TX_RasterWorkerData;
 
 typedef struct TX_RasterThreadPool {
     SDL_Thread **threads;
     TX_RasterWorkerData *worker_data;
+    SDL_Semaphore *worker_wake;
     SDL_Semaphore *worker_rest;
+    SDL_AtomicInt tile;
 } TX_RasterThreadPool;
 
 void TX_3D_RegisterToECS(ECS *ecs);

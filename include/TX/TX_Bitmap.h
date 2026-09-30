@@ -19,11 +19,18 @@ typedef struct TX_ViewportArgs {
     int width, height;
 } TX_ViewportArgs;
 
+typedef struct TX_CanvasTile {
+    sd_int *scanlines[2];
+    int left, right;
+    int top, bottom;
+} TX_CanvasTile;
+
 typedef struct TX_Canvas {
     TX_CanvasThreadPool *thread_pool;
     sd_vec3 *color;
     sd_float *depth;
-    sd_int *scanlines[2];
+    TX_CanvasTile *tiles;
+    int ntiles;
     int width, height;
 } TX_Canvas;
 
@@ -47,8 +54,70 @@ static inline sd_vec4 TX_SampleNearest(TX_Texture *texture, sd_vec2 ts) {
 }
 
 static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
+    /*
+     * This cubemap sampling algorithm is overly complicated and really difficult to understand. I recall using trial and error to get it to work.
+     * Needs a rewrite and documentation. Most of the complexity can be eliminated by preprocessing the cubemap texture into a specific format.
+     *
+     * There are two issues:
+     * - Conversion from view-space coordinates to texture-space coordinates is not trivial
+     *     - Consider when the direction vector lands on a cube face aligned with the xy plane
+     *     - For a positive z component, this means we should sample the front face
+     *     - For a negative z component, this means we should sample the back face
+     *     - Naively sampling the corresponding face using the xy coordinates of the intersection point gives incorrect results for multiple reasons
+     *     - View-space +y is up, while texture-space +y is down, so we need to flip the y coordinate
+     *     - Opposite faces have flipped view-space to texture-space mappings, so we need to flip the x coordinate for the back face
+     *         - For the xy and zy faces, it's flipped horizontally
+     *         - For the xz faces, it's flipped vertically
+     * - Vectorization
+     *     - Each stride needs to multiplex 6 texture indices for each face
+     *     - With the current approach this requires a lot of masking and blending operations
+     *     - This is called in fragment shaders, so we should really be cutting down on these for performance
+     */
+
+    /*
+     * New approach:
+     * - Compute intersection point with the +x, +y, and +z faces of the cube as before, to avoid an abs()
+     * - Sample the cube faces directly, the flipping will be preprocessed in the cubemap texture
+     *
+     * I worked out these VS -> TS mappings
+     *
+     * Right
+     * z, y -> -z, -y
+     * Left
+     * z, y -> -z, y
+     * Up
+     * x, z -> x, z
+     * Down
+     * x, z -> -x, z
+     * Front
+     * x, y -> x, -y
+     * Back
+     * x, y -> x, y
+     *
+     * Texture layout:
+     * 
+     * +------------+------------+
+     * |            |            |
+     * |   right    |    left    |
+     * |  (-x, -y)  |  (-x, y)   |
+     * |            |            |
+     * +------------+------------+
+     * |            |            |
+     * |     up     |    down    |
+     * |   (x, y)   |  (-x, y)   |
+     * |            |            |
+     * +------------+------------+
+     * |            |            |
+     * |   front    |    back    |
+     * |  (x, -y)   |   (x, y)   |
+     * |            |            |
+     * +------------+------------+
+     */
+
+
     sd_float unit = sd_float_set(texture->width * 0.5f);
-    sd_vec3 rcp = sd_vec3_rcp(dir);
+    sd_vec3 rcp = sd_vec3_rcp(dir); // This is not wrapped in an sd_vec3_abs(), so we're always computing intersections in the +x, +y, and +z faces
+                                    // The cryptic negations that follow are compensating for this
 
     sd_vec2 zy = sd_vec2_muls(sd_vec2_create(sd_vz(dir), sd_vy(dir)), sd_float_negate(sd_vx(rcp)));
     sd_vec2 xz = sd_vec2_muls(sd_vec2_create(sd_vx(dir), sd_vz(dir)), sd_float_negate(sd_vy(rcp)));
