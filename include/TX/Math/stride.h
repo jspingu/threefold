@@ -24,6 +24,16 @@
 #include <arm_neon.h>
 #endif
 
+#ifdef __x86_64__
+#if defined(__clang__) || defined(__INTEL_LLVM_COMPILER)
+    #define SD_CALL  __regcall
+#endif
+#endif
+
+#ifndef SD_CALL
+    #define SD_CALL
+#endif
+
 #define SD_DEFINE_TYPES_FIXED(suffix,float_type,int_type,mask_type)  \
     typedef float_type sd_float_##suffix;                            \
     typedef int_type sd_int_##suffix;                                \
@@ -165,17 +175,19 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
 
 #endif /* SD_DISPATCH */
 
-#define SD_DECLARE(rettype,fnname,...)                              \
-    typeof(rettype) fnname##_avx512f(SD_PARAMS(__VA_ARGS__));       \
-    typeof(rettype) fnname##_avx2(SD_PARAMS(__VA_ARGS__));          \
-    typeof(rettype) fnname##_sse2(SD_PARAMS(__VA_ARGS__));          \
-    typeof(rettype) fnname##_sve(SD_PARAMS(__VA_ARGS__));           \
-    typeof(rettype) fnname##_neon(SD_PARAMS(__VA_ARGS__));          \
-    typeof(rettype) fnname##_scalar(SD_PARAMS(__VA_ARGS__));        \
-    static inline typeof(rettype) fnname(SD_PARAMS(__VA_ARGS__)) {  \
-        typeof(&fnname) sd_fn = SD_SELECT(fnname);                  \
-        return sd_fn(SD_PARAM_NAMES(__VA_ARGS__));                  \
+#define SD_DECLARE_ATTR(attr,rettype,fnname,...)                         \
+    attr typeof(rettype) fnname##_avx512f(SD_PARAMS(__VA_ARGS__));       \
+    attr typeof(rettype) fnname##_avx2(SD_PARAMS(__VA_ARGS__));          \
+    attr typeof(rettype) fnname##_sse2(SD_PARAMS(__VA_ARGS__));          \
+    attr typeof(rettype) fnname##_sve(SD_PARAMS(__VA_ARGS__));           \
+    attr typeof(rettype) fnname##_neon(SD_PARAMS(__VA_ARGS__));          \
+    attr typeof(rettype) fnname##_scalar(SD_PARAMS(__VA_ARGS__));        \
+    attr static inline typeof(rettype) fnname(SD_PARAMS(__VA_ARGS__)) {  \
+        typeof(&fnname) sd_fn = SD_SELECT(fnname);                       \
+        return sd_fn(SD_PARAM_NAMES(__VA_ARGS__));                       \
     }
+
+#define SD_DECLARE(rettype,fnname,...)  SD_DECLARE_ATTR(, rettype, fnname, __VA_ARGS__)
 
 #define SD_DECLARE_VOID_RETURN(fnname,...)               \
     void fnname##_avx512f(SD_PARAMS(__VA_ARGS__));       \

@@ -7,7 +7,7 @@
 #include <TX/Math/linalg.h>
 #include <TX/Math/stride.h>
 
-#define TX_SHADER_DECLARE(name)  SD_DECLARE(sd_vec4, name, void *, state, sd_vec4, col, TX_ShaderParams, fragment)
+#define TX_SHADER_DECLARE(name)  SD_DECLARE_ATTR(SD_CALL, sd_vec4, name, void *, state, sd_vec4, col, TX_ShaderParams, fragment)
 
 typedef enum TX_RasterizerFlags {
     TX_RASTERIZER_ALPHA_SCISSOR       = 1 << 0,  /* TODO: implement */
@@ -33,7 +33,7 @@ typedef struct TX_ShaderParams TX_ShaderParams;
 
 typedef xform3 (*TX_XformComposer)(ECS_Handle *self, xform3 lhs);
 
-typedef sd_vec4 (*TX_FragmentShader)(void *state, sd_vec4 col, TX_ShaderParams fragment);
+typedef SD_CALL sd_vec4 (*TX_FragmentShader)(void *state, sd_vec4 col, TX_ShaderParams fragment);
 typedef sd_vec2 (*TX_VertexProjector)(ECS_Handle *self, sd_vec3 pos, sd_vec2 midpoint);
 typedef void (*TX_RasterScanner)(ECS_Handle *self, TX_CanvasTile tile, TX_RasterizerFlags flags, TX_TriangleDraw triangle, int triangle_bounds[2]);
 

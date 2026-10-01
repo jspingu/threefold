@@ -3,13 +3,13 @@
 #include <TX/Math/stride.h>
 #include <TX/Math/linalg.h>
 
-sd_vec4 SD_VARIANT(TX_ShadeSolidColor)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeSolidColor)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
     (void)col, (void)fragment;
     TX_SolidColor *solid_color = state;
     return sd_vec4_set(solid_color->r, solid_color->g, solid_color->b, 1);
 }
 
-sd_vec4 SD_VARIANT(TX_ShadeCheckerboard)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeCheckerboard)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
     (void)col;
     TX_Checkerboard *checkerboard = state;
     sd_vec2 tile_coord = sd_vec2_muls(*fragment.ts, sd_float_set(checkerboard->tiles));
@@ -23,13 +23,13 @@ sd_vec4 SD_VARIANT(TX_ShadeCheckerboard)(void *state, sd_vec4 col, TX_ShaderPara
     );
 }
 
-sd_vec4 SD_VARIANT(TX_ShadeTextureMap)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeTextureMap)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
     (void)col;
     TX_TextureMap *texture_map = state;
     return TX_SampleNearest(texture_map->texture, *fragment.ts) ;
 }
 
-sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
     TX_OpticalMedium *medium = state;
     sd_float specularity = sd_float_set(medium->specularity);
     sd_float reflectivity = sd_float_set(medium->reflectivity);
@@ -89,7 +89,7 @@ sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_ShaderParams f
     return sd_vec4_create(sd_vx(out), sd_vy(out), sd_vz(out), sd_vw(col));
 }
 
-sd_vec4 SD_VARIANT(TX_ShadeSky)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeSky)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
     (void)col;
     TX_LightEnvironment **env = state;
 
