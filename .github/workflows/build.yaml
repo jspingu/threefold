@@ -32,8 +32,9 @@ jobs:
 
       - name: Package installation (brew)
         if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
         run: |
-          brew update
           brew install sdl3
 
       - name: Package installation (apt)
