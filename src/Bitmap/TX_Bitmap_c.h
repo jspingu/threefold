@@ -32,6 +32,7 @@ void TX_Canvas_Free(void *component);
 SD_DECLARE(int, TX_CanvasWorker, void *, data)
 
 void TX_TextureBank_Attach(ECS_Handle *self, ECS_Component(void) *component);
+void TX_CubemapBank_Attach(ECS_Handle *self, ECS_Component(void) *component);
 
 void TX_Bitmap_RegisterToECS(ECS *ecs);
 

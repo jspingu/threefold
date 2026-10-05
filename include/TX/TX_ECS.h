@@ -50,6 +50,7 @@ struct TX_Components {
     ECS_Component(TX_Viewport) *Viewport;
     ECS_Component(TX_Canvas) *Canvas;
     ECS_Component(TX_ResourceBank(TX_Texture *)) *TextureBank;
+    ECS_Component(TX_ResourceBank(TX_Texture *)) *CubemapBank;
 };
 
 struct TX_SystemGroups {

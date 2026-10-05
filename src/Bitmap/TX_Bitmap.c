@@ -22,6 +22,11 @@ void TX_Bitmap_RegisterToECS(ECS *ecs) {
         .detach = TX_ResourceBank_Detach
     });
 
+    TX_Components.CubemapBank = ECS_RegisterComponent(ecs, TX_ResourceBank, {
+        .attach = TX_CubemapBank_Attach,
+        .detach = TX_ResourceBank_Detach
+    });
+
     ECS_SystemGroup_RegisterSystem(TX_SystemGroups.RenderPresent, SD_SELECT(TX_Canvas_Present), TX_Components.Viewport, TX_Components.Canvas);
 }
 
