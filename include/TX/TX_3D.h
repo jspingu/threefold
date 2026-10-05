@@ -140,7 +140,7 @@ typedef struct TX_ActiveLight {
 } TX_ActiveLight;
 
 typedef struct TX_LightEnvironment {
-    char *sky_texture_path;
+    char *skybox_dir;
     TX_Texture *sky;
     List(TX_ActiveLight *) *lights;
     float ambient;

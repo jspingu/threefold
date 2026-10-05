@@ -96,7 +96,6 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeSky)(void *state, sd_vec4 col, TX_ShaderParam
     sd_vec3 dir = sd_vec3_muls(*fragment.vs2ws_xform[0], sd_vx(*fragment.vs));
             dir = sd_vec3_fsmadd(*fragment.vs2ws_xform[1], sd_vy(*fragment.vs), dir);
             dir = sd_vec3_fsmadd(*fragment.vs2ws_xform[2], sd_vz(*fragment.vs), dir);
-            dir = sd_vec3_normalize(dir);
 
     return TX_SampleCubemap((*env)->sky, dir);
 }
@@ -144,8 +143,8 @@ void TX_PointLight_Attach(ECS_Handle *self, ECS_Component(void) *component) {
 
 void TX_LightEnvironment_Attach(ECS_Handle *self, ECS_Component(void) *component) {
     TX_LightEnvironment **env = ECS_Entity_GetComponent(self, component);
-    ECS_Handle *tb = ECS_Entity_AncestorWithComponent(self, TX_Components.TextureBank, false);
-    (*env)->sky = TX_ResourceBank_Get(tb, TX_Components.TextureBank, (*env)->sky_texture_path);
+    ECS_Handle *tb = ECS_Entity_AncestorWithComponent(self, TX_Components.CubemapBank, false);
+    (*env)->sky = TX_ResourceBank_Get(tb, TX_Components.CubemapBank, (*env)->skybox_dir);
 }
 
 void TX_TextureMap_Detach(ECS_Handle *self, ECS_Component(void) *component) {
@@ -164,7 +163,7 @@ void TX_PointLight_Detach(ECS_Handle *self, ECS_Component(void) *component) {
 void TX_LightEnvironment_Detach(ECS_Handle *self, ECS_Component(void) *component) {
     TX_LightEnvironment **env = ECS_Entity_GetComponent(self, component);
     ECS_Handle *tb = ECS_Entity_AncestorWithComponent(self, TX_Components.TextureBank, false);
-    TX_ResourceBank_Release(tb, TX_Components.TextureBank, (*env)->sky_texture_path);
+    TX_ResourceBank_Release(tb, TX_Components.TextureBank, (*env)->skybox_dir);
 }
 
 void TX_SolidColor_Init(void *component, void *args) {
@@ -210,8 +209,8 @@ void TX_LightEnvironment_Init(void *component, void *args) {
     TX_LightEnvironment **env = component;
     TX_LightEnvironment *env_args = args;
     *env = SDL_malloc(sizeof(TX_LightEnvironment));
-    (*env)->sky_texture_path = SDL_malloc(SDL_strlen(env_args->sky_texture_path) + 1);
-    SDL_strlcpy((*env)->sky_texture_path, env_args->sky_texture_path, TX_RESOURCE_PATHLEN);
+    (*env)->skybox_dir = SDL_malloc(SDL_strlen(env_args->skybox_dir) + 1);
+    SDL_strlcpy((*env)->skybox_dir, env_args->skybox_dir, TX_RESOURCE_PATHLEN);
     (*env)->lights = List_Create(TX_ActiveLight *);
     (*env)->ambient = env_args->ambient;
 }
@@ -230,7 +229,7 @@ void TX_ShaderComponent_Free(void *component) {
 
 void TX_LightEnvironment_Free(void *component) {
     TX_LightEnvironment **env = component;
-    SDL_free((*env)->sky_texture_path);
+    SDL_free((*env)->skybox_dir);
     List_Free((*env)->lights);
     SDL_free(*env);
 }

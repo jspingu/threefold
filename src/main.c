@@ -36,6 +36,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         }},
         { TX_Components.InputState, nullptr },
         { TX_Components.TextureBank, nullptr },
+        { TX_Components.CubemapBank, nullptr },
         { TX_Components.Canvas, &(TX_Canvas){
             .width = WIDTH,
             .height = HEIGHT
@@ -48,7 +49,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
             ECS_Components(
                 { TX_Components.World, nullptr },
                 { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeDefault}},
-                { TX_Components.LightEnvironment, &(TX_LightEnvironment){ .ambient=0.08, .sky_texture_path="assets/Nalovardo.png" } }
+                { TX_Components.LightEnvironment, &(TX_LightEnvironment){ .ambient=0.08, .skybox_dir="assets/Nalovardo" } }
             ),
             ECS_Children(
                 { /* Camera */
@@ -210,14 +211,14 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_Components.MeshPrimitive, nullptr },
                         { TX_Components.Cubemap, &(TX_Cubemap) { .scale=100 } },
                         { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_Cubemap_GetMesh } },
-                        { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeCubemap} },
+                        { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeCubemap} }
                     ),
                     ECS_Children({ECS_Components(
                         { TX_Components.Sky, nullptr },
                         { TX_Components.ModelInstance, &(TX_ModelInstanceArgs) {
                             .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_Components.Sky },
                             .nshaders = 1,
-                            .render_batch = Sky,
+                            .render_batch = Sky
                         }}
                     )})
                 }
