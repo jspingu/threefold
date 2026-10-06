@@ -37,7 +37,8 @@ TX_WorldGeometry *SD_VARIANT(TX_World_RegisterGeometry)(ECS_Handle *self, TX_Mes
     size_t sd_size = sd_bounding_size(mesh->nverts);
 
     *geometry = (TX_WorldGeometry) {
-        .world = world,
+        // .world = world, // Do not store this, can be invalidated after ECS update. Pass self instead.
+        .world = self,
         .instances = List_Create(TX_RenderInstance *),
         .mesh = mesh,
         .vs_verts = SDL_aligned_alloc(SD_ALIGN, sd_size * 3),
@@ -53,7 +54,7 @@ TX_WorldGeometry *SD_VARIANT(TX_World_RegisterGeometry)(ECS_Handle *self, TX_Mes
 #ifndef SD_SRC_VARIANT
 
 TX_RenderInstance *TX_WorldGeometry_Instance(TX_WorldGeometry *geometry, TX_FragmentShader *shader_pipeline, void **shader_states, size_t nshaders, size_t render_batch, TX_RasterizerFlags flags) {
-    TX_World *world = geometry->world;
+    TX_World *world = ECS_Entity_GetComponent(geometry->world, TX_Components.World);
 
     if (List_Length(world->render_batches) < render_batch + 1) {
         size_t diff = render_batch - List_Length(world->render_batches) + 1;
@@ -160,7 +161,7 @@ void TX_ModelInstance_Free(void *component) {
 }
 
 void TX_RenderInstance_Free(TX_RenderInstance *instance) {
-    TX_World *world = instance->geometry->world;
+    TX_World *world = ECS_Entity_GetComponent(instance->geometry->world, TX_Components.World);
 
     List(TX_RenderInstance *) *flag_batch = List_Get(world->render_batches, instance->render_batch)[instance->flags];
     List_RemoveWhere(flag_batch, instanced, instanced == instance);
@@ -170,7 +171,7 @@ void TX_RenderInstance_Free(TX_RenderInstance *instance) {
 }
 
 void TX_WorldGeometry_Free(TX_WorldGeometry *geometry) {
-    TX_World *world = geometry->world;
+    TX_World *world = ECS_Entity_GetComponent(geometry->world, TX_Components.World);
 
     List_ForEach(geometry->instances, instance, TX_RenderInstance_Free(instance); );
     List_Free(geometry->instances);

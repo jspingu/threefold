@@ -26,7 +26,7 @@ typedef struct TX_Sculpture {
 } TX_Sculpture;
 
 typedef struct TX_WorldGeometry {
-    TX_World *world;
+    ECS_Handle *world;
     List(TX_RenderInstance *) *instances;
     TX_Mesh *mesh;
     sd_vec3 *vs_verts;
