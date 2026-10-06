@@ -657,9 +657,11 @@ static inline sd_int sd_int_mask_blend(sd_int bg, sd_int fg, sd_mask mask) {
 #ifdef __AVX512F__
     return _mm512_mask_blend_epi32(mask, bg, fg);
 #elifdef __AVX2__
-    __m256i select_bg = _mm256_andnot_si256(mask, bg);
-    __m256i select_fg = _mm256_and_si256(mask, fg);
-    return _mm256_or_si256(select_bg, select_fg);
+    return _mm256_castps_si256(_mm256_blendv_ps(
+        _mm256_castsi256_ps(bg),
+        _mm256_castsi256_ps(fg),
+        _mm256_castsi256_ps(mask);
+    ));
 #elifdef __SSE2__
     __m128i select_bg = _mm_andnot_si128(mask, bg);
     __m128i select_fg = _mm_and_si128(mask, fg);
