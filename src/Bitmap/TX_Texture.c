@@ -73,10 +73,10 @@ static void TX_FreeTextureResource(ECS_Handle *self, void *data) {
     SDL_free(texture);
 }
 
-void TX_TextureBank_Attach(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_ResourceBank_Attach(self, component, TX_LoadTextureResource, TX_FreeTextureResource);
+void TX_AttachTextureBank(ECS_Handle *self, ECS_Component(void) *component) {
+    TX_AttachResourceBank(self, component, TX_LoadTextureResource, TX_FreeTextureResource);
 }
 
-void TX_CubemapBank_Attach(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_ResourceBank_Attach(self, component, TX_LoadCubemapResource, TX_FreeTextureResource);
+void TX_AttachCubemapBank(ECS_Handle *self, ECS_Component(void) *component) {
+    TX_AttachResourceBank(self, component, TX_LoadCubemapResource, TX_FreeTextureResource);
 }

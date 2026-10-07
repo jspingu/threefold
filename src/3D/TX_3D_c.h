@@ -82,57 +82,56 @@ typedef struct TX_RasterThreadPool {
     SDL_AtomicInt tile;
 } TX_RasterThreadPool;
 
-void TX_3D_RegisterToECS(ECS *ecs);
+void TX_Register3DToECS(ECS *ecs);
 
-void TX_LightEnvironment_Attach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_LightEnvironment_Detach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_LightEnvironment_Init(void *component, void *args);
-void TX_LightEnvironment_Free(void *component);
+void TX_AttachLightEnvironment(ECS_Handle *self, ECS_Component(void) *component);
+void TX_DetachLightEnvironment(ECS_Handle *self, ECS_Component(void) *component);
+void TX_InitLightEnvironment(void *component, void *args);
+void TX_FreeLightEnvironment(void *component);
 
-void TX_PointLight_OnXform(ECS_Handle *self, xform3 composed);
-void TX_PointLight_Attach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_PointLight_Detach(ECS_Handle *self, ECS_Component(void) *component);
+void TX_TransformPointLight(ECS_Handle *self, xform3 composed);
+void TX_AttachPointLight(ECS_Handle *self, ECS_Component(void) *component);
+void TX_DetachPointLight(ECS_Handle *self, ECS_Component(void) *component);
 
-void TX_Lighting_Attach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_Lighting_Init(void *component, void *args);
+void TX_AttachLighting(ECS_Handle *self, ECS_Component(void) *component);
+void TX_InitLighting(void *component, void *args);
 
-void TX_Sky_Attach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_Sky_Init(void *component, void *args);
+void TX_AttachSky(ECS_Handle *self, ECS_Component(void) *component);
+void TX_InitSky(void *component, void *args);
 
-void TX_SolidColor_Init(void *component, void *args);
-void TX_Checkerboard_Init(void *component, void *args);
+void TX_InitSolidColor(void *component, void *args);
+void TX_InitCheckerboard(void *component, void *args);
 
-void TX_ShaderComponent_Free(void *component);
+void TX_FreeShaderComponent(void *component);
 
-void TX_TextureMap_Attach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_TextureMap_Detach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_TextureMap_Init(void *component, void *args);
-void TX_TextureMap_Free(void *component);
+void TX_AttachTextureMap(ECS_Handle *self, ECS_Component(void) *component);
+void TX_DetachTextureMap(ECS_Handle *self, ECS_Component(void) *component);
+void TX_InitTextureMap(void *component, void *args);
+void TX_FreeTextureMap(void *component);
 
-void TX_MeshPrimitive_Init(void *component, void *args);
-void TX_MeshPrimitive_Free(void *component);
+void TX_InitMeshPrimitive(void *component, void *args);
+void TX_FreeMeshPrimitive(void *component);
 
-void TX_Model_Update(ECS_Handle *self, double delta);
-void TX_Model_OnXform(ECS_Handle *self, xform3 composed);
-void TX_Model_Attach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_Model_Detach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_Model_Init(void *component, void *args);
+void TX_TransformModel(ECS_Handle *self, xform3 composed);
+void TX_AttachModel(ECS_Handle *self, ECS_Component(void) *component);
+void TX_DetachModel(ECS_Handle *self, ECS_Component(void) *component);
+void TX_InitModel(void *component, void *args);
 
-void TX_ModelInstance_Attach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_ModelInstance_Detach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_ModelInstance_Init(void *component, void *args);
-void TX_ModelInstance_Free(void *component);
+void TX_AttachModelInstance(ECS_Handle *self, ECS_Component(void) *component);
+void TX_DetachModelInstance(ECS_Handle *self, ECS_Component(void) *component);
+void TX_InitModelInstance(void *component, void *args);
+void TX_FreeModelInstance(void *component);
 
-void TX_World_Init(void *component, void *args);
-void TX_World_Free(void *component);
+void TX_InitWorld(void *component, void *args);
+void TX_FreeWorld(void *component);
 
-SD_DECLARE_VOID_RETURN(TX_Rasterizer_Render, ECS_Handle *, self)
-void TX_Rasterizer_Attach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_Rasterizer_Detach(ECS_Handle *self, ECS_Component(void) *component);
-void TX_Rasterizer_Init(void *component, void *args);
+SD_DECLARE_VOID_RETURN(TX_RenderWorld, ECS_Handle *, self)
+void TX_AttachRasterizer(ECS_Handle *self, ECS_Component(void) *component);
+void TX_DetachRasterizer(ECS_Handle *self, ECS_Component(void) *component);
+void TX_InitRasterizer(void *component, void *args);
 
 SD_DECLARE(int, TX_RasterWorker, void *, data)
 
-void TX_PerspectiveFOV_Init(void *component, void *args);
+void TX_InitPerspectiveFOV(void *component, void *args);
 
 #endif /* TX_3D_C_H */

@@ -6,16 +6,16 @@
 
 #include "ECS_c.h"
 
-static size_t ECS_ConstructionLength(ECS_Construction c) {
+static size_t ECS_GetConstructionLength(ECS_Construction c) {
     size_t length = 1;
 
     for (size_t i = 0; i < c.nchildren; ++i)
-        length += ECS_ConstructionLength(c.children[i]);
+        length += ECS_GetConstructionLength(c.children[i]);
 
     return length;
 }
 
-static void ECS_ComponentConstructionFree(ECS_ComponentConstruction cc) {
+static void ECS_FreeComponentConstruction(ECS_ComponentConstruction cc) {
     ECS_Column *component = cc.component;
     void (*free)(void *) = component->component_callbacks.free; 
 
@@ -25,17 +25,17 @@ static void ECS_ComponentConstructionFree(ECS_ComponentConstruction cc) {
     SDL_free(cc.structure);
 }
 
-static void ECS_ConstructionFree(ECS_Construction c) {
+static void ECS_FreeConstruction(ECS_Construction c) {
     for (size_t i = 0; i < c.ncomponent_constructions; ++i)
-        ECS_ComponentConstructionFree(c.component_constructions[i]);
+        ECS_FreeComponentConstruction(c.component_constructions[i]);
 
     SDL_free(c.component_constructions);
 
     for (size_t i = 0; i < c.nchildren; ++i)
-        ECS_ConstructionFree(c.children[i]);
+        ECS_FreeConstruction(c.children[i]);
 }
 
-static ECS_EntityHeader ECS_EntityHeaderCreate(ECS *ecs) {
+static ECS_EntityHeader ECS_CreateEntityHeader(ECS *ecs) {
     ECS_EntityHeader header = {
         .self = SDL_malloc(sizeof(ECS_Handle)),
         .children = List_Create(ECS_Handle *),
@@ -49,14 +49,14 @@ static ECS_EntityHeader ECS_EntityHeaderCreate(ECS *ecs) {
     return header;
 }
 
-static void ECS_EntityHeaderFree(ECS_EntityHeader h) {
+static void ECS_FreeEntityHeader(ECS_EntityHeader h) {
     SDL_free(h.self);
     List_Free(h.children);
     Bitset_Free(h.active_components);
     List_Free(h.components_detach);
 
-    List_ForEach(h.children_add, construction, ECS_ConstructionFree(construction); );
-    List_ForEach(h.components_attach, component_construction, ECS_ComponentConstructionFree(component_construction); );
+    List_ForEach(h.children_add, construction, ECS_FreeConstruction(construction); );
+    List_ForEach(h.components_attach, component_construction, ECS_FreeComponentConstruction(component_construction); );
 
     List_Free(h.children_add);
     List_Free(h.components_attach);
@@ -66,7 +66,7 @@ static size_t ECS_WriteRows(ECS *ecs, size_t index, ECS_Handle *parent, ECS_Cons
     for (size_t i = 0; i < nconstructions; ++i) {
         ECS_Construction construction = constructions[i];
         ECS_EntityHeader *header = ecs->headers + index;
-        *header = ECS_EntityHeaderCreate(ecs);
+        *header = ECS_CreateEntityHeader(ecs);
         header->self->index = index;
         header->parent = parent;
         List_Push(ecs->headers[parent->index].children, header->self);
@@ -182,7 +182,7 @@ void ECS_Update(ECS *ecs) {
             nent_diff -= 1;
         }
         else {
-            List_ForEach(header->children_add, construction, header->ndescendants_add += ECS_ConstructionLength(construction); );
+            List_ForEach(header->children_add, construction, header->ndescendants_add += ECS_GetConstructionLength(construction); );
             nent_diff += header->ndescendants_add;
         }
     }
@@ -229,7 +229,7 @@ void ECS_Update(ECS *ecs) {
                 List_RemoveWhere(parent_children, child, child == header.self);
             }
 
-            ECS_EntityHeaderFree(header);
+            ECS_FreeEntityHeader(header);
         }
     }
 
@@ -314,7 +314,7 @@ void *ECS_RegisterSystemGroup(ECS *ecs) {
     return new_group.handle;
 }
 
-SDL_FunctionPointer *ECS_SystemGroup_RegisterSystemActual(void *system_group, void **dependencies, size_t ndependencies) {
+SDL_FunctionPointer *ECS_RegisterSystemActual(void *system_group, void **dependencies, size_t ndependencies) {
     ECS_Handle *group_handle = system_group;
     ECS_SystemGroup group = List_Get(group_handle->ecs->system_groups, group_handle->index);
     ECS_System *new_system = List_PushSpace(group.systems, 1);
@@ -332,18 +332,18 @@ SDL_FunctionPointer *ECS_SystemGroup_RegisterSystemActual(void *system_group, vo
     return &new_system->callback;
 }
 
-ECS *ECS_SystemGroup_GetECS(void *system_group) {
+ECS *ECS_GetSystemGroupECS(void *system_group) {
     ECS_Handle *group_handle = system_group;
     return group_handle->ecs;
 }
 
-size_t ECS_SystemGroup_Length(void *system_group) {
+size_t ECS_GetSystemGroupLength(void *system_group) {
     ECS_Handle *group_handle = system_group;
     ECS_SystemGroup group = List_Get(group_handle->ecs->system_groups, group_handle->index);
     return List_Length(group.systems);
 }
 
-SDL_FunctionPointer ECS_SystemGroup_GetCallback(void *system_group, size_t index) {
+SDL_FunctionPointer ECS_GetSystemGroupCallback(void *system_group, size_t index) {
     ECS_Handle *group_handle = system_group;
     ECS_SystemGroup group = List_Get(group_handle->ecs->system_groups, group_handle->index);
     return List_Get(group.systems, index).callback;
@@ -360,7 +360,7 @@ ECS *ECS_Create(void) {
         .capacity = 1
     };
 
-    ecs->headers[0] = ECS_EntityHeaderCreate(ecs);
+    ecs->headers[0] = ECS_CreateEntityHeader(ecs);
     ecs->headers->self->index = 0;
 
     return ecs;
@@ -368,7 +368,7 @@ ECS *ECS_Create(void) {
 
 void ECS_Free(ECS *ecs) {
     if (ecs->length) {
-        ECS_Entity_Free(ecs->headers->self);
+        ECS_FreeEntity(ecs->headers->self);
         ECS_Update(ecs);
     }
 

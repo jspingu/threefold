@@ -28,7 +28,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     ECS_Handle *root = ECS_GetRoot(ecs);
 
-    ECS_Entity_AttachComponents(root,
+    ECS_AttachComponents(root,
         { TX_Components.Viewport, &(TX_ViewportArgs){
             .title = "Good morning!",
             .width = WIDTH,
@@ -44,11 +44,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         { Components.GrabMouse, &(bool){} }
     );
 
-    ECS_Entity_AddChildren(root, 
+    ECS_AddChildren(root, 
         { /* Main world */
             ECS_Components(
                 { TX_Components.World, nullptr },
-                { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeDefault}},
+                { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault}},
                 { TX_Components.LightEnvironment, &(TX_LightEnvironment){ .ambient=0.08, .skybox_dir="assets/Nalovardo" } }
             ),
             ECS_Children(
@@ -75,8 +75,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
                         { TX_Components.MeshPrimitive, nullptr },
                         { TX_Components.Teapot, &(TX_Teapot) { .scale=50 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_Teapot_GetMesh }},
-                        { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeDefault} }
+                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetTeapotMesh }},
+                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} }
                     ),
                     ECS_Children({ECS_Components(
                         { TX_Components.SolidColor, &(TX_SolidColor) { .r=1.0, .g=1.0, .b=1.0 } },
@@ -98,8 +98,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_Components.Basis, (mat3x3 []){mat3x3_rotate(mat3x3_identity, vec3_i, SDL_PI_F / 2)} },
                         { TX_Components.MeshPrimitive, nullptr },
                         { TX_Components.Rect, &(TX_Rect) { .width=2000, .height=2000 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_Rect_GetMesh }},
-                        { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeDefault} }
+                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetRectMesh }},
+                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} }
                     ),
                     ECS_Children({ECS_Components(
                         { TX_Components.Checkerboard, &(TX_Checkerboard) {
@@ -124,8 +124,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
                         { TX_Components.MeshPrimitive, nullptr },
                         { TX_Components.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_Sphere_GetMesh }},
-                        { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeDefault} },
+                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
+                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
                         { TX_Components.PointLight, &(TX_PointLight) { .col={{ 1.0, 0.8, 0.2 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
@@ -146,8 +146,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
                         { TX_Components.MeshPrimitive, nullptr },
                         { TX_Components.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_Sphere_GetMesh }},
-                        { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeDefault} },
+                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
+                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
                         { TX_Components.PointLight, &(TX_PointLight) { .col={{ 0.2, 1.0, 0.5 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
@@ -168,8 +168,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
                         { TX_Components.MeshPrimitive, nullptr },
                         { TX_Components.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_Sphere_GetMesh }},
-                        { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeDefault} },
+                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
+                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
                         { TX_Components.PointLight, &(TX_PointLight) { .col={{ 1.0, 0.2, 0.1 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
@@ -190,8 +190,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
                         { TX_Components.MeshPrimitive, nullptr },
                         { TX_Components.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_Sphere_GetMesh }},
-                        { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeDefault} },
+                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
+                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
                         { TX_Components.PointLight, &(TX_PointLight) { .col={{ 0.9, 0.2, 1.0 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
@@ -210,8 +210,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     ECS_Components(
                         { TX_Components.MeshPrimitive, nullptr },
                         { TX_Components.Cubemap, &(TX_Cubemap) { .scale=100 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_Cubemap_GetMesh } },
-                        { TX_Components.XformComposer, &(TX_XformComposer){TX_XformComposeCubemap} }
+                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetCubemapMesh } },
+                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformCubemap} }
                     ),
                     ECS_Children({ECS_Components(
                         { TX_Components.Sky, nullptr },
@@ -253,13 +253,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     printf("FPS: %li              \n\x1b[F", SDL_lround(1/delta));
 
-    ECS_SystemGroup_Process(TX_SystemGroups.Update, delta);
+    ECS_ProcessSystemGroup(TX_SystemGroups.Update, delta);
 
     ECS_Update(ecs);
 
-    ECS_SystemGroup_Process(TX_SystemGroups.PostUpdate);
-    ECS_SystemGroup_ProcessReverse(TX_SystemGroups.Render);
-    ECS_SystemGroup_Process(TX_SystemGroups.RenderPresent);
+    ECS_ProcessSystemGroup(TX_SystemGroups.PostUpdate);
+    ECS_ProcessSystemGroupReverse(TX_SystemGroups.Render);
+    ECS_ProcessSystemGroup(TX_SystemGroups.RenderPresent);
 
     return SDL_APP_CONTINUE;
 }
@@ -272,7 +272,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
             return SDL_APP_SUCCESS;
 
         default:
-            ECS_SystemGroup_Process(TX_SystemGroups.OnSDLEvent, event);
+            ECS_ProcessSystemGroup(TX_SystemGroups.SDLEvent, event);
             break;
     }
 

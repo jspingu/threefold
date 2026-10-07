@@ -18,7 +18,7 @@ BIN = out
 
 SRCS_VECTORIZE += $(SRCDIR)/3D/TX_Rasterization.c
 SRCS_VECTORIZE += $(SRCDIR)/3D/TX_Geometry.c
-SRCS_VECTORIZE += $(SRCDIR)/3D/TX_Xform.c
+SRCS_VECTORIZE += $(SRCDIR)/3D/TX_Transform.c
 SRCS_VECTORIZE += $(SRCDIR)/3D/TX_Shaders.c
 SRCS_VECTORIZE += $(SRCDIR)/Bitmap/TX_Canvas.c
 

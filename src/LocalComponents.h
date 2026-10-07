@@ -14,8 +14,8 @@ struct LocalComponents {
 
 extern struct LocalComponents Components;
 
-void GrabMouse_Update(ECS_Handle *self, double delta);
-void FreeCam_Update(ECS_Handle *self, double delta);
+void UpdateGrabMouse(ECS_Handle *self, double delta);
+void UpdateFreeCam(ECS_Handle *self, double delta);
 void RegisterToECS(ECS *ecs);
 
 #endif /* LOCALCOMPONENTS_H */

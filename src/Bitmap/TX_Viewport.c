@@ -2,7 +2,7 @@
 #include <TX/ECS.h>
 #include <TX/TX_ECS.h>
 
-void TX_Viewport_Init(void *component, void *args) {
+void TX_InitViewport(void *component, void *args) {
     TX_Viewport *vp = component;
     TX_ViewportArgs *vp_args = args;
 
@@ -29,7 +29,7 @@ void TX_Viewport_Init(void *component, void *args) {
     );
 }
 
-void TX_Viewport_Free(void *component) {
+void TX_FreeViewport(void *component) {
     TX_Viewport *viewport = component;
     SDL_DestroyTexture(viewport->texture);
     SDL_DestroyRenderer(viewport->renderer);

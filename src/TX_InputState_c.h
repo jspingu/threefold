@@ -12,10 +12,10 @@ typedef struct TX_InputState {
     vec2 wheel_motion;
 } TX_InputState;
 
-void TX_InputState_OnSDLEvent(ECS_Handle *e, SDL_Event *ev);
-void TX_InputState_Step(ECS_Handle *e);
+void TX_NotifyInputState(ECS_Handle *e, SDL_Event *ev);
+void TX_AdvanceInputState(ECS_Handle *e);
 
-void TX_InputState_Init(void *component, void *args);
-void TX_InputState_Free(void *component);
+void TX_InitInputState(void *component, void *args);
+void TX_FreeInputState(void *component);
 
 #endif /* TX_INPUTSTATE_C_H */

@@ -31,7 +31,7 @@ typedef struct TX_RasterThreadPool TX_RasterThreadPool;
 typedef struct TX_TriangleDraw TX_TriangleDraw;
 typedef struct TX_ShaderParams TX_ShaderParams;
 
-typedef xform3 (*TX_XformComposer)(ECS_Handle *self, xform3 lhs);
+typedef xform3 (*TX_TransformCompositor)(ECS_Handle *self, xform3 lhs);
 
 typedef SD_CALL sd_vec4 (*TX_FragmentShader)(void *state, sd_vec4 col, TX_ShaderParams fragment);
 typedef sd_vec2 (*TX_VertexProjector)(ECS_Handle *self, sd_vec3 pos, sd_vec2 midpoint);
@@ -166,36 +166,36 @@ TX_SHADER_DECLARE(TX_ShadeTextureMap)
 TX_SHADER_DECLARE(TX_ShadeLighting)
 TX_SHADER_DECLARE(TX_ShadeSky)
 
-TX_Mesh *TX_Teapot_GetMesh(ECS_Handle *self);
-TX_Mesh *TX_Torus_GetMesh(ECS_Handle *self);
-TX_Mesh *TX_Sphere_GetMesh(ECS_Handle *self);
-TX_Mesh *TX_Rect_GetMesh(ECS_Handle *self);
-TX_Mesh *TX_Cubemap_GetMesh(ECS_Handle *self);
+TX_Mesh *TX_GetTeapotMesh(ECS_Handle *self);
+TX_Mesh *TX_GetTorusMesh(ECS_Handle *self);
+TX_Mesh *TX_GetSphereMesh(ECS_Handle *self);
+TX_Mesh *TX_GetRectMesh(ECS_Handle *self);
+TX_Mesh *TX_GetCubemapMesh(ECS_Handle *self);
 
-xform3 TX_Entity_GetXform(ECS_Handle *self);
-void TX_Entity_Xform(ECS_Handle *self, xform3 lhs);
+xform3 TX_GetEntityTransform(ECS_Handle *self);
+void TX_TransformEntity(ECS_Handle *self, xform3 lhs);
 
-xform3 TX_XformComposeDefault(ECS_Handle *self, xform3 lhs);
-xform3 TX_XformComposeBillboard(ECS_Handle *self, xform3 lhs);
-xform3 TX_XformComposeCubemap(ECS_Handle *self, xform3 lhs);
-xform3 TX_XformComposeAbsolute(ECS_Handle *self, xform3 lhs);
+xform3 TX_ComposeTransformDefault(ECS_Handle *self, xform3 lhs);
+xform3 TX_ComposeTransformBillboard(ECS_Handle *self, xform3 lhs);
+xform3 TX_ComposeTransformCubemap(ECS_Handle *self, xform3 lhs);
+xform3 TX_ComposeTransformAbsolute(ECS_Handle *self, xform3 lhs);
 
-SD_DECLARE(TX_Mesh *, TX_Mesh_Create, vec3 *, ws_verts, vec3 *, ws_nrmls, vec2 *, ts_verts, TX_MeshFace *, faces, size_t, nverts, size_t, nts_verts, size_t, nfaces)
-void TX_Mesh_Free(TX_Mesh *mesh);
+SD_DECLARE(TX_Mesh *, TX_CreateMesh, vec3 *, ws_verts, vec3 *, ws_nrmls, vec2 *, ts_verts, TX_MeshFace *, faces, size_t, nverts, size_t, nts_verts, size_t, nfaces)
+void TX_FreeMesh(TX_Mesh *mesh);
 
-void TX_Sculpture_JoinPolyChains(TX_Sculpture *sculpture, TX_PolyChain *pc1, TX_PolyChain *pc2);
-TX_PolyChain *TX_Sculpture_Vertex(TX_Sculpture *sculpture, vec3 pos);
-TX_PolyChain *TX_Sculpture_Ellipse(TX_Sculpture *sculpture, vec3 center, vec3 axis1, vec3 axis2, size_t precision);
-TX_Mesh *TX_Sculpture_ToMesh(TX_Sculpture *sculpture);
-TX_Sculpture *TX_Sculpture_Create(void);
-void TX_Sculpture_Free(TX_Sculpture *sculpture);
+void TX_JoinPolyChains(TX_Sculpture *sculpture, TX_PolyChain *pc1, TX_PolyChain *pc2);
+TX_PolyChain *TX_SculptVertex(TX_Sculpture *sculpture, vec3 pos);
+TX_PolyChain *TX_SculptEllipse(TX_Sculpture *sculpture, vec3 center, vec3 axis1, vec3 axis2, size_t precision);
+TX_Mesh *TX_SculptureToMesh(TX_Sculpture *sculpture);
+TX_Sculpture *TX_CreateSculpture(void);
+void TX_FreeSculpture(TX_Sculpture *sculpture);
 
-SD_DECLARE(TX_WorldGeometry *, TX_World_RegisterGeometry, ECS_Handle *, self, TX_Mesh *, mesh)
+SD_DECLARE(TX_WorldGeometry *, TX_RegisterGeometry, ECS_Handle *, self, TX_Mesh *, mesh)
 
-void TX_RenderInstance_Free(TX_RenderInstance *instance);
+void TX_FreeRenderInstance(TX_RenderInstance *instance);
 
-TX_RenderInstance *TX_WorldGeometry_Instance(TX_WorldGeometry *geometry, TX_FragmentShader *shader_pipeline, void **shader_states, size_t nshaders, size_t render_batch, TX_RasterizerFlags flags);
-void TX_WorldGeometry_Free(TX_WorldGeometry *geometry);
+TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_FragmentShader *shader_pipeline, void **shader_states, size_t nshaders, size_t render_batch, TX_RasterizerFlags flags);
+void TX_FreeWorldGeometry(TX_WorldGeometry *geometry);
 
 SD_DECLARE(sd_vec2, TX_ProjectParallel, ECS_Handle *, self, sd_vec3, point, sd_vec2, midpoint)
 SD_DECLARE_VOID_RETURN(TX_ScanLinear, ECS_Handle *, self, TX_CanvasTile, tile, TX_RasterizerFlags, flags, TX_TriangleDraw, triangle, int [2], triangle_bounds)
@@ -203,6 +203,6 @@ SD_DECLARE_VOID_RETURN(TX_ScanLinear, ECS_Handle *, self, TX_CanvasTile, tile, T
 SD_DECLARE(sd_vec2, TX_ProjectPerspective, ECS_Handle *, self, sd_vec3, point, sd_vec2, midpoint)
 SD_DECLARE_VOID_RETURN(TX_ScanPerspective, ECS_Handle *, self, TX_CanvasTile, tile, TX_RasterizerFlags, flags, TX_TriangleDraw, triangle, int [2], triangle_bounds)
 
-void TX_PerspectiveFOV_Set(ECS_Handle *self, float fov);
+void TX_SetPerspectiveFOV(ECS_Handle *self, float fov);
 
 #endif /* TX_3D_H */

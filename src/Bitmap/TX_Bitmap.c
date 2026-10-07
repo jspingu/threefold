@@ -4,29 +4,29 @@
 
 #include "TX_Bitmap_c.h"
 
-void TX_Bitmap_RegisterToECS(ECS *ecs) {
+void TX_RegisterBitmapToECS(ECS *ecs) {
     TX_Components.Canvas = ECS_RegisterComponent(ecs, TX_Canvas, {
-        .attach = TX_Canvas_Attach,
-        .detach = TX_Canvas_Detach,
-        .init = SD_SELECT(TX_Canvas_Init),
-        .free = TX_Canvas_Free
+        .attach = TX_AttachCanvas,
+        .detach = TX_DetachCanvas,
+        .init = SD_SELECT(TX_InitCanvas),
+        .free = TX_FreeCanvas
     });
 
     TX_Components.Viewport = ECS_RegisterComponent(ecs, TX_Viewport, {
-        .init = TX_Viewport_Init,
-        .free = TX_Viewport_Free
+        .init = TX_InitViewport,
+        .free = TX_FreeViewport
     });
 
     TX_Components.TextureBank = ECS_RegisterComponent(ecs, TX_ResourceBank, {
-        .attach = TX_TextureBank_Attach,
-        .detach = TX_ResourceBank_Detach
+        .attach = TX_AttachTextureBank,
+        .detach = TX_DetachResourceBank
     });
 
     TX_Components.CubemapBank = ECS_RegisterComponent(ecs, TX_ResourceBank, {
-        .attach = TX_CubemapBank_Attach,
-        .detach = TX_ResourceBank_Detach
+        .attach = TX_AttachCubemapBank,
+        .detach = TX_DetachResourceBank
     });
 
-    ECS_SystemGroup_RegisterSystem(TX_SystemGroups.RenderPresent, SD_SELECT(TX_Canvas_Present), TX_Components.Viewport, TX_Components.Canvas);
+    ECS_RegisterSystem(TX_SystemGroups.RenderPresent, SD_SELECT(TX_PresentCanvas), TX_Components.Viewport, TX_Components.Canvas);
 }
 

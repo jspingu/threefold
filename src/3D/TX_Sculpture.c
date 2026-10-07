@@ -4,7 +4,7 @@
 
 #include "TX_3D_c.h"
 
-void TX_Sculpture_JoinPolyChains(TX_Sculpture *sculpture, TX_PolyChain *pc1, TX_PolyChain *pc2) {
+void TX_JoinPolyChains(TX_Sculpture *sculpture, TX_PolyChain *pc1, TX_PolyChain *pc2) {
     size_t pc1_segments = pc1->nindices - 1;
     size_t pc2_segments = pc2->nindices - 1;
 
@@ -61,7 +61,7 @@ void TX_Sculpture_JoinPolyChains(TX_Sculpture *sculpture, TX_PolyChain *pc1, TX_
     }
 }
 
-TX_PolyChain *TX_Sculpture_Vertex(TX_Sculpture *sculpture, vec3 pos) {
+TX_PolyChain *TX_SculptVertex(TX_Sculpture *sculpture, vec3 pos) {
     TX_PolyChain *chain = SDL_malloc(sizeof(TX_PolyChain));
     chain->indices = SDL_malloc(sizeof(size_t));
     chain->nindices = 1;
@@ -72,7 +72,7 @@ TX_PolyChain *TX_Sculpture_Vertex(TX_Sculpture *sculpture, vec3 pos) {
     return chain;
 }
 
-TX_PolyChain *TX_Sculpture_Ellipse(TX_Sculpture *sculpture, vec3 center, vec3 axis1, vec3 axis2, size_t precision) {
+TX_PolyChain *TX_SculptEllipse(TX_Sculpture *sculpture, vec3 center, vec3 axis1, vec3 axis2, size_t precision) {
     TX_PolyChain *chain = SDL_malloc(sizeof(TX_PolyChain));
     chain->indices = SDL_malloc(sizeof(size_t) * (precision + 1));
     chain->nindices = precision + 1;
@@ -93,7 +93,7 @@ TX_PolyChain *TX_Sculpture_Ellipse(TX_Sculpture *sculpture, vec3 center, vec3 ax
     return chain;
 }
 
-TX_Mesh *TX_Sculpture_ToMesh(TX_Sculpture *sculpture) {
+TX_Mesh *TX_SculptureToMesh(TX_Sculpture *sculpture) {
     size_t nverts = List_Length(sculpture->verts);
     vec3 *nrmls = SDL_malloc(sizeof(vec3) * nverts);
 
@@ -111,7 +111,7 @@ TX_Mesh *TX_Sculpture_ToMesh(TX_Sculpture *sculpture) {
         nrmls[i] = vec3_normalize(nrml);
     }
 
-    TX_Mesh *mesh = TX_Mesh_Create(
+    TX_Mesh *mesh = TX_CreateMesh(
         List_GetAddress(sculpture->verts, 0),
         nrmls,
         nullptr,
@@ -124,7 +124,7 @@ TX_Mesh *TX_Sculpture_ToMesh(TX_Sculpture *sculpture) {
     return mesh;
 }
 
-TX_Sculpture *TX_Sculpture_Create(void) {
+TX_Sculpture *TX_CreateSculpture(void) {
     TX_Sculpture *sculpture = SDL_malloc(sizeof(TX_Sculpture));
     sculpture->verts = List_Create(vec3);
     sculpture->faces = List_Create(TX_MeshFace);
@@ -133,7 +133,7 @@ TX_Sculpture *TX_Sculpture_Create(void) {
     return sculpture;
 }
 
-void TX_Sculpture_Free(TX_Sculpture *sculpture) {
+void TX_FreeSculpture(TX_Sculpture *sculpture) {
     List_Free(sculpture->verts);
     List_Free(sculpture->faces);
     List_ForEach(sculpture->chains, chain, SDL_free(chain->indices); );

@@ -5,33 +5,33 @@
 
 #include "TX_InputState_c.h"
 
-bool TX_InputState_KeyDown(ECS_Handle *self, SDL_Scancode sc) {
-    TX_InputState *is = ECS_Entity_GetComponent(self, TX_Components.InputState);
+bool TX_IsKeyDown(ECS_Handle *self, SDL_Scancode sc) {
+    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
     return (*is->curr)[sc];
 }
 
-bool TX_InputState_KeyJustDown(ECS_Handle *self, SDL_Scancode sc) {
-    TX_InputState *is = ECS_Entity_GetComponent(self, TX_Components.InputState);
+bool TX_IsKeyJustDown(ECS_Handle *self, SDL_Scancode sc) {
+    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
     return !(*is->prev)[sc] && (*is->curr)[sc];
 }
 
-bool TX_InputState_KeyJustUp(ECS_Handle *self, SDL_Scancode sc) {
-    TX_InputState *is = ECS_Entity_GetComponent(self, TX_Components.InputState);
+bool TX_IsKeyJustUp(ECS_Handle *self, SDL_Scancode sc) {
+    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
     return (*is->prev)[sc] && !(*is->curr)[sc];
 }
 
-vec2 TX_InputState_GetMouseMotion(ECS_Handle *self) {
-    TX_InputState *is = ECS_Entity_GetComponent(self, TX_Components.InputState);
+vec2 TX_GetMouseMotion(ECS_Handle *self) {
+    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
     return is->mouse_motion;
 }
 
-vec2 TX_InputState_GetWheelMotion(ECS_Handle *self) {
-    TX_InputState *is = ECS_Entity_GetComponent(self, TX_Components.InputState);
+vec2 TX_GetWheelMotion(ECS_Handle *self) {
+    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
     return is->wheel_motion;
 }
 
-void TX_InputState_OnSDLEvent(ECS_Handle *self, SDL_Event *ev) {
-    TX_InputState *is = ECS_Entity_GetComponent(self, TX_Components.InputState);
+void TX_NotifyInputState(ECS_Handle *self, SDL_Event *ev) {
+    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
 
     switch (ev->type) {
         case SDL_EVENT_KEY_DOWN:
@@ -58,14 +58,14 @@ void TX_InputState_OnSDLEvent(ECS_Handle *self, SDL_Event *ev) {
     }
 }
 
-void TX_InputState_Step(ECS_Handle *self) {
-    TX_InputState *is = ECS_Entity_GetComponent(self, TX_Components.InputState);
+void TX_AdvanceInputState(ECS_Handle *self) {
+    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
     SDL_memcpy(*is->prev, *is->curr, sizeof(*is->curr));
     is->mouse_motion = vec2_zero;
     is->wheel_motion = vec2_zero;
 }
 
-void TX_InputState_Init(void *component, void *args) {
+void TX_InitInputState(void *component, void *args) {
     (void)args;
 
     TX_InputState *is = component;
@@ -74,7 +74,7 @@ void TX_InputState_Init(void *component, void *args) {
     is->mouse_motion = vec2_zero;
 }
 
-void TX_InputState_Free(void *component) {
+void TX_FreeInputState(void *component) {
     TX_InputState *is = component;
     SDL_free(is->prev);
     SDL_free(is->curr);

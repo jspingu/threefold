@@ -7,12 +7,12 @@
 #include "TX_Bitmap.h"
 #include "TX_Resource.h"
 
-typedef void (*TX_Entity_OnSDLEvent)(ECS_Handle *, SDL_Event *);
-typedef void (*TX_Entity_Update)(ECS_Handle *, double);
-typedef void (*TX_Entity_PostUpdate)(ECS_Handle *);
-typedef void (*TX_Entity_Render)(ECS_Handle *);
-typedef void (*TX_Entity_RenderPresent)(ECS_Handle *);
-typedef void (*TX_Entity_OnXform)(ECS_Handle *, xform3);
+typedef void (*TX_SDLEventCallback)(ECS_Handle *, SDL_Event *);
+typedef void (*TX_UpdateCallback)(ECS_Handle *, double);
+typedef void (*TX_PostUpdateCallback)(ECS_Handle *);
+typedef void (*TX_RenderCallback)(ECS_Handle *);
+typedef void (*TX_RenderPresentCallback)(ECS_Handle *);
+typedef void (*TX_TransformCallback)(ECS_Handle *, xform3);
 
 struct TX_Components {
     ECS_Component(TX_InputState) *InputState;
@@ -22,7 +22,7 @@ struct TX_Components {
     ECS_Component(TX_Rasterizer) *Rasterizer;
     ECS_Component(TX_Model) *Model;
     ECS_Component(TX_ModelInstance) *ModelInstance;
-    ECS_Component(TX_XformComposer) *XformComposer;
+    ECS_Component(TX_TransformCompositor) *TransformCompositor;
     ECS_Component(vec3) *Position;
     ECS_Component(mat3x3) *Basis;
     ECS_Component(TX_ParallelProjector) *ParallelProjector;
@@ -54,12 +54,12 @@ struct TX_Components {
 };
 
 struct TX_SystemGroups {
-    ECS_SystemGroup(TX_Entity_OnSDLEvent) *OnSDLEvent;
-    ECS_SystemGroup(TX_Entity_Update) *Update;
-    ECS_SystemGroup(TX_Entity_PostUpdate) *PostUpdate;
-    ECS_SystemGroup(TX_Entity_Render) *Render;
-    ECS_SystemGroup(TX_Entity_RenderPresent) *RenderPresent;
-    ECS_SystemGroup(TX_Entity_OnXform) *OnXform;
+    ECS_SystemGroup(TX_SDLEventCallback) *SDLEvent;
+    ECS_SystemGroup(TX_UpdateCallback) *Update;
+    ECS_SystemGroup(TX_PostUpdateCallback) *PostUpdate;
+    ECS_SystemGroup(TX_RenderCallback) *Render;
+    ECS_SystemGroup(TX_RenderPresentCallback) *RenderPresent;
+    ECS_SystemGroup(TX_TransformCallback) *Transform;
 };
 
 extern struct TX_Components TX_Components;

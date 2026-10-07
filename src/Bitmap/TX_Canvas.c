@@ -9,7 +9,7 @@
 static constexpr int MIN_TILE_SIZE = 128;
 
 static void PresentSubCanvas(TX_CanvasWorkerData *wd) {
-    TX_Canvas *canvas = ECS_Entity_GetComponent(wd->canvas, TX_Components.Canvas);
+    TX_Canvas *canvas = ECS_GetComponent(wd->canvas, TX_Components.Canvas);
     int qot = sd_qot(canvas->width);
     int rem = sd_rem(canvas->width);
 
@@ -69,9 +69,9 @@ exit:
     return 0;
 }
 
-void SD_VARIANT(TX_Canvas_Present)(ECS_Handle *self) {
-    TX_Canvas *canvas = ECS_Entity_GetComponent(self, TX_Components.Canvas);
-    TX_Viewport *vp = ECS_Entity_GetComponent(self, TX_Components.Viewport);
+void SD_VARIANT(TX_PresentCanvas)(ECS_Handle *self) {
+    TX_Canvas *canvas = ECS_GetComponent(self, TX_Components.Canvas);
+    TX_Viewport *vp = ECS_GetComponent(self, TX_Components.Viewport);
     void *pixels;
     int pitch;
 
@@ -99,7 +99,7 @@ void SD_VARIANT(TX_Canvas_Present)(ECS_Handle *self) {
     SDL_RenderPresent(vp->renderer);
 }
 
-void SD_VARIANT(TX_Canvas_Init)(void *component, void *args) {
+void SD_VARIANT(TX_InitCanvas)(void *component, void *args) {
     TX_Canvas *canvas = component, *cargs = args;
     canvas->width = cargs->width;
     canvas->height = cargs->height;
@@ -130,8 +130,8 @@ void SD_VARIANT(TX_Canvas_Init)(void *component, void *args) {
 
 #ifndef SD_SRC_VARIANT
 
-void TX_Canvas_Attach(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_Canvas *canvas = ECS_Entity_GetComponent(self, component);
+void TX_AttachCanvas(ECS_Handle *self, ECS_Component(void) *component) {
+    TX_Canvas *canvas = ECS_GetComponent(self, component);
     TX_CanvasThreadPool *pool = SDL_malloc(sizeof(TX_CanvasThreadPool));
     int nproc = SDL_GetNumLogicalCPUCores();
     canvas->thread_pool = pool;
@@ -151,8 +151,8 @@ void TX_Canvas_Attach(ECS_Handle *self, ECS_Component(void) *component) {
     }
 }
 
-void TX_Canvas_Detach(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_Canvas *canvas = ECS_Entity_GetComponent(self, component);
+void TX_DetachCanvas(ECS_Handle *self, ECS_Component(void) *component) {
+    TX_Canvas *canvas = ECS_GetComponent(self, component);
     TX_CanvasThreadPool *pool = canvas->thread_pool;
     int nproc = SDL_GetNumLogicalCPUCores();
 
@@ -173,7 +173,7 @@ void TX_Canvas_Detach(ECS_Handle *self, ECS_Component(void) *component) {
     SDL_free(pool);
 }
 
-void TX_Canvas_Free(void *component) {
+void TX_FreeCanvas(void *component) {
     TX_Canvas *canvas = component;
 
     SDL_aligned_free(canvas->color);

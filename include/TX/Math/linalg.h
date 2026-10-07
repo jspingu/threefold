@@ -189,7 +189,7 @@ static inline mat3x3 mat3x3_mulm(mat3x3 lhs, mat3x3 rhs) {
     };
 }
 
-static inline mat3x3 mat3x3_xpose(mat3x3 m) {
+static inline mat3x3 mat3x3_transpose(mat3x3 m) {
     return (mat3x3) {{
         { m.x.x, m.y.x, m.z.x },
         { m.x.y, m.y.y, m.z.y },

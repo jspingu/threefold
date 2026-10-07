@@ -110,5 +110,4 @@ static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
     return sd_vec4_gather(texture->color, pixel_index);
 }
 
-
 #endif /* TX_BITMAP_H */
