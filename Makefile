@@ -1,15 +1,42 @@
 rwildcard = $(foreach d,$1,$(wildcard $d/$2) $(call rwildcard,$(wildcard $d/*),$2))
 
 PREFIX ?= /usr/local
+BUILD ?= release
+VECTORIZATION ?= dynamic
+
 # Must compile with clang for now to use __builtin_cpu_supports("sve")
 CC = clang
 CFLAGS += $(shell pkg-config --cflags sdl3) -Iinclude -Wall -Wextra -Wpedantic -std=c23
-OPTFLAGS += -O3
 DEPFLAGS += -MMD -MP
 LDFLAGS += $(shell pkg-config --libs sdl3)
 
+ifeq ($(BUILD),debug)
+OPTFLAGS += -Og -ggdb
+CFLAGS += -fsanitize=address
+LDFLAGS += -fsanitize=address
+else
+ifeq ($(BUILD),release)
+OPTFLAGS += -O3
+else
+$(error Invalid build option '$(BUILD)'. Valid options are 'release' or 'debug')
+endif
+endif
+
+ifeq ($(VECTORIZATION),dynamic)
+BASE_VECTORIZATION_FLAGS = -DSD_DISPATCH_DYNAMIC
+OBJS_VECTORIZE = $(foreach v,$(SIMD_VARIANTS),$(OBJS_VECTORIZE_$v))
+DEPS_VECTORIZE = $(foreach v,$(SIMD_VARIANTS),$(DEPS_VECTORIZE_$v))
+else
+ifeq ($(VECTORIZATION),static)
+BASE_VECTORIZATION_FLAGS = -DSD_DISPATCH_STATIC
+else
+$(error Invalid vectorization option '$(VECTORIZATION)'. Valid options are 'static' or 'dynamic')
+endif
+endif
+
 SRCDIR = src
-BLDDIR = build
+BLDBASE = build
+BLDDIR = $(BLDBASE)/$(BUILD)
 
 SRCS = $(call rwildcard,$(SRCDIR),*.c)
 OBJS = $(SRCS:%.c=$(BLDDIR)/%.o)
@@ -34,7 +61,6 @@ DEPS_VECTORIZE_SSE2 = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_sse2.d)
 DEPS_VECTORIZE_SVE = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_sve.d)
 DEPS_VECTORIZE_NEON = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_neon.d)
 
-VECTORIZATION ?= dynamic
 PREDEFINED_MACROS := $(shell $(CC) $(CFLAGS) -E -dM - < /dev/null)
 PREDEFINED_MACROS := $(filter-out __ARM_NEON_SVE_BRIDGE,$(PREDEFINED_MACROS))
 
@@ -67,24 +93,13 @@ AVAILABLE_SIMD_EXTENSIONS = $(findstring AVX512F,$(PREDEFINED_MACROS)) \
 BASE_SIMD_EXTENSION = $(firstword $(AVAILABLE_SIMD_EXTENSIONS))
 SIMD_VARIANTS = $(filter-out $(AVAILABLE_SIMD_EXTENSIONS),$(POSSIBLE_SIMD_EXTENSIONS))
 
-ifeq ($(VECTORIZATION),dynamic)
-BASE_VECTORIZATION_FLAGS = -DSD_DISPATCH_DYNAMIC
-OBJS_VECTORIZE = $(foreach v,$(SIMD_VARIANTS),$(OBJS_VECTORIZE_$v))
-DEPS_VECTORIZE = $(foreach v,$(SIMD_VARIANTS),$(DEPS_VECTORIZE_$v))
-else
-ifeq ($(VECTORIZATION),static)
-BASE_VECTORIZATION_FLAGS = -DSD_DISPATCH_STATIC
-else
-$(error Invalid vectorization option '$(VECTORIZATION)'. Valid options are 'static' or 'dynamic')
-endif
-endif
-
 .PHONY: all
 all: buildinfo $(BIN)
 
 .PHONY: buildinfo
 buildinfo:
 	$(info Target architecture: $(firstword $(TARGET_ARCH) unknown))
+	$(info Build profile: $(BUILD))
 	$(info Base SIMD extension: $(firstword $(BASE_SIMD_EXTENSION) none))
 ifeq ($(VECTORIZATION),dynamic)
 	$(info Configured with dynamic dispatch vectorization)
@@ -133,8 +148,7 @@ $(BLDDIR)/gamma.c: scripts/gengamma.c
 
 .PHONY: clean
 clean:
-	find $(BLDDIR) -type f \( -name *.c -o -name *.o -o -name *.d \) -exec rm -f {} +
-	rm -f $(BLDDIR)/gengamma
+	find $(BLDBASE) -type f -exec rm -f {} +
 	rm -f $(BIN)
 
 -include $(DEPS_VECTORIZE) $(DEPS)
