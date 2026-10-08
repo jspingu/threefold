@@ -9,7 +9,7 @@ typedef List(unsigned char) Bitset;
 #define Bitset_ForEach(bitset,member,...)  do {                                                      \
     for (size_t Bitset_byte_iter = 0; Bitset_byte_iter < List_Length(bitset); ++Bitset_byte_iter) {  \
         unsigned char Bitset_byte = List_Get(bitset, Bitset_byte_iter);                              \
-        for (int Bitset_bit_iter = 0; Bitset_byte; Bitset_byte >>= 1) {                              \
+        for (int Bitset_bit_iter = 0; Bitset_byte; ++Bitset_bit_iter, Bitset_byte >>= 1) {           \
             size_t member = (Bitset_byte_iter << 3) + Bitset_bit_iter;                               \
             if (Bitset_byte & 1) __VA_ARGS__                                                         \
         }                                                                                            \
