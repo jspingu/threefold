@@ -178,8 +178,6 @@ void TX_FreeCanvas(void *component) {
     SDL_aligned_free(canvas->color);
     SDL_aligned_free(canvas->depth);
 
-    SDL_Log("hello?");
-
     for (int i = 0; i < canvas->ntiles; ++i) {
         SDL_aligned_free(canvas->tiles[i].scanlines[0]);
         SDL_aligned_free(canvas->tiles[i].scanlines[1]);
