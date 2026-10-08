@@ -660,7 +660,7 @@ static inline sd_int sd_int_mask_blend(sd_int bg, sd_int fg, sd_mask mask) {
     return _mm256_castps_si256(_mm256_blendv_ps(
         _mm256_castsi256_ps(bg),
         _mm256_castsi256_ps(fg),
-        _mm256_castsi256_ps(mask);
+        _mm256_castsi256_ps(mask)
     ));
 #elifdef __SSE2__
     __m128i select_bg = _mm_andnot_si128(mask, bg);
