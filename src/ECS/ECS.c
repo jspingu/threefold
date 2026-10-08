@@ -213,12 +213,8 @@ void ECS_Update(ECS *ecs) {
         List_For(header.components_detach, 0, header.ncomponents_detach, component, {
             ECS_Column column = List_Get(component->ecs->columns, component->index);
 
-            SDL_Log("ECS update: detaching component %zu from entity %zu", component->index, header.self->index);
-
-            if (column.component_callbacks.free) {
-                SDL_Log("ECS update: freeing component %zu for entity %zu", component->index, header.self->index);
+            if (column.component_callbacks.free)
                 column.component_callbacks.free(column.component_entries + (i - 1) * column.component_size);
-            }
 
             Bitset_Unset(header.active_components, component->index);
         });

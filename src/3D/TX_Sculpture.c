@@ -121,7 +121,7 @@ TX_Mesh *TX_SculptureToMesh(TX_Sculpture *sculpture) {
         List_Length(sculpture->faces)
     );
 
-    // leak: free the normals
+    SDL_free(nrmls);
     return mesh;
 }
 
@@ -137,6 +137,12 @@ TX_Sculpture *TX_CreateSculpture(void) {
 void TX_FreeSculpture(TX_Sculpture *sculpture) {
     List_Free(sculpture->verts);
     List_Free(sculpture->faces);
-    List_ForEach(sculpture->chains, chain, SDL_free(chain->indices); );
+
+    List_ForEach(sculpture->chains, chain, {
+        SDL_free(chain->indices);
+        SDL_free(chain);
+    });
+
     List_Free(sculpture->chains);
+    SDL_free(sculpture);
 }

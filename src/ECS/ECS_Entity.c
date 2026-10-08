@@ -164,12 +164,8 @@ bool ECS_EntityMatchesSystem(ECS_Handle *e, void *system_group, size_t index) {
 
 void ECS_FreeEntity(ECS_Handle *e) {
     for (size_t index = e->index, count = 1; count; ++index) {
-        SDL_Log("Free entity %zu", index);
         ECS_EntityHeader *header = e->ecs->headers + index;
-        Bitset_ForEach(header->active_components, index, {
-            SDL_Log("ECS free entity: detaching component %zu from entity %zu", index, header->self->index);
-            ECS_DetachComponents(header->self, List_Get(e->ecs->columns, index).component); 
-        });
+        Bitset_ForEach(header->active_components, index, ECS_DetachComponents(header->self, List_Get(e->ecs->columns, index).component); );
         header->free = true;
         count += ECS_GetChildCount(header->self) - 1;
     }

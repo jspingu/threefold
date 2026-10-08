@@ -179,7 +179,8 @@ void TX_FreeWorldGeometry(TX_WorldGeometry *geometry) {
 
     SDL_aligned_free(geometry->vs_verts);
     SDL_aligned_free(geometry->vs_nrmls);
-    // leak: free the ss_verts
+    SDL_aligned_free(geometry->ss_verts);
+    SDL_free(geometry);
 }
 
 void TX_FreeWorld(void *component) {
@@ -201,11 +202,11 @@ void TX_FreeWorld(void *component) {
 }
 
 void TX_FreeMesh(TX_Mesh *mesh) {
-    SDL_Log("Free mesh");
     SDL_aligned_free(mesh->ws_verts);
     SDL_aligned_free(mesh->ws_nrmls);
     SDL_free(mesh->ts_verts);
     SDL_free(mesh->faces);
+    SDL_free(mesh);
 }
 
 #endif /* SD_SRC_VARIANT */
