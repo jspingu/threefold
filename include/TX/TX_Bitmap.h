@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
 #include <TX/Math/stride.h>
+#include <TX/TX_Resource.h>
 
 typedef struct TX_CanvasThreadPool TX_CanvasThreadPool;
 
@@ -39,6 +40,15 @@ typedef struct TX_Texture {
     int width, height;
     int unit;
 } TX_Texture;
+
+struct TX_Bitmap {
+    ECS_Component(TX_Viewport) *Viewport;
+    ECS_Component(TX_Canvas) *Canvas;
+    ECS_Component(TX_ResourceBank(TX_Texture *)) *TextureBank;
+    ECS_Component(TX_ResourceBank(TX_Texture *)) *CubemapBank;
+};
+
+extern struct TX_Bitmap TX_Bitmap;
 
 static inline sd_vec4 TX_SampleNearest(TX_Texture *texture, sd_vec2 ts) {
     sd_float unit = sd_float_set(texture->unit);

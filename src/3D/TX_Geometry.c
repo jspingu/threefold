@@ -1,6 +1,5 @@
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
-#include <TX/TX_ECS.h>
 #include <TX/Collections/List.h>
 #include <TX/Math/linalg.h>
 #include <TX/Math/stride.h>
@@ -32,12 +31,11 @@ TX_Mesh *SD_VARIANT(TX_CreateMesh)(vec3 *ws_verts, vec3 *ws_nrmls, vec2 *ts_vert
 }
 
 TX_WorldGeometry *SD_VARIANT(TX_RegisterGeometry)(ECS_Handle *self, TX_Mesh *mesh) {
-    TX_World *world = ECS_GetComponent(self, TX_Components.World);
+    TX_World *world = ECS_GetComponent(self, TX_3D.World);
     TX_WorldGeometry *geometry = SDL_malloc(sizeof(TX_WorldGeometry));
     size_t sd_size = sd_bounding_size(mesh->nverts);
 
     *geometry = (TX_WorldGeometry) {
-        // .world = world, // Do not store this, can be invalidated after ECS update. Pass self instead.
         .world = self,
         .instances = List_Create(TX_RenderInstance *),
         .mesh = mesh,
@@ -54,7 +52,7 @@ TX_WorldGeometry *SD_VARIANT(TX_RegisterGeometry)(ECS_Handle *self, TX_Mesh *mes
 #ifndef SD_SRC_VARIANT
 
 TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_FragmentShader *shader_pipeline, void **shader_states, size_t nshaders, size_t render_batch, TX_RasterizerFlags flags) {
-    TX_World *world = ECS_GetComponent(geometry->world, TX_Components.World);
+    TX_World *world = ECS_GetComponent(geometry->world, TX_3D.World);
 
     if (List_Length(world->render_batches) < render_batch + 1) {
         size_t diff = render_batch - List_Length(world->render_batches) + 1;
@@ -87,21 +85,21 @@ TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_Fragm
 }
 
 void TX_TransformModel(ECS_Handle *self, xform3 composed) {
-    TX_Model *model = ECS_GetComponent(self, TX_Components.Model);
+    TX_Model *model = ECS_GetComponent(self, TX_3D.Model);
     model->geometry->xform = composed;
 }
 
 void TX_AttachModel(ECS_Handle *self, ECS_Component(void) *component) {
     TX_Model *mdl = ECS_GetComponent(self, component);
-    ECS_Handle *world = ECS_GetAncestorWithComponent(self, TX_Components.World, false);
+    ECS_Handle *world = ECS_GetAncestorWithComponent(self, TX_3D.World, false);
     TX_Mesh *mesh = mdl->get_mesh(self);
     mdl->geometry = TX_RegisterGeometry(world, mesh);
 }
 
 void TX_AttachModelInstance(ECS_Handle *self, ECS_Component(void) *component) {
     TX_ModelInstance *mdlinst = ECS_GetComponent(self, component);
-    ECS_Handle *mdl = ECS_GetAncestorWithComponent(self, TX_Components.Model, false);
-    TX_WorldGeometry *geometry = ECS_GetComponent(mdl, TX_Components.Model)->geometry;
+    ECS_Handle *mdl = ECS_GetAncestorWithComponent(self, TX_3D.Model, false);
+    TX_WorldGeometry *geometry = ECS_GetComponent(mdl, TX_3D.Model)->geometry;
 
     TX_FragmentShader *shader_pipeline = SDL_malloc(sizeof(TX_FragmentShader) * mdlinst->nshaders);
     void **shader_states = SDL_malloc(sizeof(void *) * mdlinst->nshaders);
@@ -161,17 +159,18 @@ void TX_FreeModelInstance(void *component) {
 }
 
 void TX_FreeRenderInstance(TX_RenderInstance *instance) {
-    TX_World *world = ECS_GetComponent(instance->geometry->world, TX_Components.World);
+    TX_World *world = ECS_GetComponent(instance->geometry->world, TX_3D.World);
 
     List(TX_RenderInstance *) *flag_batch = List_Get(world->render_batches, instance->render_batch)[instance->flags];
     List_RemoveWhere(flag_batch, instanced, instanced == instance);
     List_RemoveWhere(instance->geometry->instances, instanced, instanced == instance);
-    List_Free(instance->shader_pipeline);
+    SDL_free(instance->shader_pipeline);
+    SDL_free(instance->shader_states);
     SDL_free(instance);
 }
 
 void TX_FreeWorldGeometry(TX_WorldGeometry *geometry) {
-    TX_World *world = ECS_GetComponent(geometry->world, TX_Components.World);
+    TX_World *world = ECS_GetComponent(geometry->world, TX_3D.World);
 
     List_ForEach(geometry->instances, instance, TX_FreeRenderInstance(instance); );
     List_Free(geometry->instances);
@@ -180,33 +179,21 @@ void TX_FreeWorldGeometry(TX_WorldGeometry *geometry) {
 
     SDL_aligned_free(geometry->vs_verts);
     SDL_aligned_free(geometry->vs_nrmls);
+    // leak: free the ss_verts
 }
 
 void TX_FreeWorld(void *component) {
     TX_World *world = component;
 
-    List_ForEach(world->geometry, geometry, {
-        List_Free(geometry->instances);
-        SDL_aligned_free(geometry->vs_verts);
-        SDL_aligned_free(geometry->vs_nrmls);
-        SDL_free(geometry);
-    });
-
+    List_ForEach(world->geometry, geometry, TX_FreeWorldGeometry(geometry); );
     List_Free(world->geometry);
 
     for (size_t i = 0; i < List_Length(world->render_batches); ++i) {
         for (int j = 0; j < TX_RASTERIZER_FLAG_COMBINATIONS; ++j) {
             List(TX_RenderInstance *) *flag_batch = List_Get(world->render_batches, i)[j];
 
-            if (!flag_batch)
-                continue;
-
-            List_ForEach(flag_batch, instance, { 
-                List_Free(instance->shader_pipeline);
-                SDL_free(instance);
-            });
-
-            List_Free(flag_batch);
+            if (flag_batch)
+                List_Free(flag_batch);
         }
     }
 
@@ -214,6 +201,7 @@ void TX_FreeWorld(void *component) {
 }
 
 void TX_FreeMesh(TX_Mesh *mesh) {
+    SDL_Log("Free mesh");
     SDL_aligned_free(mesh->ws_verts);
     SDL_aligned_free(mesh->ws_nrmls);
     SDL_free(mesh->ts_verts);

@@ -1,6 +1,5 @@
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
-#include <TX/TX_ECS.h>
 #include <TX/Math/stride.h>
 #include <TX/gamma.h>
 
@@ -9,7 +8,7 @@
 static constexpr int MIN_TILE_SIZE = 128;
 
 static void PresentSubCanvas(TX_CanvasWorkerData *wd) {
-    TX_Canvas *canvas = ECS_GetComponent(wd->canvas, TX_Components.Canvas);
+    TX_Canvas *canvas = ECS_GetComponent(wd->canvas, TX_Bitmap.Canvas);
     int qot = sd_qot(canvas->width);
     int rem = sd_rem(canvas->width);
 
@@ -70,8 +69,8 @@ exit:
 }
 
 void SD_VARIANT(TX_PresentCanvas)(ECS_Handle *self) {
-    TX_Canvas *canvas = ECS_GetComponent(self, TX_Components.Canvas);
-    TX_Viewport *vp = ECS_GetComponent(self, TX_Components.Viewport);
+    TX_Canvas *canvas = ECS_GetComponent(self, TX_Bitmap.Canvas);
+    TX_Viewport *vp = ECS_GetComponent(self, TX_Bitmap.Viewport);
     void *pixels;
     int pitch;
 
@@ -178,6 +177,8 @@ void TX_FreeCanvas(void *component) {
 
     SDL_aligned_free(canvas->color);
     SDL_aligned_free(canvas->depth);
+
+    SDL_Log("hello?");
 
     for (int i = 0; i < canvas->ntiles; ++i) {
         SDL_aligned_free(canvas->tiles[i].scanlines[0]);

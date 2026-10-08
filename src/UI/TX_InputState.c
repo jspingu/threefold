@@ -1,37 +1,36 @@
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
-#include <TX/TX_ECS.h>
 #include <TX/Math/linalg.h>
 
-#include "TX_InputState_c.h"
+#include "TX_UI_c.h"
 
 bool TX_IsKeyDown(ECS_Handle *self, SDL_Scancode sc) {
-    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
+    TX_InputState *is = ECS_GetComponent(self, TX_UI.InputState);
     return (*is->curr)[sc];
 }
 
 bool TX_IsKeyJustDown(ECS_Handle *self, SDL_Scancode sc) {
-    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
+    TX_InputState *is = ECS_GetComponent(self, TX_UI.InputState);
     return !(*is->prev)[sc] && (*is->curr)[sc];
 }
 
 bool TX_IsKeyJustUp(ECS_Handle *self, SDL_Scancode sc) {
-    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
+    TX_InputState *is = ECS_GetComponent(self, TX_UI.InputState);
     return (*is->prev)[sc] && !(*is->curr)[sc];
 }
 
 vec2 TX_GetMouseMotion(ECS_Handle *self) {
-    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
+    TX_InputState *is = ECS_GetComponent(self, TX_UI.InputState);
     return is->mouse_motion;
 }
 
 vec2 TX_GetWheelMotion(ECS_Handle *self) {
-    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
+    TX_InputState *is = ECS_GetComponent(self, TX_UI.InputState);
     return is->wheel_motion;
 }
 
 void TX_NotifyInputState(ECS_Handle *self, SDL_Event *ev) {
-    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
+    TX_InputState *is = ECS_GetComponent(self, TX_UI.InputState);
 
     switch (ev->type) {
         case SDL_EVENT_KEY_DOWN:
@@ -59,7 +58,7 @@ void TX_NotifyInputState(ECS_Handle *self, SDL_Event *ev) {
 }
 
 void TX_AdvanceInputState(ECS_Handle *self) {
-    TX_InputState *is = ECS_GetComponent(self, TX_Components.InputState);
+    TX_InputState *is = ECS_GetComponent(self, TX_UI.InputState);
     SDL_memcpy(*is->prev, *is->curr, sizeof(*is->curr));
     is->mouse_motion = vec2_zero;
     is->wheel_motion = vec2_zero;

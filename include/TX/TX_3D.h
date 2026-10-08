@@ -160,6 +160,38 @@ typedef struct TX_OpticalMedium {
     int exp;
 } TX_OpticalMedium;
 
+struct TX_3D {
+    ECS_Component(vec3) *Position;
+    ECS_Component(mat3x3) *Basis;
+    ECS_Component(TX_TransformCompositor) *TransformCompositor;
+
+    ECS_Component(TX_World) *World;
+    ECS_Component(TX_Model) *Model;
+    ECS_Component(TX_ModelInstance) *ModelInstance;
+
+    ECS_Component(TX_Rasterizer) *Rasterizer;
+    ECS_Component(TX_ParallelProjector) *ParallelProjector;
+    ECS_Component(TX_PerspectiveFOV) *PerspectiveFOV;
+
+    ECS_Component(TX_LightEnvironment *) *LightEnvironment;
+    ECS_Component(TX_PointLight) *PointLight;
+
+    ECS_Component(TX_Mesh *) *MeshPrimitive;
+    ECS_Component(TX_Teapot) *Teapot;
+    ECS_Component(TX_Torus) *Torus;
+    ECS_Component(TX_Sphere) *Sphere;
+    ECS_Component(TX_Rect) *Rect;
+    ECS_Component(TX_Cubemap) *Cubemap;
+
+    ECS_Component(TX_ShaderComponent) *SolidColor;
+    ECS_Component(TX_ShaderComponent) *Checkerboard;
+    ECS_Component(TX_ShaderComponent) *TextureMap;
+    ECS_Component(TX_ShaderComponent) *Lighting;
+    ECS_Component(TX_ShaderComponent) *Sky;
+};
+
+extern struct TX_3D TX_3D;
+
 TX_SHADER_DECLARE(TX_ShadeSolidColor)
 TX_SHADER_DECLARE(TX_ShadeCheckerboard)
 TX_SHADER_DECLARE(TX_ShadeTextureMap)

@@ -1,7 +1,9 @@
 #include <SDL3/SDL.h>
-#include <TX/TX_ECS.h>
+#include <TX/ECS.h>
 #include <TX/TX_Resource.h>
 #include <TX/gamma.h>
+
+#include "TX_Bitmap_c.h"
 
 static TX_Texture *TX_TextureFromSDLSurface(SDL_Surface *surface) {
     SDL_Surface *img_abgr = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_ABGR32);

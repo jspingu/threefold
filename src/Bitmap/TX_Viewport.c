@@ -1,6 +1,6 @@
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
-#include <TX/TX_ECS.h>
+#include <TX/TX_Bitmap.h>
 
 void TX_InitViewport(void *component, void *args) {
     TX_Viewport *vp = component;

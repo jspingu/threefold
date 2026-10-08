@@ -1,12 +1,12 @@
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
-#include <TX/TX_ECS.h>
+#include <TX/TX_3D.h>
 #include <TX/Collections/List.h>
 #include <TX/Math/linalg.h>
 
 TX_Mesh *TX_GetTeapotMesh(ECS_Handle *self) {
-    TX_Mesh **mesh = ECS_GetComponent(self, TX_Components.MeshPrimitive);
-    TX_Teapot *teapot = ECS_GetComponent(self, TX_Components.Teapot);
+    TX_Mesh **mesh = ECS_GetComponent(self, TX_3D.MeshPrimitive);
+    TX_Teapot *teapot = ECS_GetComponent(self, TX_3D.Teapot);
     if (*mesh) return *mesh;
 
     SDL_IOStream *teapot_data = SDL_IOFromFile("assets/teapot_surface1.norm", "r");
@@ -89,8 +89,8 @@ TX_Mesh *TX_GetTeapotMesh(ECS_Handle *self) {
 }
 
 TX_Mesh *TX_GetTorusMesh(ECS_Handle *self) {
-    TX_Mesh **mesh = ECS_GetComponent(self, TX_Components.MeshPrimitive);
-    TX_Torus *torus = ECS_GetComponent(self, TX_Components.Torus);
+    TX_Mesh **mesh = ECS_GetComponent(self, TX_3D.MeshPrimitive);
+    TX_Torus *torus = ECS_GetComponent(self, TX_3D.Torus);
     if (*mesh) return *mesh;
 
     TX_Sculpture *torus_sculpt = TX_CreateSculpture();
@@ -119,8 +119,8 @@ TX_Mesh *TX_GetTorusMesh(ECS_Handle *self) {
 }
 
 TX_Mesh *TX_GetSphereMesh(ECS_Handle *self) {
-    TX_Mesh **mesh = ECS_GetComponent(self, TX_Components.MeshPrimitive);
-    TX_Sphere *sphere = ECS_GetComponent(self, TX_Components.Sphere);
+    TX_Mesh **mesh = ECS_GetComponent(self, TX_3D.MeshPrimitive);
+    TX_Sphere *sphere = ECS_GetComponent(self, TX_3D.Sphere);
     if (*mesh) return *mesh;
 
     TX_Sculpture *sphere_sculpt = TX_CreateSculpture();
@@ -158,8 +158,8 @@ TX_Mesh *TX_GetSphereMesh(ECS_Handle *self) {
 }
 
 TX_Mesh *TX_GetRectMesh(ECS_Handle *self) {
-    TX_Mesh **mesh = ECS_GetComponent(self, TX_Components.MeshPrimitive);
-    TX_Rect *rect = ECS_GetComponent(self, TX_Components.Rect);
+    TX_Mesh **mesh = ECS_GetComponent(self, TX_3D.MeshPrimitive);
+    TX_Rect *rect = ECS_GetComponent(self, TX_3D.Rect);
     if (*mesh) return *mesh;
 
     vec3 ws_verts[4] = {
@@ -188,8 +188,8 @@ TX_Mesh *TX_GetRectMesh(ECS_Handle *self) {
 }
 
 TX_Mesh *TX_GetCubemapMesh(ECS_Handle *self) {
-    TX_Mesh **mesh = ECS_GetComponent(self, TX_Components.MeshPrimitive);
-    TX_Cubemap *cubemap = ECS_GetComponent(self, TX_Components.Cubemap);
+    TX_Mesh **mesh = ECS_GetComponent(self, TX_3D.MeshPrimitive);
+    TX_Cubemap *cubemap = ECS_GetComponent(self, TX_3D.Cubemap);
     if (*mesh) return *mesh;
 
     vec3 ws_verts[8] = {

@@ -1,6 +1,9 @@
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
 #include <TX/TX_ECS.h>
+#include <TX/TX_3D.h>
+#include <TX/TX_Bitmap.h>
+#include <TX/TX_UI.h>
 #include <stdio.h>
 
 #define SDL_MAIN_USE_CALLBACKS
@@ -29,15 +32,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     ECS_Handle *root = ECS_GetRoot(ecs);
 
     ECS_AttachComponents(root,
-        { TX_Components.Viewport, &(TX_ViewportArgs){
+        { TX_Bitmap.Viewport, &(TX_ViewportArgs){
             .title = "Good morning!",
             .width = WIDTH,
             .height = HEIGHT
         }},
-        { TX_Components.InputState, nullptr },
-        { TX_Components.TextureBank, nullptr },
-        { TX_Components.CubemapBank, nullptr },
-        { TX_Components.Canvas, &(TX_Canvas){
+        { TX_UI.InputState, nullptr },
+        { TX_Bitmap.TextureBank, nullptr },
+        { TX_Bitmap.CubemapBank, nullptr },
+        { TX_Bitmap.Canvas, &(TX_Canvas){
             .width = WIDTH,
             .height = HEIGHT
         }},
@@ -47,42 +50,42 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     ECS_AddChildren(root, 
         { /* Main world */
             ECS_Components(
-                { TX_Components.World, nullptr },
-                { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault}},
-                { TX_Components.LightEnvironment, &(TX_LightEnvironment){ .ambient=0.08, .skybox_dir="assets/Nalovardo" } }
+                { TX_3D.World, nullptr },
+                { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault}},
+                { TX_3D.LightEnvironment, &(TX_LightEnvironment){ .ambient=0.08, .skybox_dir="assets/Nalovardo" } }
             ),
             ECS_Children(
                 { /* Camera */
                     ECS_Components(
-                        { TX_Components.ParallelProjector, &(TX_ParallelProjector) {
+                        { TX_3D.ParallelProjector, &(TX_ParallelProjector) {
                             .slope = { .x=0, .y=0 },
                             .scale = { .x=0.5, .y=0.5 }
                         }},
-                        { TX_Components.PerspectiveFOV, &(float) { SDL_PI_F / 2 } },
-                        { TX_Components.Rasterizer, &(TX_Rasterizer) {
+                        { TX_3D.PerspectiveFOV, &(float) { SDL_PI_F / 2 } },
+                        { TX_3D.Rasterizer, &(TX_Rasterizer) {
                             .project = SD_SELECT(TX_ProjectPerspective),
                             .scan = SD_SELECT(TX_ScanPerspective),
                             .near = 1
                         }},
-                        { TX_Components.Position, &(vec3){} },
-                        { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
+                        { TX_3D.Position, &(vec3){} },
+                        { TX_3D.Basis, (mat3x3 []){mat3x3_identity} },
                         { Components.FreeCam, &(FreeCam){} }
                     )
                 },
                 { /* Teapot */
                     ECS_Components(
-                        { TX_Components.Position, &(vec3){ .y=-150, .z=600 } },
-                        { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
-                        { TX_Components.MeshPrimitive, nullptr },
-                        { TX_Components.Teapot, &(TX_Teapot) { .scale=50 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetTeapotMesh }},
-                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} }
+                        { TX_3D.Position, &(vec3){ .y=-150, .z=600 } },
+                        { TX_3D.Basis, (mat3x3 []){mat3x3_identity} },
+                        { TX_3D.MeshPrimitive, nullptr },
+                        { TX_3D.Teapot, &(TX_Teapot) { .scale=50 } },
+                        { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetTeapotMesh }},
+                        { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_Components.SolidColor, &(TX_SolidColor) { .r=1.0, .g=1.0, .b=1.0 } },
-                        { TX_Components.Lighting, &(TX_OpticalMedium) { .reflectivity=1.0, .specularity=1.0, .exp=4 } },
-                        { TX_Components.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_Components.SolidColor, TX_Components.Lighting },
+                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1.0, .g=1.0, .b=1.0 } },
+                        { TX_3D.Lighting, &(TX_OpticalMedium) { .reflectivity=1.0, .specularity=1.0, .exp=4 } },
+                        { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
+                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_3D.SolidColor, TX_3D.Lighting },
                             .nshaders = 2,
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
@@ -94,22 +97,22 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 },
                 { /* Floor */
                     ECS_Components(
-                        { TX_Components.Position, &(vec3){ .y=-150, .z=600 } },
-                        { TX_Components.Basis, (mat3x3 []){mat3x3_rotate(mat3x3_identity, vec3_i, SDL_PI_F / 2)} },
-                        { TX_Components.MeshPrimitive, nullptr },
-                        { TX_Components.Rect, &(TX_Rect) { .width=2000, .height=2000 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetRectMesh }},
-                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} }
+                        { TX_3D.Position, &(vec3){ .y=-150, .z=600 } },
+                        { TX_3D.Basis, (mat3x3 []){mat3x3_rotate(mat3x3_identity, vec3_i, SDL_PI_F / 2)} },
+                        { TX_3D.MeshPrimitive, nullptr },
+                        { TX_3D.Rect, &(TX_Rect) { .width=2000, .height=2000 } },
+                        { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetRectMesh }},
+                        { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_Components.Checkerboard, &(TX_Checkerboard) {
+                        { TX_3D.Checkerboard, &(TX_Checkerboard) {
                             .tiles = 31,
                             .r1 = 0.4, .g1 = 0.4, .b1 = 0.8,
                             .r2 = 1.0, .g2 = 1.0, .b2 = 1.0,
                         }},
-                        { TX_Components.Lighting, &(TX_OpticalMedium) { .reflectivity=0.4, .specularity=0.4, .exp=4 } },
-                        { TX_Components.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_Components.Checkerboard, TX_Components.Lighting },
+                        { TX_3D.Lighting, &(TX_OpticalMedium) { .reflectivity=0.4, .specularity=0.4, .exp=4 } },
+                        { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
+                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_3D.Checkerboard, TX_3D.Lighting },
                             .nshaders = 2,
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
@@ -120,18 +123,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 },
                 { /* Light */
                     ECS_Components(
-                        { TX_Components.Position, &(vec3){ .x=-150, .y=-115, .z=400 } },
-                        { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
-                        { TX_Components.MeshPrimitive, nullptr },
-                        { TX_Components.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
-                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
-                        { TX_Components.PointLight, &(TX_PointLight) { .col={{ 1.0, 0.8, 0.2 }}, .energy=20000 } }
+                        { TX_3D.Position, &(vec3){ .x=-150, .y=-115, .z=400 } },
+                        { TX_3D.Basis, (mat3x3 []){mat3x3_identity} },
+                        { TX_3D.MeshPrimitive, nullptr },
+                        { TX_3D.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
+                        { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
+                        { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
+                        { TX_3D.PointLight, &(TX_PointLight) { .col={{ 1.0, 0.8, 0.2 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_Components.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
-                        { TX_Components.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_Components.SolidColor },
+                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
+                        { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
+                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_3D.SolidColor },
                             .nshaders = 1,
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
@@ -142,18 +145,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 },
                 { /* Light */
                     ECS_Components(
-                        { TX_Components.Position, &(vec3){ .x=150, .y=-115, .z=400 } },
-                        { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
-                        { TX_Components.MeshPrimitive, nullptr },
-                        { TX_Components.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
-                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
-                        { TX_Components.PointLight, &(TX_PointLight) { .col={{ 0.2, 1.0, 0.5 }}, .energy=20000 } }
+                        { TX_3D.Position, &(vec3){ .x=150, .y=-115, .z=400 } },
+                        { TX_3D.Basis, (mat3x3 []){mat3x3_identity} },
+                        { TX_3D.MeshPrimitive, nullptr },
+                        { TX_3D.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
+                        { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
+                        { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
+                        { TX_3D.PointLight, &(TX_PointLight) { .col={{ 0.2, 1.0, 0.5 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_Components.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
-                        { TX_Components.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_Components.SolidColor },
+                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
+                        { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
+                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_3D.SolidColor },
                             .nshaders = 1,
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
@@ -164,18 +167,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 },
                 { /* Light */
                     ECS_Components(
-                        { TX_Components.Position, &(vec3){ .x=-150, .y=-115, .z=800 } },
-                        { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
-                        { TX_Components.MeshPrimitive, nullptr },
-                        { TX_Components.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
-                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
-                        { TX_Components.PointLight, &(TX_PointLight) { .col={{ 1.0, 0.2, 0.1 }}, .energy=20000 } }
+                        { TX_3D.Position, &(vec3){ .x=-150, .y=-115, .z=800 } },
+                        { TX_3D.Basis, (mat3x3 []){mat3x3_identity} },
+                        { TX_3D.MeshPrimitive, nullptr },
+                        { TX_3D.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
+                        { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
+                        { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
+                        { TX_3D.PointLight, &(TX_PointLight) { .col={{ 1.0, 0.2, 0.1 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_Components.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
-                        { TX_Components.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_Components.SolidColor },
+                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
+                        { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
+                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_3D.SolidColor },
                             .nshaders = 1,
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
@@ -186,18 +189,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 },
                 { /* Light */
                     ECS_Components(
-                        { TX_Components.Position, &(vec3){ .x=150, .y=-115, .z=800 } },
-                        { TX_Components.Basis, (mat3x3 []){mat3x3_identity} },
-                        { TX_Components.MeshPrimitive, nullptr },
-                        { TX_Components.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
-                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
-                        { TX_Components.PointLight, &(TX_PointLight) { .col={{ 0.9, 0.2, 1.0 }}, .energy=20000 } }
+                        { TX_3D.Position, &(vec3){ .x=150, .y=-115, .z=800 } },
+                        { TX_3D.Basis, (mat3x3 []){mat3x3_identity} },
+                        { TX_3D.MeshPrimitive, nullptr },
+                        { TX_3D.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
+                        { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
+                        { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
+                        { TX_3D.PointLight, &(TX_PointLight) { .col={{ 0.9, 0.2, 1.0 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_Components.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
-                        { TX_Components.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_Components.SolidColor },
+                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
+                        { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
+                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_3D.SolidColor },
                             .nshaders = 1,
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
@@ -208,15 +211,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 },
                 { /* Skybox */
                     ECS_Components(
-                        { TX_Components.MeshPrimitive, nullptr },
-                        { TX_Components.Cubemap, &(TX_Cubemap) { .scale=100 } },
-                        { TX_Components.Model, &(TX_ModelArgs) { .get_mesh = TX_GetCubemapMesh } },
-                        { TX_Components.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformCubemap} }
+                        { TX_3D.MeshPrimitive, nullptr },
+                        { TX_3D.Cubemap, &(TX_Cubemap) { .scale=100 } },
+                        { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetCubemapMesh } },
+                        { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformCubemap} }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_Components.Sky, nullptr },
-                        { TX_Components.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_Components.Sky },
+                        { TX_3D.Sky, nullptr },
+                        { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
+                            .shader_components = (ECS_Component(TX_ShaderComponent) *[]) { TX_3D.Sky },
                             .nshaders = 1,
                             .render_batch = Sky
                         }}

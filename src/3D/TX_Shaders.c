@@ -1,5 +1,6 @@
 #include <TX/ECS.h>
-#include <TX/TX_ECS.h>
+#include <TX/TX_3D.h>
+#include <TX/TX_Bitmap.h>
 #include <TX/Math/stride.h>
 #include <TX/Math/linalg.h>
 
@@ -103,34 +104,34 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeSky)(void *state, sd_vec4 col, TX_ShaderParam
 #ifndef SD_SRC_VARIANT
 
 void TX_TransformPointLight(ECS_Handle *self, xform3 composed) {
-    TX_PointLight *light = ECS_GetComponent(self, TX_Components.PointLight);
+    TX_PointLight *light = ECS_GetComponent(self, TX_3D.PointLight);
     light->active->pos = composed.translation;
 }
 
 void TX_AttachTextureMap(ECS_Handle *self, ECS_Component(void) *component) {
     TX_ShaderComponent *shader_component = ECS_GetComponent(self, component);
     TX_TextureMap *texture_map = shader_component->state;
-    ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Components.TextureBank, false);
-    texture_map->texture = TX_GetResource(tb, TX_Components.TextureBank, texture_map->texture_path);
+    ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.TextureBank, false);
+    texture_map->texture = TX_GetResource(tb, TX_Bitmap.TextureBank, texture_map->texture_path);
 }
 
 void TX_AttachLighting(ECS_Handle *self, ECS_Component(void) *component) {
     TX_ShaderComponent *shader_component = ECS_GetComponent(self, component);
     TX_OpticalMedium *medium = shader_component->state;
-    ECS_Handle *env = ECS_GetAncestorWithComponent(self, TX_Components.LightEnvironment, false);
-    medium->environment = *ECS_GetComponent(env, TX_Components.LightEnvironment);
+    ECS_Handle *env = ECS_GetAncestorWithComponent(self, TX_3D.LightEnvironment, false);
+    medium->environment = *ECS_GetComponent(env, TX_3D.LightEnvironment);
 }
 
 void TX_AttachSky(ECS_Handle *self, ECS_Component(void) *component) {
     TX_ShaderComponent *shader_component = ECS_GetComponent(self, component);
-    ECS_Handle *env = ECS_GetAncestorWithComponent(self, TX_Components.LightEnvironment, false);
-    *(TX_LightEnvironment **)(shader_component->state) = *ECS_GetComponent(env, TX_Components.LightEnvironment);
+    ECS_Handle *env = ECS_GetAncestorWithComponent(self, TX_3D.LightEnvironment, false);
+    *(TX_LightEnvironment **)(shader_component->state) = *ECS_GetComponent(env, TX_3D.LightEnvironment);
 }
 
 void TX_AttachPointLight(ECS_Handle *self, ECS_Component(void) *component) {
     TX_PointLight *light = ECS_GetComponent(self, component);
-    ECS_Handle *env = ECS_GetAncestorWithComponent(self, TX_Components.LightEnvironment, false);
-    light->environment = *ECS_GetComponent(env, TX_Components.LightEnvironment);
+    ECS_Handle *env = ECS_GetAncestorWithComponent(self, TX_3D.LightEnvironment, false);
+    light->environment = *ECS_GetComponent(env, TX_3D.LightEnvironment);
 
     TX_ActiveLight *active = SDL_malloc(sizeof(TX_ActiveLight));
     active->col = light->col;
@@ -143,15 +144,15 @@ void TX_AttachPointLight(ECS_Handle *self, ECS_Component(void) *component) {
 
 void TX_AttachLightEnvironment(ECS_Handle *self, ECS_Component(void) *component) {
     TX_LightEnvironment **env = ECS_GetComponent(self, component);
-    ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Components.CubemapBank, false);
-    (*env)->sky = TX_GetResource(tb, TX_Components.CubemapBank, (*env)->skybox_dir);
+    ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.CubemapBank, false);
+    (*env)->sky = TX_GetResource(tb, TX_Bitmap.CubemapBank, (*env)->skybox_dir);
 }
 
 void TX_DetachTextureMap(ECS_Handle *self, ECS_Component(void) *component) {
     TX_ShaderComponent *shader_component = ECS_GetComponent(self, component);
     TX_TextureMap *texture_map = shader_component->state;
-    ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Components.TextureBank, false);
-    TX_ReleaseResource(tb, TX_Components.TextureBank, texture_map->texture_path);
+    ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.TextureBank, false);
+    TX_ReleaseResource(tb, TX_Bitmap.TextureBank, texture_map->texture_path);
 }
 
 void TX_DetachPointLight(ECS_Handle *self, ECS_Component(void) *component) {
@@ -162,8 +163,8 @@ void TX_DetachPointLight(ECS_Handle *self, ECS_Component(void) *component) {
 
 void TX_DetachLightEnvironment(ECS_Handle *self, ECS_Component(void) *component) {
     TX_LightEnvironment **env = ECS_GetComponent(self, component);
-    ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Components.TextureBank, false);
-    TX_ReleaseResource(tb, TX_Components.TextureBank, (*env)->skybox_dir);
+    ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.TextureBank, false);
+    TX_ReleaseResource(tb, TX_Bitmap.TextureBank, (*env)->skybox_dir);
 }
 
 void TX_InitSolidColor(void *component, void *args) {

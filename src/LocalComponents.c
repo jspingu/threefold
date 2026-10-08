@@ -1,7 +1,11 @@
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
 #include <TX/TX_ECS.h>
+#include <TX/TX_3D.h>
+#include <TX/TX_Bitmap.h>
+#include <TX/TX_UI.h>
 #include <TX/Math/linalg.h>
+
 #include "LocalComponents.h"
 
 struct LocalComponents Components;
@@ -15,9 +19,9 @@ static bool vec3_eq(vec3 lhs, vec3 rhs) {
 void UpdateGrabMouse(ECS_Handle *self, double delta) {
     (void)delta;
     bool *grabbed = ECS_GetComponent(self, Components.GrabMouse);
-    ECS_Handle *is = ECS_GetAncestorWithComponent(self, TX_Components.InputState, true);
-    ECS_Handle *vp = ECS_GetAncestorWithComponent(self, TX_Components.Viewport, true);
-    TX_Viewport *c_vp = ECS_GetComponent(vp, TX_Components.Viewport);
+    ECS_Handle *is = ECS_GetAncestorWithComponent(self, TX_UI.InputState, true);
+    ECS_Handle *vp = ECS_GetAncestorWithComponent(self, TX_Bitmap.Viewport, true);
+    TX_Viewport *c_vp = ECS_GetComponent(vp, TX_Bitmap.Viewport);
     
     if (TX_IsKeyJustDown(is, SDL_SCANCODE_ESCAPE)) {
         *grabbed = !*grabbed;       
@@ -27,14 +31,14 @@ void UpdateGrabMouse(ECS_Handle *self, double delta) {
 
 void UpdateFreeCam(ECS_Handle *self, double delta) {
     ECS_Handle *mouse_grab = ECS_GetAncestorWithComponent(self, Components.GrabMouse, true);
-    ECS_Handle *is = ECS_GetAncestorWithComponent(self, TX_Components.InputState, true);
+    ECS_Handle *is = ECS_GetAncestorWithComponent(self, TX_UI.InputState, true);
 
     if (!*ECS_GetComponent(mouse_grab, Components.GrabMouse))
         return;
 
     FreeCam *cam = ECS_GetComponent(self, Components.FreeCam);
-    vec3 *pos = ECS_GetComponent(self, TX_Components.Position);
-    mat3x3 *basis = ECS_GetComponent(self, TX_Components.Basis);
+    vec3 *pos = ECS_GetComponent(self, TX_3D.Position);
+    mat3x3 *basis = ECS_GetComponent(self, TX_3D.Basis);
 
     vec3 input_axis = vec3_zero;
 
@@ -62,8 +66,8 @@ void UpdateFreeCam(ECS_Handle *self, double delta) {
     cam->pitch += mouse_motion.y * 0.15 * delta;
     cam->pitch = SDL_clamp(cam->pitch, -SDL_PI_F / 2, SDL_PI_F / 2);
 
-    ECS_Handle *fov = ECS_GetAncestorWithComponent(self, TX_Components.PerspectiveFOV, true);
-    float fov_curr = ECS_GetComponent(fov, TX_Components.PerspectiveFOV)->fov;
+    ECS_Handle *fov = ECS_GetAncestorWithComponent(self, TX_3D.PerspectiveFOV, true);
+    float fov_curr = ECS_GetComponent(fov, TX_3D.PerspectiveFOV)->fov;
     TX_SetPerspectiveFOV(fov, SDL_clamp(fov_curr - TX_GetWheelMotion(is).y * 16 * delta, 30 * SDL_PI_F / 180, 150 * SDL_PI_F / 180));
 
     *basis = mat3x3_rotate(
@@ -80,7 +84,7 @@ void RegisterToECS(ECS *ecs) {
 
     ECS_RegisterSystem(TX_SystemGroups.Update, UpdateFreeCam,
         Components.FreeCam,
-        TX_Components.Position,
-        TX_Components.Basis
+        TX_3D.Position,
+        TX_3D.Basis
     );
 }

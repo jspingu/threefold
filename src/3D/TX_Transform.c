@@ -1,16 +1,17 @@
 #include <TX/ECS.h>
 #include <TX/TX_ECS.h>
+#include <TX/TX_3D.h>
 #include <TX/Math/linalg.h>
 #include <TX/Math/stride.h>
 
 sd_vec2 SD_VARIANT(TX_ProjectParallel)(ECS_Handle *self, sd_vec3 pos, sd_vec2 midpoint) {
-    TX_ParallelProjector *parallel_projector = ECS_GetComponent(self, TX_Components.ParallelProjector);
+    TX_ParallelProjector *parallel_projector = ECS_GetComponent(self, TX_3D.ParallelProjector);
     sd_vec2 projected = sd_vec2_fsmadd(sd_vec2_set(parallel_projector->slope.x, parallel_projector->slope.y), sd_vz(pos), sd_vxy(pos));
     return sd_vec2_add(midpoint, sd_vec2_mul(projected, sd_vec2_set(parallel_projector->scale.x, -parallel_projector->scale.y)));
 }
 
 sd_vec2 SD_VARIANT(TX_ProjectPerspective)(ECS_Handle *self, sd_vec3 pos, sd_vec2 midpoint) {
-    TX_PerspectiveFOV *perspective_fov = ECS_GetComponent(self, TX_Components.PerspectiveFOV);
+    TX_PerspectiveFOV *perspective_fov = ECS_GetComponent(self, TX_3D.PerspectiveFOV);
 
     sd_vec2 normalized = sd_vec2_create(sd_vx(pos), sd_float_negate(sd_vy(pos)));
             normalized = sd_vec2_muls(normalized, sd_float_rcp(sd_float_mul(sd_vz(pos), sd_float_set(perspective_fov->tan_half_fov))));
@@ -21,8 +22,8 @@ sd_vec2 SD_VARIANT(TX_ProjectPerspective)(ECS_Handle *self, sd_vec3 pos, sd_vec2
 #ifndef SD_SRC_VARIANT
 
 xform3 TX_GetEntityTransform(ECS_Handle *self) {
-    mat3x3 *basis = ECS_GetComponent(self, TX_Components.Basis);
-    vec3 *position = ECS_GetComponent(self, TX_Components.Position);
+    mat3x3 *basis = ECS_GetComponent(self, TX_3D.Basis);
+    vec3 *position = ECS_GetComponent(self, TX_3D.Position);
 
     return (xform3) {
         basis ? *basis : mat3x3_identity,
@@ -31,7 +32,7 @@ xform3 TX_GetEntityTransform(ECS_Handle *self) {
 }
 
 void TX_TransformEntity(ECS_Handle *self, xform3 lhs) {
-    TX_TransformCompositor *compose = ECS_GetComponent(self, TX_Components.TransformCompositor);
+    TX_TransformCompositor *compose = ECS_GetComponent(self, TX_3D.TransformCompositor);
     if (!compose) return;
 
     xform3 composed = (*compose)(self, lhs);

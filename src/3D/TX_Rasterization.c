@@ -1,6 +1,6 @@
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
-#include <TX/TX_ECS.h>
+#include <TX/TX_Bitmap.h>
 #include <TX/Collections/List.h>
 #include <TX/Math/linalg.h>
 #include <TX/Math/stride.h>
@@ -20,8 +20,8 @@ static inline void swap(int *a, int *b) {
 }
 
 void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_RasterizerFlags flags, TX_TriangleDraw triangle, int triangle_bounds[2]) {
-    TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_Components.Rasterizer);
-    TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Components.Canvas);
+    TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
+    TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
     xform3 scalar_vs2ws_xform = TX_GetEntityTransform(self);
 
     sd_vec3 vs2ws_xform_i = sd_vec3_set(scalar_vs2ws_xform.basis.x.x, scalar_vs2ws_xform.basis.x.y, scalar_vs2ws_xform.basis.x.z);
@@ -121,9 +121,9 @@ void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_Rasteriz
 }
 
 void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_RasterizerFlags flags, TX_TriangleDraw triangle, int triangle_bounds[2]) {
-    TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_Components.Rasterizer);
-    TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Components.Canvas);
-    TX_PerspectiveFOV *perspective_fov = ECS_GetComponent(self, TX_Components.PerspectiveFOV);
+    TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
+    TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
+    TX_PerspectiveFOV *perspective_fov = ECS_GetComponent(self, TX_3D.PerspectiveFOV);
     xform3 scalar_vs2ws_xform = TX_GetEntityTransform(self);
 
     sd_vec3 vs2ws_xform_i = sd_vec3_set(scalar_vs2ws_xform.basis.x.x, scalar_vs2ws_xform.basis.x.y, scalar_vs2ws_xform.basis.x.z);
@@ -427,9 +427,9 @@ exit:
 }
 
 void SD_VARIANT(TX_RenderWorld)(ECS_Handle *self) {
-    TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_Components.Rasterizer);
-    TX_World *world = ECS_GetComponent(rasterizer->world, TX_Components.World);
-    TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Components.Canvas);
+    TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
+    TX_World *world = ECS_GetComponent(rasterizer->world, TX_3D.World);
+    TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
 
     /* Transform registered world geometry */
     List(TX_WorldGeometry *) *geometry = world->geometry;
@@ -500,8 +500,8 @@ void SD_VARIANT(TX_RenderWorld)(ECS_Handle *self) {
 
 void TX_AttachRasterizer(ECS_Handle *self, ECS_Component(void) *component) {
     TX_Rasterizer *rasterizer = ECS_GetComponent(self, component);
-    rasterizer->world = ECS_GetAncestorWithComponent(self, TX_Components.World, true);
-    rasterizer->target = ECS_GetAncestorWithComponent(self, TX_Components.Canvas, true);
+    rasterizer->world = ECS_GetAncestorWithComponent(self, TX_3D.World, true);
+    rasterizer->target = ECS_GetAncestorWithComponent(self, TX_Bitmap.Canvas, true);
 
     int nproc = SDL_GetNumLogicalCPUCores();
     TX_RasterThreadPool *pool = SDL_malloc(sizeof(TX_RasterThreadPool));
@@ -555,7 +555,7 @@ void TX_InitRasterizer(void *component, void *args) {
 }
 
 void TX_SetPerspectiveFOV(ECS_Handle *self, float fov) {
-    TX_PerspectiveFOV *perspective_fov = ECS_GetComponent(self, TX_Components.PerspectiveFOV);
+    TX_PerspectiveFOV *perspective_fov = ECS_GetComponent(self, TX_3D.PerspectiveFOV);
     perspective_fov->fov = fov;
     perspective_fov->tan_half_fov = SDL_tanf(fov / 2);
 }

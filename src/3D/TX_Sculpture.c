@@ -121,6 +121,7 @@ TX_Mesh *TX_SculptureToMesh(TX_Sculpture *sculpture) {
         List_Length(sculpture->faces)
     );
 
+    // leak: free the normals
     return mesh;
 }
 

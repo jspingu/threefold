@@ -23,8 +23,8 @@ typedef struct TX_ResourceBank {
     TX_ResourceFreer free;
 } TX_ResourceBank;
 
-void *TX_GetResourceActual(ECS_Handle *self, void *component, char *path);
-void TX_ReleaseResource(ECS_Handle *self, void *component, char *path);
+void *TX_GetResourceActual(ECS_Handle *self, ECS_Component(void) *component, char *path);
+void TX_ReleaseResource(ECS_Handle *self, ECS_Component(void) *component, char *path);
 void TX_AttachResourceBank(ECS_Handle *self, ECS_Component(void) *component, TX_ResourceLoader load, TX_ResourceFreer free);
 void TX_DetachResourceBank(ECS_Handle *self, ECS_Component(void) *component);
 
