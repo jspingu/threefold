@@ -165,7 +165,7 @@ bool ECS_EntityMatchesSystem(ECS_Handle *e, void *system_group, size_t index) {
 void ECS_FreeEntity(ECS_Handle *e) {
     for (size_t index = e->index, count = 1; count; ++index) {
         ECS_EntityHeader *header = e->ecs->headers + index;
-        Bitset_ForEach(header->active_components, index, ECS_DetachComponents(header->self, List_Get(e->ecs->columns, index).component); );
+        Bitset_ForEach(header->active_components, cindex, ECS_DetachComponents(header->self, List_Get(e->ecs->columns, cindex).component); );
         header->free = true;
         count += ECS_GetChildCount(header->self) - 1;
     }

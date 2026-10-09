@@ -91,42 +91,42 @@ static void ECS_ShiftRows(ECS *ecs, size_t start, size_t end, ptrdiff_t shift) {
     }
 
     Bitset_ForEach(component_union, id, {
-        ECS_Column *component = List_GetAddress(ecs->columns, id);
-        size_t right = end;
+        ECS_Column *column = List_GetAddress(ecs->columns, id);
+        size_t column_end = end;
 
-        while (right > start && !Bitset_Test(ecs->headers[right - 1].active_components, id))
-            right -= 1;
+        while (column_end > start && !Bitset_Test(ecs->headers[column_end - 1].active_components, id))
+            column_end -= 1;
 
-        if (right + shift > component->capacity) {
-            component->capacity = List_bounding_size(right + shift);
-            component->component_entries = SDL_realloc(component->component_entries, component->capacity * component->component_size);
+        if (column_end + shift > column->capacity) {
+            column->capacity = List_bounding_size(column_end + shift);
+            column->component_entries = SDL_realloc(column->component_entries, column->capacity * column->component_size);
         }
 
-        SDL_memmove(component->component_entries + start + shift, component->component_entries + start, (right - start) * component->component_size);
+        SDL_memmove(column->component_entries + start + shift, column->component_entries + start, (column_end - start) * column->component_size);
     });
 
     Bitset_Free(component_union);
     SDL_memmove(ecs->headers + start + shift, ecs->headers + start, (end - start) * sizeof(ECS_EntityHeader));
 }
 
-static void ECS_UpdateSubtable(ECS *ecs, size_t index, size_t left, size_t right, ptrdiff_t shift) {
-    while (index < right) {
+static void ECS_UpdateSubtable(ECS *ecs, size_t index, size_t start, size_t end, ptrdiff_t shift) {
+    while (index < end) {
         if (ecs->headers[index].was_free) {
             size_t fwd_index = index + 1;
             ptrdiff_t fwd_shift = shift - 1;
 
-            while (fwd_index < right && ecs->headers[fwd_index].was_free) {
+            while (fwd_index < end && ecs->headers[fwd_index].was_free) {
                 fwd_index += 1;
                 fwd_shift -= 1;
             }
 
             if (fwd_shift < 0) {
-                ECS_ShiftRows(ecs, left, index, shift);
-                ECS_UpdateSubtable(ecs, fwd_index, fwd_index, right, fwd_shift);
+                ECS_ShiftRows(ecs, start, index, shift);
+                ECS_UpdateSubtable(ecs, fwd_index, fwd_index, end, fwd_shift);
             }
             else {
-                ECS_UpdateSubtable(ecs, fwd_index, fwd_index, right, fwd_shift);
-                ECS_ShiftRows(ecs, left, index, shift);
+                ECS_UpdateSubtable(ecs, fwd_index, fwd_index, end, fwd_shift);
+                ECS_ShiftRows(ecs, start, index, shift);
             }
 
             return;
@@ -147,12 +147,12 @@ static void ECS_UpdateSubtable(ECS *ecs, size_t index, size_t left, size_t right
             }
 
             if (fwd_shift < 0) {
-                ECS_UpdateSubtable(ecs, index + 1, left, fwd_index, shift);
-                ECS_UpdateSubtable(ecs, fwd_index, fwd_index, right, fwd_shift);
+                ECS_UpdateSubtable(ecs, index + 1, start, fwd_index, shift);
+                ECS_UpdateSubtable(ecs, fwd_index, fwd_index, end, fwd_shift);
             }
             else {
-                ECS_UpdateSubtable(ecs, fwd_index, fwd_index, right, fwd_shift);
-                ECS_UpdateSubtable(ecs, index + 1, left, fwd_index, shift);
+                ECS_UpdateSubtable(ecs, fwd_index, fwd_index, end, fwd_shift);
+                ECS_UpdateSubtable(ecs, index + 1, start, fwd_index, shift);
             }
 
             ECS_EntityHeader header = ecs->headers[index];
@@ -164,7 +164,7 @@ static void ECS_UpdateSubtable(ECS *ecs, size_t index, size_t left, size_t right
         index += 1;
     }
 
-    ECS_ShiftRows(ecs, left, right, shift);
+    ECS_ShiftRows(ecs, start, end, shift);
 }
 
 void ECS_Update(ECS *ecs) {
