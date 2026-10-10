@@ -44,10 +44,18 @@ typedef struct TX_RenderInstance {
     TX_RasterizerFlags flags;
 } TX_RenderInstance;
 
+typedef struct TX_FlagBatch {
+    List(TX_RenderInstance *) *instances;
+    List(TX_TriangleDraw) *triangles;
+} TX_FlagBatch;
+
+typedef struct TX_RenderBatch {
+    TX_FlagBatch *flag_batches[TX_RASTERIZER_FLAG_COMBINATIONS];
+} TX_RenderBatch;
+
 typedef struct TX_World {
     List(TX_WorldGeometry *) *geometry;
-    /* List of arrays of Lists of RenderInstance */
-    List(List(TX_RenderInstance *) *[TX_RASTERIZER_FLAG_COMBINATIONS]) *render_batches;
+    List(TX_RenderBatch) *render_batches;
 } TX_World;
 
 typedef struct TX_Model {

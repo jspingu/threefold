@@ -56,17 +56,20 @@ TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_Fragm
 
     if (List_Length(world->render_batches) < render_batch + 1) {
         size_t diff = render_batch - List_Length(world->render_batches) + 1;
-        List(TX_RenderInstance *) *(*new_batches)[TX_RASTERIZER_FLAG_COMBINATIONS] = List_PushSpace(world->render_batches, diff);
+        TX_RenderBatch *new_batches = List_PushSpace(world->render_batches, diff);
 
         for (size_t i = 0; i < diff; ++i)
-            for (int j = 0; j < TX_RASTERIZER_FLAG_COMBINATIONS; ++j)
-                new_batches[i][j] = nullptr;
+            for (int flags = 0; flags < TX_RASTERIZER_FLAG_COMBINATIONS; ++flags)
+                new_batches[i].flag_batches[flags] = nullptr;
     }
 
-    List(TX_RenderInstance *) **flag_batches = List_Get(world->render_batches, render_batch);
+    TX_RenderBatch *rb = List_GetAddress(world->render_batches, render_batch);
     
-    if (!flag_batches[flags])
-        flag_batches[flags] = List_Create(TX_RenderInstance *);
+    if (!rb->flag_batches[flags]) {
+        rb->flag_batches[flags] = SDL_malloc(sizeof(TX_FlagBatch));
+        rb->flag_batches[flags]->instances = List_Create(TX_RenderInstance *);
+        rb->flag_batches[flags]->triangles = List_Create(TX_TriangleDraw);
+    }
 
     TX_RenderInstance *instance = SDL_malloc(sizeof(TX_RenderInstance));
 
@@ -79,7 +82,7 @@ TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_Fragm
         .flags = flags
     };
 
-    List_Push(flag_batches[flags], instance);
+    List_Push(rb->flag_batches[flags]->instances, instance);
     List_Push(geometry->instances, instance);
     return instance;
 }
@@ -130,7 +133,7 @@ void TX_InitWorld(void *component, void *args) {
 
     TX_World *world = component;
     world->geometry = List_Create(TX_WorldGeometry *);
-    world->render_batches = List_Create(List(TX_RenderInstance *) *[TX_RASTERIZER_FLAG_COMBINATIONS]);
+    world->render_batches = List_Create(TX_RenderBatch);
 }
 
 void TX_InitModel(void *component, void *args) {
@@ -161,8 +164,9 @@ void TX_FreeModelInstance(void *component) {
 void TX_FreeRenderInstance(TX_RenderInstance *instance) {
     TX_World *world = ECS_GetComponent(instance->geometry->world, TX_3D.World);
 
-    List(TX_RenderInstance *) *flag_batch = List_Get(world->render_batches, instance->render_batch)[instance->flags];
-    List_RemoveWhere(flag_batch, instanced, instanced == instance);
+    TX_RenderBatch rb = List_Get(world->render_batches, instance->render_batch);
+    TX_FlagBatch *fb = rb.flag_batches[instance->flags];
+    List_RemoveWhere(fb->instances, instanced, instanced == instance);
     List_RemoveWhere(instance->geometry->instances, instanced, instanced == instance);
     SDL_free(instance->shader_pipeline);
     SDL_free(instance->shader_states);
@@ -190,11 +194,15 @@ void TX_FreeWorld(void *component) {
     List_Free(world->geometry);
 
     for (size_t i = 0; i < List_Length(world->render_batches); ++i) {
-        for (int j = 0; j < TX_RASTERIZER_FLAG_COMBINATIONS; ++j) {
-            List(TX_RenderInstance *) *flag_batch = List_Get(world->render_batches, i)[j];
+        for (int flags = 0; flags < TX_RASTERIZER_FLAG_COMBINATIONS; ++flags) {
+            TX_RenderBatch rb = List_Get(world->render_batches, i);
+            TX_FlagBatch *fb = rb.flag_batches[flags];
 
-            if (flag_batch)
-                List_Free(flag_batch);
+            if (fb) {
+                List_Free(fb->instances);
+                List_Free(fb->triangles);
+                SDL_free(fb);
+            }
         }
     }
 

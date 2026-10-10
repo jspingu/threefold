@@ -63,6 +63,8 @@ typedef struct TX_TriangleDraw {
     vec3 vs_nrmls[3];
     vec2 ts_verts[3];
     vec2 ss_verts[3];
+    int left, right;
+    int top, bottom;
 } TX_TriangleDraw;
 
 typedef struct TX_Rasterizer {

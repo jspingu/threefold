@@ -272,22 +272,41 @@ static void Span(TX_CanvasTile tile, vec2 verts[3], int triangle_bounds[2]) {
     }
 }
 
-static void DrawTriangle(TX_RasterWorkerData *wd, TX_CanvasTile tile, TX_RasterizerFlags flags, TX_TriangleDraw triangle) {
-    float min_y = SDL_min(SDL_min(triangle.ss_verts[0].y, triangle.ss_verts[1].y), triangle.ss_verts[2].y);
-    float max_y = SDL_max(SDL_max(triangle.ss_verts[0].y, triangle.ss_verts[1].y), triangle.ss_verts[2].y);
+static void RenderToCanvasTile(TX_RasterWorkerData *wd, TX_CanvasTile tile) {
+    size_t sd_width = sd_bounding_length(wd->canvas->width);
 
-    int triangle_bounds[2] = {
-        SDL_clamp((int)(min_y + 0.5f), tile.top, tile.bottom),
-        SDL_clamp((int)(max_y + 0.5f), tile.top, tile.bottom)
-    };
+    /* Reset depth */
+    for (int i = tile.top; i < tile.bottom; ++i)
+        for (size_t j = sd_qot(tile.left); j < sd_bounding_length(tile.right); ++j)
+            sd_float_store(wd->canvas->depth, i * sd_width + j, sd_float_zero());
 
-    Span(tile, triangle.ss_verts, triangle_bounds);
-    wd->rasterizer->scan(wd->entity, tile, flags, triangle, triangle_bounds);
+    /* Draw geometry in batches, according to render order and rasterizer flags */
+    List_ForEach(wd->world->render_batches, rb, {
+        for (int flags = 0; flags < TX_RASTERIZER_FLAG_COMBINATIONS; ++flags) {
+            TX_FlagBatch *fb = rb.flag_batches[flags];
+
+            if (fb)
+                List_ForEach(fb->triangles, triangle, {
+                    if (triangle.left < tile.right && triangle.right > tile.left && triangle.top < tile.bottom && triangle.bottom > tile.top) {
+                        int triangle_bounds[2] = {
+                            SDL_max(triangle.top, tile.top),
+                            SDL_min(triangle.bottom, tile.bottom)
+                        };
+
+                        Span(tile, triangle.ss_verts, triangle_bounds);
+                        wd->rasterizer->scan(wd->entity, tile, flags, triangle, triangle_bounds);
+                    }
+                });
+        }
+    });
 }
 
-static void DrawBatch(TX_RasterWorkerData *wd, TX_CanvasTile tile, List(TX_RenderInstance *) *batch, TX_RasterizerFlags flags) {
-    /* Draw triangles */
-    List_ForEach(batch, instance, {
+static void PrepareFlagBatch(ECS_Handle *self, TX_FlagBatch *fb, TX_RasterizerFlags flags) {
+    TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
+    TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
+    List_Clear(fb->triangles);
+
+    List_ForEach(fb->instances, instance, {
         TX_MeshFace *faces = instance->geometry->mesh->faces;
         size_t nfaces = instance->geometry->mesh->nfaces;
 
@@ -315,15 +334,15 @@ static void DrawBatch(TX_RasterWorkerData *wd, TX_CanvasTile tile, List(TX_Rende
                 vec3 curr = vs_verts[j];
                 vec3 next = vs_verts[(j + 1) % 3];
 
-                if (curr.z >= wd->rasterizer->near)
+                if (curr.z >= rasterizer->near)
                     clipped[nclipped++] = ss_verts[j];
 
-                if ((curr.z < wd->rasterizer->near) != (next.z < wd->rasterizer->near)) {
-                    vec3 intercept = intersect_near(curr, next, wd->rasterizer->near);
+                if ((curr.z < rasterizer->near) != (next.z < rasterizer->near)) {
+                    vec3 intersect = intersect_near(curr, next, rasterizer->near);
 
-                    sd_vec2 projected = wd->rasterizer->project(wd->entity,
-                        sd_vec3_set(intercept.x, intercept.y, wd->rasterizer->near),
-                        sd_vec2_set(wd->canvas->width * 0.5f, wd->canvas->height * 0.5f)
+                    sd_vec2 projected = rasterizer->project(self,
+                        sd_vec3_set(intersect.x, intersect.y, rasterizer->near),
+                        sd_vec2_set(canvas->width * 0.5f, canvas->height * 0.5f)
                     );
 
                     sd_vec2_scalar projected_scalar = sd_vec2_loads(&projected, 0);
@@ -333,16 +352,6 @@ static void DrawBatch(TX_RasterWorkerData *wd, TX_CanvasTile tile, List(TX_Rende
 
             /* Triangle fan clipped verticies */
             for (int j = 1; j < nclipped - 1; ++j) {
-                /* Compute extremes */
-                float min_x = SDL_min(clipped[0].x, SDL_min(clipped[j].x, clipped[j + 1].x));
-                float max_x = SDL_max(clipped[0].x, SDL_max(clipped[j].x, clipped[j + 1].x));
-                float min_y = SDL_min(clipped[0].y, SDL_min(clipped[j].y, clipped[j + 1].y));
-                float max_y = SDL_max(clipped[0].y, SDL_max(clipped[j].y, clipped[j + 1].y));
-
-                /* Cull off-screen triangles */
-                if (min_x > tile.right || max_x < tile.left || min_y > tile.bottom || max_y < tile.top)
-                    continue;
-
                 bool verts_cw = vec2_dot(
                     vec2_orthogonal(vec2_sub(clipped[j], clipped[0])),
                     vec2_sub(clipped[j + 1], clipped[0])
@@ -354,7 +363,11 @@ static void DrawBatch(TX_RasterWorkerData *wd, TX_CanvasTile tile, List(TX_Rende
                 TX_TriangleDraw triangle = {
                     .shader_pipeline = instance->shader_pipeline,
                     .shader_states = instance->shader_states,
-                    .nshaders = instance->nshaders
+                    .nshaders = instance->nshaders,
+                    .left = (int)(SDL_min(clipped[0].x, SDL_min(clipped[j].x, clipped[j + 1].x)) + 0.5f),
+                    .right = (int)(SDL_max(clipped[0].x, SDL_max(clipped[j].x, clipped[j + 1].x)) + 0.5f),
+                    .top = (int)(SDL_min(clipped[0].y, SDL_min(clipped[j].y, clipped[j + 1].y)) + 0.5f),
+                    .bottom = (int)(SDL_max(clipped[0].y, SDL_max(clipped[j].y, clipped[j + 1].y)) + 0.5f)
                 };
 
                 SDL_memcpy(triangle.vs_verts, (vec3 [3]) { vs_verts[0], vs_verts[1 + !verts_cw], vs_verts[1 + verts_cw] }, sizeof(vec3 [3]));
@@ -374,36 +387,14 @@ static void DrawBatch(TX_RasterWorkerData *wd, TX_CanvasTile tile, List(TX_Rende
                         instance->geometry->mesh->ts_verts[faces[i].idx_tverts[1 + verts_cw]]
                     }, sizeof(vec2 [3]));
 
-                DrawTriangle(wd, tile, flags, triangle);
+                List_Push(fb->triangles, triangle);
             }
         }
     });
-}
 
-static void RenderToCanvasTile(TX_RasterWorkerData *wd, TX_CanvasTile tile) {
-    /*
-     * changes from kdr that make sorting more difficult
-     * kdr's geometry buffers stored all triangles from all meshes in a single buffer
-     * tx changed this design for easier vectorization and to allow the same mesh to be instanced multiple times with different shaders
-     * if a given call to DrawBatch needs to sort triangles, a temp list of all triangles from all instances in the batch will need to be created and sorted, then drawn
-     */
-
-    size_t sd_width = sd_bounding_length(wd->canvas->width);
-
-    /* Reset depth */
-    for (int i = tile.top; i < tile.bottom; ++i)
-        for (size_t j = sd_qot(tile.left); j < sd_bounding_length(tile.right); ++j)
-            sd_float_store(wd->canvas->depth, i * sd_width + j, sd_float_zero());
-
-    /* Draw geometry in batches, according to render order and rasterizer flags */
-    for (size_t i = 0; i < List_Length(wd->world->render_batches); ++i) {
-        for (int flags = 0; flags < TX_RASTERIZER_FLAG_COMBINATIONS; ++flags) {
-            List(TX_RenderInstance *) *flag_batch = List_Get(wd->world->render_batches, i)[flags];
-
-            if (flag_batch)
-                DrawBatch(wd, tile, flag_batch, flags);
-        }
-    }
+    // TODO: triangle sort
+    // if (flags & TX_RASTERIZER_SORT_TRIANGLES)
+    //     SDL_qsort(List_GetAddress(fb->triangles, 0), List_Length(fb->triangles), sizeof(TX_TriangleDraw), compare);
 }
 
 int SD_VARIANT(TX_RasterWorker)(void *data) {
@@ -475,6 +466,15 @@ void SD_VARIANT(TX_RenderWorld)(ECS_Handle *self) {
             }
 
             sd_vec2_store(wg->ss_verts, i, rasterizer->project(self, vs_vert, sd_vec2_set(canvas->width * 0.5f, canvas->height * 0.5f)));
+        }
+    });
+
+    List_ForEach(world->render_batches, rb, {
+        for (int flags = 0; flags < TX_RASTERIZER_FLAG_COMBINATIONS; ++flags) {
+            TX_FlagBatch *fb = rb.flag_batches[flags];
+
+            if (fb)
+                PrepareFlagBatch(self, fb, flags);
         }
     });
 
