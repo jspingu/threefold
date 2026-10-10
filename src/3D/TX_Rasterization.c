@@ -238,31 +238,23 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Ras
     }
 }
 
-static void Span(TX_CanvasTile tile, vec2 verts[3], int triangle_bounds[2]) {
-    int idxs[] = { 0, 1, 2 };
+static void Span(TX_CanvasTile tile, TX_TriangleDraw triangle, int triangle_bounds[2]) {
+    sd_float sd_grad01 = sd_float_set(triangle.grad01);
+    sd_float sd_grad12 = sd_float_set(triangle.grad12);
+    sd_float sd_grad02 = sd_float_set(triangle.grad02);
+    bool le_left = triangle.le_left;
 
-    /* Sort by ascending y */
-    if (verts[idxs[0]].y > verts[idxs[1]].y) swap(&idxs[0], &idxs[1]);
-    if (verts[idxs[1]].y > verts[idxs[2]].y) swap(&idxs[1], &idxs[2]);
-    if (verts[idxs[0]].y > verts[idxs[1]].y) swap(&idxs[0], &idxs[1]);
-
-    sd_float sd_grad01 = sd_float_set((verts[idxs[1]].x - verts[idxs[0]].x) / (verts[idxs[1]].y - verts[idxs[0]].y));
-    sd_float sd_grad12 = sd_float_set((verts[idxs[2]].x - verts[idxs[1]].x) / (verts[idxs[2]].y - verts[idxs[1]].y));
-    sd_float sd_grad02 = sd_float_set((verts[idxs[2]].x - verts[idxs[0]].x) / (verts[idxs[2]].y - verts[idxs[0]].y));
-
-    /* True if Long edge is left edge */
-    bool le_left = ((idxs[0] + 2) % 3 == idxs[2]);
     size_t sd_top = sd_qot(triangle_bounds[0]);
     size_t sd_bottom = sd_bounding_length(triangle_bounds[1]);
 
     for (size_t i = sd_top; i < sd_bottom; ++i) {
         sd_float y = sd_float_add(sd_float_range(), sd_float_set(i * sd_length() + 0.5f));
-        sd_float offset0 = sd_float_sub(y, sd_float_set(verts[idxs[0]].y));
-        sd_float offset1 = sd_float_sub(y, sd_float_set(verts[idxs[1]].y));
+        sd_float offset0 = sd_float_sub(y, sd_float_set(triangle.ss_verts[triangle.sorted_idxs[0]].y));
+        sd_float offset1 = sd_float_sub(y, sd_float_set(triangle.ss_verts[triangle.sorted_idxs[1]].y));
 
-        sd_float x01 = sd_float_fmadd(sd_grad01, offset0, sd_float_set(verts[idxs[0]].x));
-        sd_float x12 = sd_float_fmadd(sd_grad12, offset1, sd_float_set(verts[idxs[1]].x));
-        sd_float x02 = sd_float_fmadd(sd_grad02, offset0, sd_float_set(verts[idxs[0]].x));
+        sd_float x01 = sd_float_fmadd(sd_grad01, offset0, sd_float_set(triangle.ss_verts[triangle.sorted_idxs[0]].x));
+        sd_float x12 = sd_float_fmadd(sd_grad12, offset1, sd_float_set(triangle.ss_verts[triangle.sorted_idxs[1]].x));
+        sd_float x02 = sd_float_fmadd(sd_grad02, offset0, sd_float_set(triangle.ss_verts[triangle.sorted_idxs[0]].x));
 
         sd_int left = sd_float_to_int(sd_float_add(sd_float_clamp(le_left ? x02 : sd_float_max(x01, x12), sd_float_set(tile.left), sd_float_set(tile.right)), sd_float_set(0.5f)));
         sd_int right = sd_float_to_int(sd_float_add(sd_float_clamp(le_left ? sd_float_min(x01, x12) : x02, sd_float_set(tile.left), sd_float_set(tile.right)), sd_float_set(0.5f)));
@@ -293,7 +285,7 @@ static void RenderToCanvasTile(TX_RasterWorkerData *wd, TX_CanvasTile tile) {
                             SDL_min(triangle.bottom, tile.bottom)
                         };
 
-                        Span(tile, triangle.ss_verts, triangle_bounds);
+                        Span(tile, triangle, triangle_bounds);
                         wd->rasterizer->scan(wd->entity, tile, flags, triangle, triangle_bounds);
                     }
                 });
@@ -387,6 +379,22 @@ static void PrepareFlagBatch(ECS_Handle *self, TX_FlagBatch *fb, TX_RasterizerFl
                         instance->geometry->mesh->ts_verts[faces[i].idx_tverts[1 + verts_cw]]
                     }, sizeof(vec2 [3]));
 
+                /* Sort by ascending y */
+                int idxs[] = { 0, 1, 2 };
+
+                if (triangle.ss_verts[idxs[0]].y > triangle.ss_verts[idxs[1]].y) swap(&idxs[0], &idxs[1]);
+                if (triangle.ss_verts[idxs[1]].y > triangle.ss_verts[idxs[2]].y) swap(&idxs[1], &idxs[2]);
+                if (triangle.ss_verts[idxs[0]].y > triangle.ss_verts[idxs[1]].y) swap(&idxs[0], &idxs[1]);
+
+                /* Precompute gradients for scanline interpolation */
+                triangle.grad01 = (triangle.ss_verts[idxs[1]].x - triangle.ss_verts[idxs[0]].x) / (triangle.ss_verts[idxs[1]].y - triangle.ss_verts[idxs[0]].y);
+                triangle.grad12 = (triangle.ss_verts[idxs[2]].x - triangle.ss_verts[idxs[1]].x) / (triangle.ss_verts[idxs[2]].y - triangle.ss_verts[idxs[1]].y);
+                triangle.grad02 = (triangle.ss_verts[idxs[2]].x - triangle.ss_verts[idxs[0]].x) / (triangle.ss_verts[idxs[2]].y - triangle.ss_verts[idxs[0]].y);
+
+                /* True if Long edge is left edge */
+                triangle.le_left = ((idxs[0] + 2) % 3 == idxs[2]);
+
+                SDL_memcpy(triangle.sorted_idxs, idxs, sizeof(int [3]));
                 List_Push(fb->triangles, triangle);
             }
         }
