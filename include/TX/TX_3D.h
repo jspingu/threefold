@@ -35,7 +35,7 @@ typedef xform3 (*TX_TransformCompositor)(ECS_Handle *self, xform3 lhs);
 
 typedef SD_CALL sd_vec4 (*TX_FragmentShader)(void *state, sd_vec4 col, TX_ShaderParams fragment);
 typedef sd_vec2 (*TX_VertexProjector)(ECS_Handle *self, sd_vec3 pos, sd_vec2 midpoint);
-typedef void (*TX_RasterScanner)(ECS_Handle *self, TX_CanvasTile tile, TX_RasterizerFlags flags, TX_TriangleDraw triangle, int triangle_bounds[2]);
+typedef void (*TX_RasterScanner)(ECS_Handle *self, TX_CanvasTile tile, TX_TriangleDraw triangle, int triangle_bounds[2]);
 
 typedef struct TX_ShaderParams {
     sd_vec3 *bg;
@@ -65,14 +65,15 @@ typedef struct TX_TriangleDraw {
     vec2 ss_verts[3];
     float grad01, grad12, grad02;
     int sorted_idxs[3];
-    int left, right;
     int top, bottom;
+    TX_RasterizerFlags flags;
     bool le_left;
 } TX_TriangleDraw;
 
 typedef struct TX_Rasterizer {
     ECS_Handle *world;
     ECS_Handle *target;
+    List(TX_TriangleDraw) *triangles;
     TX_RasterThreadPool *thread_pool;
     TX_VertexProjector project;
     TX_RasterScanner scan;
@@ -235,10 +236,10 @@ TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_Fragm
 void TX_FreeWorldGeometry(TX_WorldGeometry *geometry);
 
 SD_DECLARE(sd_vec2, TX_ProjectParallel, ECS_Handle *, self, sd_vec3, point, sd_vec2, midpoint)
-SD_DECLARE_VOID_RETURN(TX_ScanLinear, ECS_Handle *, self, TX_CanvasTile, tile, TX_RasterizerFlags, flags, TX_TriangleDraw, triangle, int [2], triangle_bounds)
+SD_DECLARE_VOID_RETURN(TX_ScanLinear, ECS_Handle *, self, TX_CanvasTile, tile, TX_TriangleDraw, triangle, int [2], triangle_bounds)
 
 SD_DECLARE(sd_vec2, TX_ProjectPerspective, ECS_Handle *, self, sd_vec3, point, sd_vec2, midpoint)
-SD_DECLARE_VOID_RETURN(TX_ScanPerspective, ECS_Handle *, self, TX_CanvasTile, tile, TX_RasterizerFlags, flags, TX_TriangleDraw, triangle, int [2], triangle_bounds)
+SD_DECLARE_VOID_RETURN(TX_ScanPerspective, ECS_Handle *, self, TX_CanvasTile, tile, TX_TriangleDraw, triangle, int [2], triangle_bounds)
 
 void TX_SetPerspectiveFOV(ECS_Handle *self, float fov);
 

@@ -46,7 +46,7 @@ typedef struct TX_RenderInstance {
 
 typedef struct TX_FlagBatch {
     List(TX_RenderInstance *) *instances;
-    List(TX_TriangleDraw) *triangles;
+    TX_RasterizerFlags flags;
 } TX_FlagBatch;
 
 typedef struct TX_RenderBatch {
@@ -137,6 +137,7 @@ SD_DECLARE_VOID_RETURN(TX_RenderWorld, ECS_Handle *, self)
 void TX_AttachRasterizer(ECS_Handle *self, ECS_Component(void) *component);
 void TX_DetachRasterizer(ECS_Handle *self, ECS_Component(void) *component);
 void TX_InitRasterizer(void *component, void *args);
+void TX_FreeRasterizer(void *component);
 
 SD_DECLARE(int, TX_RasterWorker, void *, data)
 

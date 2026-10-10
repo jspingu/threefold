@@ -3,8 +3,9 @@
 
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
-#include <TX/Math/stride.h>
 #include <TX/TX_Resource.h>
+#include <TX/Collections/List.h>
+#include <TX/Math/stride.h>
 
 typedef struct TX_CanvasThreadPool TX_CanvasThreadPool;
 
@@ -21,6 +22,7 @@ typedef struct TX_ViewportArgs {
 } TX_ViewportArgs;
 
 typedef struct TX_CanvasTile {
+    List(size_t) *triangle_idxs;
     sd_int *scanlines[2];
     int left, right;
     int top, bottom;
@@ -31,7 +33,7 @@ typedef struct TX_Canvas {
     sd_vec3 *color;
     sd_float *depth;
     TX_CanvasTile *tiles;
-    int ntiles;
+    int ntiles, tile_width;
     int width, height;
 } TX_Canvas;
 

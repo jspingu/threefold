@@ -15,7 +15,8 @@ void TX_Register3DToECS(ECS *ecs) {
     TX_3D.Rasterizer = ECS_RegisterComponent(ecs, TX_Rasterizer, {
         .attach = TX_AttachRasterizer,
         .detach = TX_DetachRasterizer,
-        .init = TX_InitRasterizer
+        .init = TX_InitRasterizer,
+        .free = TX_FreeRasterizer
     });
 
     TX_3D.Model = ECS_RegisterComponent(ecs, TX_Model, {

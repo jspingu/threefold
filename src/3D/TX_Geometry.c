@@ -68,7 +68,7 @@ TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_Fragm
     if (!rb->flag_batches[flags]) {
         rb->flag_batches[flags] = SDL_malloc(sizeof(TX_FlagBatch));
         rb->flag_batches[flags]->instances = List_Create(TX_RenderInstance *);
-        rb->flag_batches[flags]->triangles = List_Create(TX_TriangleDraw);
+        rb->flag_batches[flags]->flags = flags;
     }
 
     TX_RenderInstance *instance = SDL_malloc(sizeof(TX_RenderInstance));
@@ -200,7 +200,6 @@ void TX_FreeWorld(void *component) {
 
             if (fb) {
                 List_Free(fb->instances);
-                List_Free(fb->triangles);
                 SDL_free(fb);
             }
         }
