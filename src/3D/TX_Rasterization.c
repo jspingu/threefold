@@ -19,7 +19,7 @@ static inline void swap(int *a, int *b) {
     *b = tmp;
 }
 
-void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_TriangleDraw triangle, int triangle_bounds[2]) {
+void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_TriangleDraw *triangle, int triangle_bounds[2]) {
     TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
     TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
     xform3 scalar_vs2ws_xform = TX_GetEntityTransform(self);
@@ -28,37 +28,37 @@ void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_Triangle
     sd_vec3 vs2ws_xform_j = sd_vec3_set(scalar_vs2ws_xform.basis.y.x, scalar_vs2ws_xform.basis.y.y, scalar_vs2ws_xform.basis.y.z);
     sd_vec3 vs2ws_xform_k = sd_vec3_set(scalar_vs2ws_xform.basis.z.x, scalar_vs2ws_xform.basis.z.y, scalar_vs2ws_xform.basis.z.z);
 
-    sd_vec2 origin = sd_vec2_set(triangle.ss_verts[0].x ,triangle.ss_verts[0].y);
-    sd_vec2 ab = sd_vec2_sub(sd_vec2_set(triangle.ss_verts[1].x, triangle.ss_verts[1].y), origin);
-    sd_vec2 ac = sd_vec2_sub(sd_vec2_set(triangle.ss_verts[2].x, triangle.ss_verts[2].y), origin);
+    sd_vec2 origin = sd_vec2_set(triangle->ss_verts[0].x ,triangle->ss_verts[0].y);
+    sd_vec2 ab = sd_vec2_sub(sd_vec2_set(triangle->ss_verts[1].x, triangle->ss_verts[1].y), origin);
+    sd_vec2 ac = sd_vec2_sub(sd_vec2_set(triangle->ss_verts[2].x, triangle->ss_verts[2].y), origin);
 
     sd_float inv_disc = sd_float_rcp(sd_float_sub(sd_float_mul(sd_vx(ab), sd_vy(ac)), sd_float_mul(sd_vy(ab), sd_vx(ac))));
 
     sd_vec2 inv_xform_i = sd_vec2_muls(sd_vec2_create(sd_vy(ac), sd_float_negate(sd_vy(ab))), inv_disc);
     sd_vec2 inv_xform_j = sd_vec2_muls(sd_vec2_create(sd_float_negate(sd_vx(ac)), sd_vx(ab)), inv_disc);
 
-    sd_vec3 origin_vs = sd_vec3_set(triangle.vs_verts[0].x, triangle.vs_verts[0].y, triangle.vs_verts[0].z);
-    sd_vec3 ab_vs = sd_vec3_sub(sd_vec3_set(triangle.vs_verts[1].x, triangle.vs_verts[1].y, triangle.vs_verts[1].z), origin_vs);
-    sd_vec3 ac_vs = sd_vec3_sub(sd_vec3_set(triangle.vs_verts[2].x, triangle.vs_verts[2].y, triangle.vs_verts[2].z), origin_vs);
+    sd_vec3 origin_vs = sd_vec3_set(triangle->vs_verts[0].x, triangle->vs_verts[0].y, triangle->vs_verts[0].z);
+    sd_vec3 ab_vs = sd_vec3_sub(sd_vec3_set(triangle->vs_verts[1].x, triangle->vs_verts[1].y, triangle->vs_verts[1].z), origin_vs);
+    sd_vec3 ac_vs = sd_vec3_sub(sd_vec3_set(triangle->vs_verts[2].x, triangle->vs_verts[2].y, triangle->vs_verts[2].z), origin_vs);
 
     sd_vec3 vs_xform_i = sd_vec3_fsmadd(ac_vs, sd_vy(inv_xform_i), sd_vec3_muls(ab_vs, sd_vx(inv_xform_i)));
     sd_vec3 vs_xform_j = sd_vec3_fsmadd(ac_vs, sd_vy(inv_xform_j), sd_vec3_muls(ab_vs, sd_vx(inv_xform_j)));
 
-    sd_vec3 origin_nrml = sd_vec3_set(triangle.vs_nrmls[0].x, triangle.vs_nrmls[0].y, triangle.vs_nrmls[0].z);
-    sd_vec3 ab_nrml = sd_vec3_sub(sd_vec3_set(triangle.vs_nrmls[1].x, triangle.vs_nrmls[1].y, triangle.vs_nrmls[1].z), origin_nrml);
-    sd_vec3 ac_nrml = sd_vec3_sub(sd_vec3_set(triangle.vs_nrmls[2].x, triangle.vs_nrmls[2].y, triangle.vs_nrmls[2].z), origin_nrml);
+    sd_vec3 origin_nrml = sd_vec3_set(triangle->vs_nrmls[0].x, triangle->vs_nrmls[0].y, triangle->vs_nrmls[0].z);
+    sd_vec3 ab_nrml = sd_vec3_sub(sd_vec3_set(triangle->vs_nrmls[1].x, triangle->vs_nrmls[1].y, triangle->vs_nrmls[1].z), origin_nrml);
+    sd_vec3 ac_nrml = sd_vec3_sub(sd_vec3_set(triangle->vs_nrmls[2].x, triangle->vs_nrmls[2].y, triangle->vs_nrmls[2].z), origin_nrml);
 
     sd_vec3 nrml_xform_i = sd_vec3_fsmadd(ac_nrml, sd_vy(inv_xform_i), sd_vec3_muls(ab_nrml, sd_vx(inv_xform_i)));
     sd_vec3 nrml_xform_j = sd_vec3_fsmadd(ac_nrml, sd_vy(inv_xform_j), sd_vec3_muls(ab_nrml, sd_vx(inv_xform_j)));
 
-    sd_vec2 origin_ts = sd_vec2_set(triangle.ts_verts[0].x, triangle.ts_verts[0].y);
-    sd_vec2 ab_ts = sd_vec2_sub(sd_vec2_set(triangle.ts_verts[1].x, triangle.ts_verts[1].y), origin_ts);
-    sd_vec2 ac_ts = sd_vec2_sub(sd_vec2_set(triangle.ts_verts[2].x, triangle.ts_verts[2].y), origin_ts);
+    sd_vec2 origin_ts = sd_vec2_set(triangle->ts_verts[0].x, triangle->ts_verts[0].y);
+    sd_vec2 ab_ts = sd_vec2_sub(sd_vec2_set(triangle->ts_verts[1].x, triangle->ts_verts[1].y), origin_ts);
+    sd_vec2 ac_ts = sd_vec2_sub(sd_vec2_set(triangle->ts_verts[2].x, triangle->ts_verts[2].y), origin_ts);
     
     sd_vec2 ts_xform_i = sd_vec2_fsmadd(ac_ts, sd_vy(inv_xform_i), sd_vec2_muls(ab_ts, sd_vx(inv_xform_i)));
     sd_vec2 ts_xform_j = sd_vec2_fsmadd(ac_ts, sd_vy(inv_xform_j), sd_vec2_muls(ab_ts, sd_vx(inv_xform_j)));
 
-    vec3 scalar_nrml = vec3_cross(vec3_sub(triangle.vs_verts[1], triangle.vs_verts[0]), vec3_sub(triangle.vs_verts[2], triangle.vs_verts[0]));
+    vec3 scalar_nrml = vec3_cross(vec3_sub(triangle->vs_verts[1], triangle->vs_verts[0]), vec3_sub(triangle->vs_verts[2], triangle->vs_verts[0]));
     sd_vec3 nrml = sd_vec3_set(scalar_nrml.x, scalar_nrml.y, scalar_nrml.z);
 
     for (int i = triangle_bounds[0]; i < triangle_bounds[1]; ++i) {
@@ -83,7 +83,7 @@ void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_Triangle
             sd_float inv_z = sd_float_rcp(sd_vz(fragment_vs));
             sd_vec3 fragment_nrml;
 
-            if (triangle.flags & TX_RASTERIZER_INTERPOLATE_NORMALS) {
+            if (triangle->flags & TX_RASTERIZER_INTERPOLATE_NORMALS) {
                 fragment_nrml = sd_vec3_fsmadd(nrml_xform_i, sd_vx(relative), origin_nrml);
                 fragment_nrml = sd_vec3_fsmadd(nrml_xform_j, sd_vy(relative), fragment_nrml);
             } else fragment_nrml = nrml;
@@ -98,10 +98,10 @@ void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_Triangle
             sd_float bg_z = sd_float_load(canvas->depth, base + j);
             sd_mask mask = sd_float_between(sd_vx(ss), left, right);
 
-            if (triangle.flags & TX_RASTERIZER_TEST_DEPTH)
+            if (triangle->flags & TX_RASTERIZER_TEST_DEPTH)
                 mask = sd_mask_and(mask, sd_float_gt(inv_z, bg_z));
 
-            if (triangle.flags & TX_RASTERIZER_WRITE_DEPTH)
+            if (triangle->flags & TX_RASTERIZER_WRITE_DEPTH)
                 sd_float_store(canvas->depth, base + j, sd_float_mask_blend(bg_z, inv_z, mask));
 
             TX_ShaderParams fragment = {
@@ -112,15 +112,15 @@ void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_Triangle
                 .vs2ws_xform = { &vs2ws_xform_i, &vs2ws_xform_j, &vs2ws_xform_k }
             };
 
-            for (size_t i = 0; i < triangle.nshaders; ++i)
-                col = triangle.shader_pipeline[i](triangle.shader_states[i], col, fragment);
+            for (size_t i = 0; i < triangle->nshaders; ++i)
+                col = triangle->shader_pipeline[i](triangle->shader_states[i], col, fragment);
 
             sd_vec3_store(canvas->color, base + j, sd_vec3_mask_blend(bg, sd_vxyz(col), mask));
         }
     }
 }
 
-void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_TriangleDraw triangle, int triangle_bounds[2]) {
+void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_TriangleDraw *triangle, int triangle_bounds[2]) {
     TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
     TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
     TX_PerspectiveFOV *perspective_fov = ECS_GetComponent(self, TX_3D.PerspectiveFOV);
@@ -130,9 +130,9 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
     sd_vec3 vs2ws_xform_j = sd_vec3_set(scalar_vs2ws_xform.basis.y.x, scalar_vs2ws_xform.basis.y.y, scalar_vs2ws_xform.basis.y.z);
     sd_vec3 vs2ws_xform_k = sd_vec3_set(scalar_vs2ws_xform.basis.z.x, scalar_vs2ws_xform.basis.z.y, scalar_vs2ws_xform.basis.z.z);
 
-    sd_vec3 origin = sd_vec3_set(triangle.vs_verts[0].x, triangle.vs_verts[0].y, triangle.vs_verts[0].z);
-    sd_vec3 ab = sd_vec3_sub(sd_vec3_set(triangle.vs_verts[1].x, triangle.vs_verts[1].y, triangle.vs_verts[1].z), origin);
-    sd_vec3 ac = sd_vec3_sub(sd_vec3_set(triangle.vs_verts[2].x, triangle.vs_verts[2].y, triangle.vs_verts[2].z), origin);
+    sd_vec3 origin = sd_vec3_set(triangle->vs_verts[0].x, triangle->vs_verts[0].y, triangle->vs_verts[0].z);
+    sd_vec3 ab = sd_vec3_sub(sd_vec3_set(triangle->vs_verts[1].x, triangle->vs_verts[1].y, triangle->vs_verts[1].z), origin);
+    sd_vec3 ac = sd_vec3_sub(sd_vec3_set(triangle->vs_verts[2].x, triangle->vs_verts[2].y, triangle->vs_verts[2].z), origin);
 
     sd_vec3 nrml = sd_vec3_cross(ab, ac);
     sd_float inv_nrml_disp = sd_float_rcp(sd_vec3_dot(origin, nrml));
@@ -146,17 +146,17 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
     sd_vec2 inv_xform_j = sd_vec2_muls(sd_vec2_create(sd_vy(perp_ac), sd_vy(perp_ab)), inv_pgram_area);
     sd_vec2 inv_xform_k = sd_vec2_muls(sd_vec2_create(sd_vz(perp_ac), sd_vz(perp_ab)), inv_pgram_area);
 
-    sd_vec3 origin_nrml = sd_vec3_set(triangle.vs_nrmls[0].x, triangle.vs_nrmls[0].y, triangle.vs_nrmls[0].z);
-    sd_vec3 ab_nrml = sd_vec3_sub(sd_vec3_set(triangle.vs_nrmls[1].x, triangle.vs_nrmls[1].y, triangle.vs_nrmls[1].z), origin_nrml);
-    sd_vec3 ac_nrml = sd_vec3_sub(sd_vec3_set(triangle.vs_nrmls[2].x, triangle.vs_nrmls[2].y, triangle.vs_nrmls[2].z), origin_nrml);
+    sd_vec3 origin_nrml = sd_vec3_set(triangle->vs_nrmls[0].x, triangle->vs_nrmls[0].y, triangle->vs_nrmls[0].z);
+    sd_vec3 ab_nrml = sd_vec3_sub(sd_vec3_set(triangle->vs_nrmls[1].x, triangle->vs_nrmls[1].y, triangle->vs_nrmls[1].z), origin_nrml);
+    sd_vec3 ac_nrml = sd_vec3_sub(sd_vec3_set(triangle->vs_nrmls[2].x, triangle->vs_nrmls[2].y, triangle->vs_nrmls[2].z), origin_nrml);
 
     sd_vec3 nrml_xform_i = sd_vec3_fsmadd(ac_nrml, sd_vy(inv_xform_i), sd_vec3_muls(ab_nrml, sd_vx(inv_xform_i)));
     sd_vec3 nrml_xform_j = sd_vec3_fsmadd(ac_nrml, sd_vy(inv_xform_j), sd_vec3_muls(ab_nrml, sd_vx(inv_xform_j)));
     sd_vec3 nrml_xform_k = sd_vec3_fsmadd(ac_nrml, sd_vy(inv_xform_k), sd_vec3_muls(ab_nrml, sd_vx(inv_xform_k)));
 
-    sd_vec2 origin_ts = sd_vec2_set(triangle.ts_verts[0].x, triangle.ts_verts[0].y);
-    sd_vec2 ab_ts = sd_vec2_sub(sd_vec2_set(triangle.ts_verts[1].x, triangle.ts_verts[1].y), origin_ts);
-    sd_vec2 ac_ts = sd_vec2_sub(sd_vec2_set(triangle.ts_verts[2].x, triangle.ts_verts[2].y), origin_ts);
+    sd_vec2 origin_ts = sd_vec2_set(triangle->ts_verts[0].x, triangle->ts_verts[0].y);
+    sd_vec2 ab_ts = sd_vec2_sub(sd_vec2_set(triangle->ts_verts[1].x, triangle->ts_verts[1].y), origin_ts);
+    sd_vec2 ac_ts = sd_vec2_sub(sd_vec2_set(triangle->ts_verts[2].x, triangle->ts_verts[2].y), origin_ts);
 
     sd_vec2 ts_xform_i = sd_vec2_fsmadd(ac_ts, sd_vy(inv_xform_i), sd_vec2_muls(ab_ts, sd_vx(inv_xform_i)));
     sd_vec2 ts_xform_j = sd_vec2_fsmadd(ac_ts, sd_vy(inv_xform_j), sd_vec2_muls(ab_ts, sd_vx(inv_xform_j)));
@@ -199,7 +199,7 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
             sd_vec3 relative = sd_vec3_sub(fragment_vs, origin);
             sd_vec3 fragment_nrml;
 
-            if (triangle.flags & TX_RASTERIZER_INTERPOLATE_NORMALS) {
+            if (triangle->flags & TX_RASTERIZER_INTERPOLATE_NORMALS) {
                 fragment_nrml = sd_vec3_fsmadd(nrml_xform_i, sd_vx(relative), origin_nrml);
                 fragment_nrml = sd_vec3_fsmadd(nrml_xform_j, sd_vy(relative), fragment_nrml);
                 fragment_nrml = sd_vec3_fsmadd(nrml_xform_k, sd_vz(relative), fragment_nrml);
@@ -224,37 +224,37 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
                 .vs2ws_xform = { &vs2ws_xform_i, &vs2ws_xform_j, &vs2ws_xform_k }
             };
 
-            if (triangle.flags & TX_RASTERIZER_TEST_DEPTH)
+            if (triangle->flags & TX_RASTERIZER_TEST_DEPTH)
                 mask = sd_mask_and(mask, sd_float_gt(inv_z, bg_z));
 
-            if (triangle.flags & TX_RASTERIZER_WRITE_DEPTH)
+            if (triangle->flags & TX_RASTERIZER_WRITE_DEPTH)
                 sd_float_store(canvas->depth, base + j, sd_float_mask_blend(bg_z, inv_z, mask));
 
-            for (size_t i = 0; i < triangle.nshaders; ++i)
-                col = triangle.shader_pipeline[i](triangle.shader_states[i], col, fragment);
+            for (size_t i = 0; i < triangle->nshaders; ++i)
+                col = triangle->shader_pipeline[i](triangle->shader_states[i], col, fragment);
 
             sd_vec3_store(canvas->color, base + j, sd_vec3_mask_blend(bg, sd_vxyz(col), mask));
         }
     }
 }
 
-static void Span(TX_CanvasTile tile, TX_TriangleDraw triangle, int triangle_bounds[2]) {
-    sd_float sd_grad01 = sd_float_set(triangle.grad01);
-    sd_float sd_grad12 = sd_float_set(triangle.grad12);
-    sd_float sd_grad02 = sd_float_set(triangle.grad02);
-    bool le_left = triangle.le_left;
+static void Span(TX_CanvasTile tile, TX_TriangleDraw *triangle, int triangle_bounds[2]) {
+    sd_float sd_grad01 = sd_float_set(triangle->grad01);
+    sd_float sd_grad12 = sd_float_set(triangle->grad12);
+    sd_float sd_grad02 = sd_float_set(triangle->grad02);
+    bool le_left = triangle->le_left;
 
     size_t sd_top = sd_qot(triangle_bounds[0]);
     size_t sd_bottom = sd_bounding_length(triangle_bounds[1]);
 
     for (size_t i = sd_top; i < sd_bottom; ++i) {
         sd_float y = sd_float_add(sd_float_range(), sd_float_set(i * sd_length() + 0.5f));
-        sd_float offset0 = sd_float_sub(y, sd_float_set(triangle.ss_verts[triangle.sorted_idxs[0]].y));
-        sd_float offset1 = sd_float_sub(y, sd_float_set(triangle.ss_verts[triangle.sorted_idxs[1]].y));
+        sd_float offset0 = sd_float_sub(y, sd_float_set(triangle->ss_verts[triangle->sorted_idxs[0]].y));
+        sd_float offset1 = sd_float_sub(y, sd_float_set(triangle->ss_verts[triangle->sorted_idxs[1]].y));
 
-        sd_float x01 = sd_float_fmadd(sd_grad01, offset0, sd_float_set(triangle.ss_verts[triangle.sorted_idxs[0]].x));
-        sd_float x12 = sd_float_fmadd(sd_grad12, offset1, sd_float_set(triangle.ss_verts[triangle.sorted_idxs[1]].x));
-        sd_float x02 = sd_float_fmadd(sd_grad02, offset0, sd_float_set(triangle.ss_verts[triangle.sorted_idxs[0]].x));
+        sd_float x01 = sd_float_fmadd(sd_grad01, offset0, sd_float_set(triangle->ss_verts[triangle->sorted_idxs[0]].x));
+        sd_float x12 = sd_float_fmadd(sd_grad12, offset1, sd_float_set(triangle->ss_verts[triangle->sorted_idxs[1]].x));
+        sd_float x02 = sd_float_fmadd(sd_grad02, offset0, sd_float_set(triangle->ss_verts[triangle->sorted_idxs[0]].x));
 
         sd_int left = sd_float_to_int(sd_float_add(sd_float_clamp(le_left ? x02 : sd_float_max(x01, x12), sd_float_set(tile.left), sd_float_set(tile.right)), sd_float_set(0.5f)));
         sd_int right = sd_float_to_int(sd_float_add(sd_float_clamp(le_left ? sd_float_min(x01, x12) : x02, sd_float_set(tile.left), sd_float_set(tile.right)), sd_float_set(0.5f)));
@@ -274,15 +274,15 @@ static void RenderToCanvasTile(TX_RasterWorkerData *wd, TX_CanvasTile tile) {
 
     /* Draw queued triangles for this tile */
     List_ForEach(tile.triangle_idxs, i, {
-        TX_TriangleDraw triangle = List_Get(wd->rasterizer->triangles, i);
+        TX_TriangleDraw *triangle = List_GetAddress(wd->rasterizer->triangles, i);
 
-        int triangles_bounds[2] = {
-            SDL_max(triangle.top, tile.top),
-            SDL_min(triangle.bottom, tile.bottom)
+        int triangle_bounds[2] = {
+            SDL_max(triangle->top, tile.top),
+            SDL_min(triangle->bottom, tile.bottom)
         };
 
-        Span(tile, triangle, triangles_bounds);
-        wd->rasterizer->scan(wd->entity, tile, triangle, triangles_bounds);
+        Span(tile, triangle, triangle_bounds);
+        wd->rasterizer->scan(wd->entity, tile, triangle, triangle_bounds);
     });
 }
 
