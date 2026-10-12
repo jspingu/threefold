@@ -7,12 +7,6 @@
 
 #include "TX_3D_c.h"
 
-static inline vec3 intersect_near(vec3 from, vec3 to, float near) {
-    vec3 path = vec3_sub(to, from);
-    vec3 slope = vec3_div(path, path.z);
-    return vec3_add(from, vec3_mul(slope, near - from.z));
-}
-
 static inline void swap(int *a, int *b) {
     int tmp = *a;
     *a = *b;
@@ -321,12 +315,14 @@ static void QueueFlagBatchTriangles(ECS_Handle *self, TX_FlagBatch *fb) {
             for (int j = 0; j < 3; ++j) {
                 vec3 curr = vs_verts[j];
                 vec3 next = vs_verts[(j + 1) % 3];
+                float near = rasterizer->near;
 
                 if (curr.z >= rasterizer->near)
                     clipped[nclipped++] = ss_verts[j];
 
-                if ((curr.z < rasterizer->near) != (next.z < rasterizer->near)) {
-                    vec3 intersect = intersect_near(curr, next, rasterizer->near);
+                if ((curr.z < near && next.z > near) || (curr.z > near && next.z < near)) {
+                    vec3 disp = vec3_sub(next, curr);
+                    vec3 intersect = vec3_add(curr, vec3_mul(disp, (rasterizer->near - curr.z) / disp.z));
 
                     sd_vec2 projected = rasterizer->project(self,
                         sd_vec3_set(intersect.x, intersect.y, rasterizer->near),
