@@ -13,6 +13,38 @@ static inline void swap(int *a, int *b) {
     *b = tmp;
 }
 
+static int PlanarDisplacementSign(const vec3 to[3], const vec3 from[3]) {
+    vec3 nrml = vec3_cross(vec3_sub(from[1], from[0]), vec3_sub(from[2], from[0]));
+    float dp_point = vec3_dot(nrml, from[0]);
+    int pos = 0, neg = 0;
+
+    for (int i = 0; i < 3; ++i) {
+        float dp = vec3_dot(nrml, to[i]) - dp_point;
+
+        if (dp > 0)
+            pos = 1;
+        else if (dp < 0)
+            neg = -1;
+    }
+
+    return pos + neg;
+}
+
+static int CompareTriangles(const void *a, const void *b) {
+    const TX_TriangleDraw *tri_a = a;
+    const TX_TriangleDraw *tri_b = b;
+
+    int disp_a = PlanarDisplacementSign(tri_a->vs_verts, tri_b->vs_verts);
+    int disp_b = PlanarDisplacementSign(tri_b->vs_verts, tri_a->vs_verts);
+
+    if (disp_a != disp_b)
+        return disp_a ? disp_a : -disp_b;
+
+    float z_a = (tri_a->vs_verts[0].z + tri_a->vs_verts[1].z + tri_a->vs_verts[2].z) / 3;
+    float z_b = (tri_b->vs_verts[0].z + tri_b->vs_verts[1].z + tri_b->vs_verts[2].z) / 3;
+    return z_a < z_b ? 1 : z_a > z_b ? -1 : 0;
+}
+
 void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_TriangleDraw *triangle, int triangle_bounds[2]) {
     TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
     TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
@@ -233,22 +265,32 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
 }
 
 static void Span(TX_CanvasTile tile, TX_TriangleDraw *triangle, int triangle_bounds[2]) {
-    sd_float sd_grad01 = sd_float_set(triangle->grad01);
-    sd_float sd_grad12 = sd_float_set(triangle->grad12);
-    sd_float sd_grad02 = sd_float_set(triangle->grad02);
-    bool le_left = triangle->le_left;
+    /* Sort by ascending y */
+    int idxs[] = { 0, 1, 2 };
+
+    if (triangle->ss_verts[idxs[0]].y > triangle->ss_verts[idxs[1]].y) swap(&idxs[0], &idxs[1]);
+    if (triangle->ss_verts[idxs[1]].y > triangle->ss_verts[idxs[2]].y) swap(&idxs[1], &idxs[2]);
+    if (triangle->ss_verts[idxs[0]].y > triangle->ss_verts[idxs[1]].y) swap(&idxs[0], &idxs[1]);
+
+    /* True if long edge is left edge */
+    bool le_left = ((idxs[0] + 2) % 3 == idxs[2]);
+
+    /* Precompute gradients for scanline interpolation */
+    sd_float grad01 = sd_float_set((triangle->ss_verts[idxs[1]].x - triangle->ss_verts[idxs[0]].x) / (triangle->ss_verts[idxs[1]].y - triangle->ss_verts[idxs[0]].y));
+    sd_float grad12 = sd_float_set((triangle->ss_verts[idxs[2]].x - triangle->ss_verts[idxs[1]].x) / (triangle->ss_verts[idxs[2]].y - triangle->ss_verts[idxs[1]].y));
+    sd_float grad02 = sd_float_set((triangle->ss_verts[idxs[2]].x - triangle->ss_verts[idxs[0]].x) / (triangle->ss_verts[idxs[2]].y - triangle->ss_verts[idxs[0]].y));
 
     size_t sd_top = sd_qot(triangle_bounds[0]);
     size_t sd_bottom = sd_bounding_length(triangle_bounds[1]);
 
     for (size_t i = sd_top; i < sd_bottom; ++i) {
         sd_float y = sd_float_add(sd_float_range(), sd_float_set(i * sd_length() + 0.5f));
-        sd_float offset0 = sd_float_sub(y, sd_float_set(triangle->ss_verts[triangle->sorted_idxs[0]].y));
-        sd_float offset1 = sd_float_sub(y, sd_float_set(triangle->ss_verts[triangle->sorted_idxs[1]].y));
+        sd_float offset0 = sd_float_sub(y, sd_float_set(triangle->ss_verts[idxs[0]].y));
+        sd_float offset1 = sd_float_sub(y, sd_float_set(triangle->ss_verts[idxs[1]].y));
 
-        sd_float x01 = sd_float_fmadd(sd_grad01, offset0, sd_float_set(triangle->ss_verts[triangle->sorted_idxs[0]].x));
-        sd_float x12 = sd_float_fmadd(sd_grad12, offset1, sd_float_set(triangle->ss_verts[triangle->sorted_idxs[1]].x));
-        sd_float x02 = sd_float_fmadd(sd_grad02, offset0, sd_float_set(triangle->ss_verts[triangle->sorted_idxs[0]].x));
+        sd_float x01 = sd_float_fmadd(grad01, offset0, sd_float_set(triangle->ss_verts[idxs[0]].x));
+        sd_float x12 = sd_float_fmadd(grad12, offset1, sd_float_set(triangle->ss_verts[idxs[1]].x));
+        sd_float x02 = sd_float_fmadd(grad02, offset0, sd_float_set(triangle->ss_verts[idxs[0]].x));
 
         sd_int left = sd_float_to_int(sd_float_add(sd_float_clamp(le_left ? x02 : sd_float_max(x01, x12), sd_float_set(tile.left), sd_float_set(tile.right)), sd_float_set(0.5f)));
         sd_int right = sd_float_to_int(sd_float_add(sd_float_clamp(le_left ? sd_float_min(x01, x12) : x02, sd_float_set(tile.left), sd_float_set(tile.right)), sd_float_set(0.5f)));
@@ -283,10 +325,7 @@ static void RenderToCanvasTile(TX_RasterWorkerData *wd, TX_CanvasTile tile) {
 static void QueueFlagBatchTriangles(ECS_Handle *self, TX_FlagBatch *fb) {
     TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
     TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
-
-    // Start index for this batch of triangles
-    // Keep track of this for sorting
-    // size_t batch_start = List_Length(rasterizer->triangles);
+    size_t batch_start = List_Length(rasterizer->triangles);
 
     List_ForEach(fb->instances, instance, {
         TX_MeshFace *faces = instance->geometry->mesh->faces;
@@ -345,18 +384,16 @@ static void QueueFlagBatchTriangles(ECS_Handle *self, TX_FlagBatch *fb) {
                     continue;
 
                 int bbox_left   = (int)(SDL_min(clipped[0].x, SDL_min(clipped[j].x, clipped[j + 1].x)) + 0.5f);
-                    bbox_left   = SDL_clamp(bbox_left, 0, canvas->width);
                 int bbox_right  = (int)(SDL_max(clipped[0].x, SDL_max(clipped[j].x, clipped[j + 1].x)) + 0.5f);
-                    bbox_right  = SDL_clamp(bbox_right, 0, canvas->width);
                 int bbox_top    = (int)(SDL_min(clipped[0].y, SDL_min(clipped[j].y, clipped[j + 1].y)) + 0.5f);
-                    bbox_top    = SDL_clamp(bbox_top, 0, canvas->height);
                 int bbox_bottom = (int)(SDL_max(clipped[0].y, SDL_max(clipped[j].y, clipped[j + 1].y)) + 0.5f);
-                    bbox_bottom = SDL_clamp(bbox_bottom, 0, canvas->height);
 
                 TX_TriangleDraw triangle = {
                     .shader_pipeline = instance->shader_pipeline,
                     .shader_states = instance->shader_states,
                     .nshaders = instance->nshaders,
+                    .left = bbox_left,
+                    .right = bbox_right,
                     .top = bbox_top,
                     .bottom = bbox_bottom,
                     .flags = fb->flags
@@ -379,42 +416,31 @@ static void QueueFlagBatchTriangles(ECS_Handle *self, TX_FlagBatch *fb) {
                         instance->geometry->mesh->ts_verts[faces[i].idx_tverts[1 + verts_cw]]
                     }, sizeof(vec2 [3]));
 
-                /* Sort by ascending y */
-                int idxs[] = { 0, 1, 2 };
-
-                if (triangle.ss_verts[idxs[0]].y > triangle.ss_verts[idxs[1]].y) swap(&idxs[0], &idxs[1]);
-                if (triangle.ss_verts[idxs[1]].y > triangle.ss_verts[idxs[2]].y) swap(&idxs[1], &idxs[2]);
-                if (triangle.ss_verts[idxs[0]].y > triangle.ss_verts[idxs[1]].y) swap(&idxs[0], &idxs[1]);
-
-                /* True if long edge is left edge */
-                triangle.le_left = ((idxs[0] + 2) % 3 == idxs[2]);
-                SDL_memcpy(triangle.sorted_idxs, idxs, sizeof(int [3]));
-
-                /* Precompute gradients for scanline interpolation */
-                triangle.grad01 = (triangle.ss_verts[idxs[1]].x - triangle.ss_verts[idxs[0]].x) / (triangle.ss_verts[idxs[1]].y - triangle.ss_verts[idxs[0]].y);
-                triangle.grad12 = (triangle.ss_verts[idxs[2]].x - triangle.ss_verts[idxs[1]].x) / (triangle.ss_verts[idxs[2]].y - triangle.ss_verts[idxs[1]].y);
-                triangle.grad02 = (triangle.ss_verts[idxs[2]].x - triangle.ss_verts[idxs[0]].x) / (triangle.ss_verts[idxs[2]].y - triangle.ss_verts[idxs[0]].y);
-
-                /* Queue triangle to rasterizer and canvas tiles spanned by bounding-box */
-                size_t triangle_idx = List_Length(rasterizer->triangles);
+                /* Queue triangle draw to rasterizer */
                 List_Push(rasterizer->triangles, triangle);
 
-                int htiles = (canvas->width + canvas->tile_width - 1) / canvas->tile_width;
-                int tile_left = bbox_left / canvas->tile_width;
-                int tile_top = bbox_top / canvas->tile_width;
-                int tile_right = (bbox_right + canvas->tile_width - 1) / canvas->tile_width;
-                int tile_bottom = (bbox_bottom + canvas->tile_width - 1) / canvas->tile_width;
-
-                for (int i = tile_top; i < tile_bottom; ++i)
-                    for (int j = tile_left; j < tile_right; ++j)
-                        List_Push(canvas->tiles[i * htiles + j].triangle_idxs, triangle_idx);
             }
         }
     });
 
-    // TODO: triangle sort
-    // if (flags & TX_RASTERIZER_SORT_TRIANGLES)
-    //      SDL_qsort(List_GetAddress(rasterizer->triangles, batch_start), List_Length(rasterizer->triangles) - batch_start, sizeof(TX_TriangleDraw), CompareTriangles);
+    if (fb->flags & TX_RASTERIZER_SORT_TRIANGLES)
+         SDL_qsort(List_GetAddress(rasterizer->triangles, batch_start), List_Length(rasterizer->triangles) - batch_start, sizeof(TX_TriangleDraw), CompareTriangles);
+
+    /* Queue triangle draws to canvas tiles */
+    int htiles = (canvas->width + canvas->tile_width - 1) / canvas->tile_width;
+
+    for (size_t triangle_idx = batch_start; triangle_idx < List_Length(rasterizer->triangles); ++triangle_idx) {
+        TX_TriangleDraw triangle = List_Get(rasterizer->triangles, triangle_idx);
+        int tile_left = SDL_max(triangle.left, 0) / canvas->tile_width;
+        int tile_top = SDL_max(triangle.top, 0) / canvas->tile_width;
+        int tile_right = (SDL_min(triangle.right, canvas->width) + canvas->tile_width - 1) / canvas->tile_width;
+        int tile_bottom = (SDL_min(triangle.bottom, canvas->height) + canvas->tile_width - 1) / canvas->tile_width;
+
+        for (int i = tile_top; i < tile_bottom; ++i)
+            for (int j = tile_left; j < tile_right; ++j)
+                List_Push(canvas->tiles[i * htiles + j].triangle_idxs, triangle_idx);
+    }
+
 }
 
 int SD_VARIANT(TX_RasterWorker)(void *data) {

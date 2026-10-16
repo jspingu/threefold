@@ -13,7 +13,7 @@ typedef enum TX_RasterizerFlags {
     TX_RASTERIZER_ALPHA_SCISSOR       = 1 << 0,  /* TODO: implement */
     TX_RASTERIZER_CULL_BACKFACE       = 1 << 1,
     TX_RASTERIZER_INTERPOLATE_NORMALS = 1 << 2,
-    TX_RASTERIZER_SORT_TRIANGLES      = 1 << 3,  /* TODO: implement */
+    TX_RASTERIZER_SORT_TRIANGLES      = 1 << 3,
     TX_RASTERIZER_TEST_DEPTH          = 1 << 4,
     TX_RASTERIZER_WRITE_DEPTH         = 1 << 5,
     TX_RASTERIZER_FLAG_COMBINATIONS   = 1 << 6
@@ -63,11 +63,9 @@ typedef struct TX_TriangleDraw {
     vec3 vs_nrmls[3];
     vec2 ts_verts[3];
     vec2 ss_verts[3];
-    float grad01, grad12, grad02;
-    int sorted_idxs[3];
+    int left, right;
     int top, bottom;
     TX_RasterizerFlags flags;
-    bool le_left;
 } TX_TriangleDraw;
 
 typedef struct TX_Rasterizer {
