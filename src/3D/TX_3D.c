@@ -25,7 +25,7 @@ void TX_Register3DToECS(ECS *ecs) {
         .init = TX_InitModel
     });
 
-    TX_3D.ModelInstance = ECS_RegisterComponent(ecs, TX_RenderInstance, {
+    TX_3D.ModelInstance = ECS_RegisterComponent(ecs, TX_ModelInstance, {
         .attach = TX_AttachModelInstance,
         .detach = TX_DetachModelInstance,
         .init = TX_InitModelInstance,
