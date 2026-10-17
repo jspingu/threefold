@@ -4,16 +4,16 @@
 #include <TX/Math/stride.h>
 #include <TX/Math/linalg.h>
 
-SD_CALL sd_vec4 SD_VARIANT(TX_ShadeSolidColor)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeSolidColor)(void *state, sd_vec4 col, TX_ShaderParams *fragment) {
     (void)col, (void)fragment;
     TX_SolidColor *solid_color = state;
     return sd_vec4_set(solid_color->r, solid_color->g, solid_color->b, 1);
 }
 
-SD_CALL sd_vec4 SD_VARIANT(TX_ShadeCheckerboard)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeCheckerboard)(void *state, sd_vec4 col, TX_ShaderParams *fragment) {
     (void)col;
     TX_Checkerboard *checkerboard = state;
-    sd_vec2 tile_coord = sd_vec2_muls(*fragment.ts, sd_float_set(checkerboard->tiles));
+    sd_vec2 tile_coord = sd_vec2_muls(*fragment->ts, sd_float_set(checkerboard->tiles));
     sd_int tile_idx = sd_int_add(sd_int_mul(sd_float_to_int(sd_vy(tile_coord)), sd_int_set(checkerboard->tiles)), sd_float_to_int(sd_vx(tile_coord)));
     sd_mask tile_mask = sd_int_gt(sd_int_and(tile_idx, sd_int_set(1)), sd_int_set(0));
 
@@ -24,18 +24,18 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeCheckerboard)(void *state, sd_vec4 col, TX_Sh
     );
 }
 
-SD_CALL sd_vec4 SD_VARIANT(TX_ShadeTextureMap)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeTextureMap)(void *state, sd_vec4 col, TX_ShaderParams *fragment) {
     (void)col;
     TX_TextureMap *texture_map = state;
-    return TX_SampleNearest(texture_map->texture, *fragment.ts) ;
+    return TX_SampleNearest(texture_map->texture, *fragment->ts) ;
 }
 
-SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_ShaderParams *fragment) {
     TX_OpticalMedium *medium = state;
     sd_float specularity = sd_float_set(medium->specularity);
     sd_float reflectivity = sd_float_set(medium->reflectivity);
     sd_float ambient = sd_float_set(medium->environment->ambient);
-    sd_vec3 eye = sd_vec3_negate(sd_vec3_normalize(*fragment.vs));
+    sd_vec3 eye = sd_vec3_negate(sd_vec3_normalize(*fragment->vs));
 
     sd_vec3 out = sd_vec3_muls(sd_vxyz(col), ambient);
 
@@ -44,13 +44,13 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_Shader
         sd_vec3 light_col = sd_vec3_set(light->col.x, light->col.y, light->col.z);
         sd_float light_energy = sd_float_set(light->energy);
 
-        sd_vec3 incident = sd_vec3_sub(*fragment.vs, light_vs);
+        sd_vec3 incident = sd_vec3_sub(*fragment->vs, light_vs);
         sd_float sqrlen = sd_vec3_dot(incident, incident);
         sd_float rcpsql = sd_float_rcp(sqrlen);
         sd_float rcplen = sd_float_rsqrt(sqrlen);
 
-        sd_vec3 reflected = sd_vec3_muls(sd_vec3_reflect(incident, *fragment.nrml), rcplen);
-        sd_float dp = sd_float_max(sd_vec3_dot(reflected, *fragment.nrml), sd_float_zero());
+        sd_vec3 reflected = sd_vec3_muls(sd_vec3_reflect(incident, *fragment->nrml), rcplen);
+        sd_float dp = sd_float_max(sd_vec3_dot(reflected, *fragment->nrml), sd_float_zero());
 
         sd_float rf_falloff = sd_float_sub(sd_float_one(), dp);
                  rf_falloff = sd_float_mul(rf_falloff, rf_falloff);
@@ -69,8 +69,8 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_Shader
         out = sd_vec3_add(out, sd_vec3_mul(sd_vxyz(col), sd_vec3_fsmadd(power_out, sp_coeff, power_out)));
     });
 
-    sd_vec3 dir_vs = sd_vec3_reflect(sd_vec3_normalize(*fragment.vs), *fragment.nrml);
-    sd_float dp = sd_vec3_dot(dir_vs, *fragment.nrml);
+    sd_vec3 dir_vs = sd_vec3_reflect(sd_vec3_normalize(*fragment->vs), *fragment->nrml);
+    sd_float dp = sd_vec3_dot(dir_vs, *fragment->nrml);
 
     sd_float rf_falloff = sd_float_sub(sd_float_one(), dp);
              rf_falloff = sd_float_mul(rf_falloff, rf_falloff);
@@ -78,9 +78,9 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_Shader
 
     sd_float rf_coeff = sd_float_fmadd(sd_float_sub(sd_float_one(), reflectivity), rf_falloff, reflectivity);
 
-    sd_vec3 dir = sd_vec3_muls(*fragment.vs2ws_xform[0], sd_vx(dir_vs));
-            dir = sd_vec3_fsmadd(*fragment.vs2ws_xform[1], sd_vy(dir_vs), dir);
-            dir = sd_vec3_fsmadd(*fragment.vs2ws_xform[2], sd_vz(dir_vs), dir);
+    sd_vec3 dir = sd_vec3_muls(*fragment->vs2ws_xform[0], sd_vx(dir_vs));
+            dir = sd_vec3_fsmadd(*fragment->vs2ws_xform[1], sd_vy(dir_vs), dir);
+            dir = sd_vec3_fsmadd(*fragment->vs2ws_xform[2], sd_vz(dir_vs), dir);
 
     sd_vec4 sky = TX_SampleCubemap(medium->environment->sky, dir);
     sd_vec3 power_in = sd_vec3_muls(sd_vxyz(sky), dp);
@@ -90,13 +90,13 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_Shader
     return sd_vec4_create(sd_vx(out), sd_vy(out), sd_vz(out), sd_vw(col));
 }
 
-SD_CALL sd_vec4 SD_VARIANT(TX_ShadeSky)(void *state, sd_vec4 col, TX_ShaderParams fragment) {
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeSky)(void *state, sd_vec4 col, TX_ShaderParams *fragment) {
     (void)col;
     TX_LightEnvironment **env = state;
 
-    sd_vec3 dir = sd_vec3_muls(*fragment.vs2ws_xform[0], sd_vx(*fragment.vs));
-            dir = sd_vec3_fsmadd(*fragment.vs2ws_xform[1], sd_vy(*fragment.vs), dir);
-            dir = sd_vec3_fsmadd(*fragment.vs2ws_xform[2], sd_vz(*fragment.vs), dir);
+    sd_vec3 dir = sd_vec3_muls(*fragment->vs2ws_xform[0], sd_vx(*fragment->vs));
+            dir = sd_vec3_fsmadd(*fragment->vs2ws_xform[1], sd_vy(*fragment->vs), dir);
+            dir = sd_vec3_fsmadd(*fragment->vs2ws_xform[2], sd_vz(*fragment->vs), dir);
 
     return TX_SampleCubemap((*env)->sky, dir);
 }

@@ -139,7 +139,7 @@ void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_Triangle
             };
 
             for (TX_ShaderCall *shader = triangle->shader_pipeline; shader->callback; ++shader)
-                col = shader->callback(shader->state, col, fragment);
+                col = shader->callback(shader->state, col, &fragment);
 
             sd_vec3_store(canvas->color, base + j, sd_vec3_mask_blend(bg, sd_vxyz(col), mask));
         }
@@ -257,7 +257,7 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
                 sd_float_store(canvas->depth, base + j, sd_float_mask_blend(bg_z, inv_z, mask));
 
             for (TX_ShaderCall *shader = triangle->shader_pipeline; shader->callback; ++shader)
-                col = shader->callback(shader->state, col, fragment);
+                col = shader->callback(shader->state, col, &fragment);
 
             sd_vec3_store(canvas->color, base + j, sd_vec3_mask_blend(bg, sd_vxyz(col), mask));
         }
