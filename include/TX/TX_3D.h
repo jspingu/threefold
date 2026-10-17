@@ -45,10 +45,10 @@ typedef struct TX_ShaderParams {
     sd_vec3 *vs2ws_xform[3];
 } TX_ShaderParams;
 
-typedef struct TX_ShaderComponent {
+typedef struct TX_ShaderCall {
     TX_FragmentShader callback;
     void *state;
-} TX_ShaderComponent;
+} TX_ShaderCall;
 
 typedef struct TX_MeshFace {
     size_t idx_verts[3];
@@ -56,9 +56,7 @@ typedef struct TX_MeshFace {
 } TX_MeshFace;
 
 typedef struct TX_TriangleDraw {
-    TX_FragmentShader *shader_pipeline;
-    void **shader_states;
-    size_t nshaders;
+    TX_ShaderCall *shader_pipeline;
     vec3 vs_verts[3];
     vec3 vs_nrmls[3];
     vec2 ts_verts[3];
@@ -93,8 +91,7 @@ typedef struct TX_ModelArgs {
 } TX_ModelArgs;
 
 typedef struct TX_ModelInstanceArgs {
-    ECS_Component(TX_ShaderComponent) **shader_components;
-    size_t nshaders;
+    ECS_Component(TX_ShaderCall) **shader_components;
     size_t render_batch;
     TX_RasterizerFlags flags;
 } TX_ModelInstanceArgs;
@@ -187,11 +184,11 @@ struct TX_3D {
     ECS_Component(TX_Rect) *Rect;
     ECS_Component(TX_Cubemap) *Cubemap;
 
-    ECS_Component(TX_ShaderComponent) *SolidColor;
-    ECS_Component(TX_ShaderComponent) *Checkerboard;
-    ECS_Component(TX_ShaderComponent) *TextureMap;
-    ECS_Component(TX_ShaderComponent) *Lighting;
-    ECS_Component(TX_ShaderComponent) *Sky;
+    ECS_Component(TX_ShaderCall) *SolidColor;
+    ECS_Component(TX_ShaderCall) *Checkerboard;
+    ECS_Component(TX_ShaderCall) *TextureMap;
+    ECS_Component(TX_ShaderCall) *Lighting;
+    ECS_Component(TX_ShaderCall) *Sky;
 };
 
 extern struct TX_3D TX_3D;
@@ -230,7 +227,7 @@ SD_DECLARE(TX_WorldGeometry *, TX_RegisterGeometry, ECS_Handle *, self, TX_Mesh 
 
 void TX_FreeRenderInstance(TX_RenderInstance *instance);
 
-TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_FragmentShader *shader_pipeline, void **shader_states, size_t nshaders, size_t render_batch, TX_RasterizerFlags flags);
+TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_ShaderCall *shader_pipeline, size_t render_batch, TX_RasterizerFlags flags);
 void TX_FreeWorldGeometry(TX_WorldGeometry *geometry);
 
 SD_DECLARE(sd_vec2, TX_ProjectParallel, ECS_Handle *, self, sd_vec3, point, sd_vec2, midpoint)

@@ -57,29 +57,29 @@ void TX_Register3DToECS(ECS *ecs) {
         .detach = TX_DetachPointLight
     });
 
-    TX_3D.SolidColor = ECS_RegisterComponent(ecs, TX_ShaderComponent, {
+    TX_3D.SolidColor = ECS_RegisterComponent(ecs, TX_ShaderCall, {
         .init = TX_InitSolidColor,
         .free = TX_FreeShaderComponent
     });
 
-    TX_3D.Checkerboard = ECS_RegisterComponent(ecs, TX_ShaderComponent, {
+    TX_3D.Checkerboard = ECS_RegisterComponent(ecs, TX_ShaderCall, {
         .init = TX_InitCheckerboard,
         .free = TX_FreeShaderComponent
     });
 
-    TX_3D.Lighting = ECS_RegisterComponent(ecs, TX_ShaderComponent, {
+    TX_3D.Lighting = ECS_RegisterComponent(ecs, TX_ShaderCall, {
         .attach = TX_AttachLighting,
         .init = TX_InitLighting,
         .free = TX_FreeShaderComponent
     });
 
-    TX_3D.Sky = ECS_RegisterComponent(ecs, TX_ShaderComponent, {
+    TX_3D.Sky = ECS_RegisterComponent(ecs, TX_ShaderCall, {
         .attach = TX_AttachSky,
         .init = TX_InitSky,
         .free = TX_FreeShaderComponent
     });
 
-    TX_3D.TextureMap = ECS_RegisterComponent(ecs, TX_ShaderComponent, {
+    TX_3D.TextureMap = ECS_RegisterComponent(ecs, TX_ShaderCall, {
         .attach = TX_AttachTextureMap,
         .detach = TX_DetachTextureMap,
         .init = TX_InitTextureMap,

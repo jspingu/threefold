@@ -138,8 +138,8 @@ void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_Triangle
                 .vs2ws_xform = { &vs2ws_xform_i, &vs2ws_xform_j, &vs2ws_xform_k }
             };
 
-            for (size_t i = 0; i < triangle->nshaders; ++i)
-                col = triangle->shader_pipeline[i](triangle->shader_states[i], col, fragment);
+            for (TX_ShaderCall *shader = triangle->shader_pipeline; shader->callback; ++shader)
+                col = shader->callback(shader->state, col, fragment);
 
             sd_vec3_store(canvas->color, base + j, sd_vec3_mask_blend(bg, sd_vxyz(col), mask));
         }
@@ -256,8 +256,8 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
             if (triangle->flags & TX_RASTERIZER_WRITE_DEPTH)
                 sd_float_store(canvas->depth, base + j, sd_float_mask_blend(bg_z, inv_z, mask));
 
-            for (size_t i = 0; i < triangle->nshaders; ++i)
-                col = triangle->shader_pipeline[i](triangle->shader_states[i], col, fragment);
+            for (TX_ShaderCall *shader = triangle->shader_pipeline; shader->callback; ++shader)
+                col = shader->callback(shader->state, col, fragment);
 
             sd_vec3_store(canvas->color, base + j, sd_vec3_mask_blend(bg, sd_vxyz(col), mask));
         }
@@ -390,8 +390,6 @@ static void QueueFlagBatchTriangles(ECS_Handle *self, TX_FlagBatch *fb) {
 
                 TX_TriangleDraw triangle = {
                     .shader_pipeline = instance->shader_pipeline,
-                    .shader_states = instance->shader_states,
-                    .nshaders = instance->nshaders,
                     .left = bbox_left,
                     .right = bbox_right,
                     .top = bbox_top,

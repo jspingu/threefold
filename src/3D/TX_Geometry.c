@@ -51,7 +51,7 @@ TX_WorldGeometry *SD_VARIANT(TX_RegisterGeometry)(ECS_Handle *self, TX_Mesh *mes
 
 #ifndef SD_SRC_VARIANT
 
-TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_FragmentShader *shader_pipeline, void **shader_states, size_t nshaders, size_t render_batch, TX_RasterizerFlags flags) {
+TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_ShaderCall *shader_pipeline, size_t render_batch, TX_RasterizerFlags flags) {
     TX_World *world = ECS_GetComponent(geometry->world, TX_3D.World);
 
     if (List_Length(world->render_batches) < render_batch + 1) {
@@ -72,12 +72,14 @@ TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_Fragm
     }
 
     TX_RenderInstance *instance = SDL_malloc(sizeof(TX_RenderInstance));
+    size_t nshaders = 0;
+
+    while (shader_pipeline[nshaders].callback)
+        nshaders += 1;
 
     *instance = (TX_RenderInstance) {
         .geometry = geometry,
-        .shader_pipeline = SDL_memcpy(SDL_malloc(sizeof(TX_FragmentShader) * nshaders), shader_pipeline, sizeof(TX_FragmentShader) * nshaders),
-        .shader_states = SDL_memcpy(SDL_malloc(sizeof(void *) * nshaders), shader_states, sizeof(void *) * nshaders),
-        .nshaders = nshaders,
+        .shader_pipeline = SDL_memcpy(SDL_malloc(sizeof(TX_ShaderCall) * (nshaders + 1)), shader_pipeline, sizeof(TX_ShaderCall) * (nshaders + 1)),
         .render_batch = render_batch,
         .flags = flags
     };
@@ -103,19 +105,16 @@ void TX_AttachModelInstance(ECS_Handle *self, ECS_Component(void) *component) {
     TX_ModelInstance *mdlinst = ECS_GetComponent(self, component);
     ECS_Handle *mdl = ECS_GetAncestorWithComponent(self, TX_3D.Model, false);
     TX_WorldGeometry *geometry = ECS_GetComponent(mdl, TX_3D.Model)->geometry;
-
-    TX_FragmentShader *shader_pipeline = SDL_malloc(sizeof(TX_FragmentShader) * mdlinst->nshaders);
-    void **shader_states = SDL_malloc(sizeof(void *) * mdlinst->nshaders);
+    TX_ShaderCall *shader_pipeline = SDL_malloc(sizeof(TX_ShaderCall) * (mdlinst->nshaders + 1));
 
     for (size_t i = 0; i < mdlinst->nshaders; ++i) {
-        TX_ShaderComponent *shader_component = ECS_GetComponent(self, mdlinst->shader_components[i]);
-        shader_pipeline[i] = shader_component->callback;
-        shader_states[i] = shader_component->state;
+        TX_ShaderCall *shader_component = ECS_GetComponent(self, mdlinst->shader_components[i]);
+        shader_pipeline[i] = *shader_component;
     }
 
-    mdlinst->instance = TX_InstanceWorldGeometry(geometry, shader_pipeline, shader_states, mdlinst->nshaders, mdlinst->render_batch, mdlinst->flags);
+    shader_pipeline[mdlinst->nshaders] = (TX_ShaderCall){};
+    mdlinst->instance = TX_InstanceWorldGeometry(geometry, shader_pipeline, mdlinst->render_batch, mdlinst->flags);
     SDL_free(shader_pipeline);
-    SDL_free(shader_states);
 }
 
 void TX_DetachModel(ECS_Handle *self, ECS_Component(void) *component) {
@@ -145,14 +144,17 @@ void TX_InitModel(void *component, void *args) {
 void TX_InitModelInstance(void *component, void *args) {
     TX_ModelInstance *mdlinst = component;
     TX_ModelInstanceArgs *mdlinst_args = args;
-    mdlinst->nshaders = mdlinst_args->nshaders;
     mdlinst->render_batch = mdlinst_args->render_batch;
     mdlinst->flags = mdlinst_args->flags;
+    mdlinst->nshaders = 0;
+
+    while (mdlinst_args->shader_components[mdlinst->nshaders])
+        mdlinst->nshaders += 1;
 
     mdlinst->shader_components = SDL_memcpy(
-        SDL_malloc(sizeof(ECS_Component(TX_ShaderComponent) *) * mdlinst->nshaders),
+        SDL_malloc(sizeof(ECS_Component(TX_ShaderCall) *) * (mdlinst->nshaders + 1)),
         mdlinst_args->shader_components,
-        sizeof(ECS_Component(TX_ShaderComponent) *) * mdlinst->nshaders
+        sizeof(ECS_Component(TX_ShaderCall) *) * (mdlinst->nshaders + 1)
     );
 }
 
@@ -169,7 +171,6 @@ void TX_FreeRenderInstance(TX_RenderInstance *instance) {
     List_RemoveWhere(fb->instances, instanced, instanced == instance);
     List_RemoveWhere(instance->geometry->instances, instanced, instanced == instance);
     SDL_free(instance->shader_pipeline);
-    SDL_free(instance->shader_states);
     SDL_free(instance);
 }
 

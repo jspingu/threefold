@@ -37,9 +37,7 @@ typedef struct TX_WorldGeometry {
 
 typedef struct TX_RenderInstance {
     TX_WorldGeometry *geometry;
-    TX_FragmentShader *shader_pipeline;
-    void **shader_states;
-    size_t nshaders;
+    TX_ShaderCall *shader_pipeline;
     size_t render_batch;
     TX_RasterizerFlags flags;
 } TX_RenderInstance;
@@ -65,7 +63,7 @@ typedef struct TX_Model {
 
 typedef struct TX_ModelInstance {
     TX_RenderInstance *instance;
-    ECS_Component(TX_ShaderComponent) **shader_components;
+    ECS_Component(TX_ShaderCall) **shader_components;
     size_t nshaders;
     size_t render_batch;
     TX_RasterizerFlags flags;

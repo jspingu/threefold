@@ -109,21 +109,21 @@ void TX_TransformPointLight(ECS_Handle *self, xform3 composed) {
 }
 
 void TX_AttachTextureMap(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_ShaderComponent *shader_component = ECS_GetComponent(self, component);
+    TX_ShaderCall *shader_component = ECS_GetComponent(self, component);
     TX_TextureMap *texture_map = shader_component->state;
     ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.TextureBank, false);
     texture_map->texture = TX_GetResource(tb, TX_Bitmap.TextureBank, texture_map->texture_path);
 }
 
 void TX_AttachLighting(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_ShaderComponent *shader_component = ECS_GetComponent(self, component);
+    TX_ShaderCall *shader_component = ECS_GetComponent(self, component);
     TX_OpticalMedium *medium = shader_component->state;
     ECS_Handle *env = ECS_GetAncestorWithComponent(self, TX_3D.LightEnvironment, false);
     medium->environment = *ECS_GetComponent(env, TX_3D.LightEnvironment);
 }
 
 void TX_AttachSky(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_ShaderComponent *shader_component = ECS_GetComponent(self, component);
+    TX_ShaderCall *shader_component = ECS_GetComponent(self, component);
     ECS_Handle *env = ECS_GetAncestorWithComponent(self, TX_3D.LightEnvironment, false);
     *(TX_LightEnvironment **)(shader_component->state) = *ECS_GetComponent(env, TX_3D.LightEnvironment);
 }
@@ -149,7 +149,7 @@ void TX_AttachLightEnvironment(ECS_Handle *self, ECS_Component(void) *component)
 }
 
 void TX_DetachTextureMap(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_ShaderComponent *shader_component = ECS_GetComponent(self, component);
+    TX_ShaderCall *shader_component = ECS_GetComponent(self, component);
     TX_TextureMap *texture_map = shader_component->state;
     ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.TextureBank, false);
     TX_ReleaseResource(tb, TX_Bitmap.TextureBank, texture_map->texture_path);
@@ -168,21 +168,21 @@ void TX_DetachLightEnvironment(ECS_Handle *self, ECS_Component(void) *component)
 }
 
 void TX_InitSolidColor(void *component, void *args) {
-    TX_ShaderComponent *shader_component = component;
+    TX_ShaderCall *shader_component = component;
     shader_component->callback = SD_SELECT(TX_ShadeSolidColor);
     shader_component->state = SDL_malloc(sizeof(TX_SolidColor));
     SDL_memcpy(shader_component->state, args, sizeof(TX_SolidColor));
 }
 
 void TX_InitCheckerboard(void *component, void *args) {
-    TX_ShaderComponent *shader_component = component;
+    TX_ShaderCall *shader_component = component;
     shader_component->callback = SD_SELECT(TX_ShadeCheckerboard);
     shader_component->state = SDL_malloc(sizeof(TX_Checkerboard));
     SDL_memcpy(shader_component->state, args, sizeof(TX_Checkerboard));
 }
 
 void TX_InitTextureMap(void *component, void *args) {
-    TX_ShaderComponent *shader_component = component;
+    TX_ShaderCall *shader_component = component;
     shader_component->callback = SD_SELECT(TX_ShadeTextureMap);
     shader_component->state = SDL_malloc(sizeof(TX_TextureMap));
 
@@ -193,7 +193,7 @@ void TX_InitTextureMap(void *component, void *args) {
 }
 
 void TX_InitLighting(void *component, void *args) {
-    TX_ShaderComponent *shader_component = component;
+    TX_ShaderCall *shader_component = component;
     shader_component->callback = SD_SELECT(TX_ShadeLighting);
     shader_component->state = SDL_malloc(sizeof(TX_OpticalMedium));
     SDL_memcpy(shader_component->state, args, sizeof(TX_OpticalMedium));
@@ -201,7 +201,7 @@ void TX_InitLighting(void *component, void *args) {
 
 void TX_InitSky(void *component, void *args) {
     (void)args;
-    TX_ShaderComponent *shader_component = component;
+    TX_ShaderCall *shader_component = component;
     shader_component->callback = SD_SELECT(TX_ShadeSky);
     shader_component->state = SDL_malloc(sizeof(TX_LightEnvironment **));
 }
@@ -217,14 +217,14 @@ void TX_InitLightEnvironment(void *component, void *args) {
 }
 
 void TX_FreeTextureMap(void *component) {
-    TX_ShaderComponent *shader_component = component;
+    TX_ShaderCall *shader_component = component;
     TX_TextureMap *texture_map = shader_component->state;
     SDL_free(texture_map->texture_path);
     SDL_free(texture_map);
 }
 
 void TX_FreeShaderComponent(void *component) {
-    TX_ShaderComponent *shader_component = component;
+    TX_ShaderCall *shader_component = component;
     SDL_free(shader_component->state);
 }
 
