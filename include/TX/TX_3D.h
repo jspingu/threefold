@@ -10,7 +10,7 @@
 #define TX_SHADER_DECLARE(name)  SD_DECLARE_ATTR(SD_CALL, sd_vec4, name, void *, state, sd_vec4, col, TX_ShaderParams *, fragment)
 
 typedef enum TX_RasterizerFlags {
-    TX_RASTERIZER_ALPHA_SCISSOR       = 1 << 0,  /* TODO: implement */
+    TX_RASTERIZER_ALPHA_SCISSOR       = 1 << 0,
     TX_RASTERIZER_CULL_BACKFACE       = 1 << 1,
     TX_RASTERIZER_INTERPOLATE_NORMALS = 1 << 2,
     TX_RASTERIZER_SORT_TRIANGLES      = 1 << 3,
