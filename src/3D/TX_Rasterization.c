@@ -331,7 +331,6 @@ static void RenderToCanvasTile(TX_RasterWorkerData *wd, TX_CanvasTile tile) {
 static void QueueFlagBatchTriangles(ECS_Handle *self, TX_FlagBatch *fb) {
     TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
     TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
-    size_t batch_start = List_Length(rasterizer->triangles);
 
     List_ForEach(fb->instances, instance, {
         TX_MeshFace *faces = instance->geometry->mesh->faces;
@@ -426,25 +425,6 @@ static void QueueFlagBatchTriangles(ECS_Handle *self, TX_FlagBatch *fb) {
             }
         }
     });
-
-    if (fb->flags & TX_RASTERIZER_SORT_TRIANGLES)
-         SDL_qsort(List_GetAddress(rasterizer->triangles, batch_start), List_Length(rasterizer->triangles) - batch_start, sizeof(TX_TriangleDraw), CompareTriangles);
-
-    /* Queue triangle draws to canvas tiles */
-    int htiles = (canvas->width + canvas->tile_width - 1) / canvas->tile_width;
-
-    for (size_t triangle_idx = batch_start; triangle_idx < List_Length(rasterizer->triangles); ++triangle_idx) {
-        TX_TriangleDraw triangle = List_Get(rasterizer->triangles, triangle_idx);
-        int tile_left = SDL_max(triangle.left, 0) / canvas->tile_width;
-        int tile_top = SDL_max(triangle.top, 0) / canvas->tile_width;
-        int tile_right = (SDL_min(triangle.right, canvas->width) + canvas->tile_width - 1) / canvas->tile_width;
-        int tile_bottom = (SDL_min(triangle.bottom, canvas->height) + canvas->tile_width - 1) / canvas->tile_width;
-
-        for (int i = tile_top; i < tile_bottom; ++i)
-            for (int j = tile_left; j < tile_right; ++j)
-                List_Push(canvas->tiles[i * htiles + j].triangle_idxs, triangle_idx);
-    }
-
 }
 
 int SD_VARIANT(TX_RasterWorker)(void *data) {
@@ -526,13 +506,37 @@ void SD_VARIANT(TX_RenderWorld)(ECS_Handle *self) {
         List_Clear(canvas->tiles[i].triangle_idxs);
 
     List_ForEach(world->render_batches, rb, {
+        static_assert(TX_RASTERIZER_SORT_TRIANGLES == TX_RASTERIZER_FLAG_COMBINATIONS >> 1, "TX_RASTERIZER_SORT_TRIANGLES must be the last flag");
+        size_t sort_start;
+
         for (int flags = 0; flags < TX_RASTERIZER_FLAG_COMBINATIONS; ++flags) {
             TX_FlagBatch *fb = rb.flag_batches[flags];
+
+            if (flags == TX_RASTERIZER_SORT_TRIANGLES)
+                sort_start = List_Length(rasterizer->triangles);
 
             if (fb)
                 QueueFlagBatchTriangles(self, fb);
         }
+
+        SDL_qsort(List_GetAddress(rasterizer->triangles, sort_start), List_Length(rasterizer->triangles) - sort_start, sizeof(TX_TriangleDraw), CompareTriangles);
     });
+
+
+    /* Queue triangle draws to canvas tiles */
+    int htiles = (canvas->width + canvas->tile_width - 1) / canvas->tile_width;
+
+    for (size_t triangle_idx = 0; triangle_idx < List_Length(rasterizer->triangles); ++triangle_idx) {
+        TX_TriangleDraw triangle = List_Get(rasterizer->triangles, triangle_idx);
+        int tile_left = SDL_max(triangle.left, 0) / canvas->tile_width;
+        int tile_top = SDL_max(triangle.top, 0) / canvas->tile_width;
+        int tile_right = (SDL_min(triangle.right, canvas->width) + canvas->tile_width - 1) / canvas->tile_width;
+        int tile_bottom = (SDL_min(triangle.bottom, canvas->height) + canvas->tile_width - 1) / canvas->tile_width;
+
+        for (int i = tile_top; i < tile_bottom; ++i)
+            for (int j = tile_left; j < tile_right; ++j)
+                List_Push(canvas->tiles[i * htiles + j].triangle_idxs, triangle_idx);
+    }
 
     /* Thread pool dispatch */
     int nproc = SDL_GetNumLogicalCPUCores();
