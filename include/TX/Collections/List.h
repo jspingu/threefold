@@ -63,7 +63,7 @@ typedef struct List {
     size_t capacity;
 } List;
 
-static inline size_t List_bounding_size(size_t n) {
+static inline size_t List_bounding_length(size_t n) {
     size_t size = 1;
     while (size < n)
         size = (size << 1) + 1;
@@ -77,7 +77,7 @@ static inline void *List_InsertSpaceSized(void *list, size_t index, size_t count
     l->length += count;
 
     if (l->length > l->capacity) {
-        l->capacity = List_bounding_size(l->length);
+        l->capacity = List_bounding_length(l->length);
         l->elements = SDL_realloc(l->elements, type_size * l->capacity);
     }
 

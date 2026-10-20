@@ -98,7 +98,7 @@ static void ECS_ShiftRows(ECS *ecs, size_t start, size_t end, ptrdiff_t shift) {
             column_end -= 1;
 
         if (column_end + shift > column->capacity) {
-            column->capacity = List_bounding_size(column_end + shift);
+            column->capacity = List_bounding_length(column_end + shift);
             column->component_entries = SDL_realloc(column->component_entries, column->capacity * column->component_size);
         }
 
@@ -188,7 +188,7 @@ void ECS_Update(ECS *ecs) {
     }
 
     if (ecs->length + nent_diff > ecs->capacity) {
-        ecs->capacity = List_bounding_size(ecs->length + nent_diff);
+        ecs->capacity = List_bounding_length(ecs->length + nent_diff);
         ecs->headers = SDL_realloc(ecs->headers, ecs->capacity * sizeof(ECS_EntityHeader));
     }
 
@@ -248,7 +248,7 @@ void ECS_Update(ECS *ecs) {
             Bitset_Set(header.active_components, component->index);
 
             if (column->capacity < i + 1) {
-                column->capacity = List_bounding_size(i + 1);
+                column->capacity = List_bounding_length(i + 1);
                 column->component_entries = SDL_realloc(column->component_entries, column->component_size * column->capacity);
             }
 
