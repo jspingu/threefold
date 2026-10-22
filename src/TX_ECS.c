@@ -4,6 +4,7 @@
 
 #include "3D/TX_3D_c.h"
 #include "Bitmap/TX_Bitmap_c.h"
+#include "Shade/TX_Shade_c.h"
 #include "UI/TX_UI_c.h"
 
 struct TX_SystemGroups TX_SystemGroups;
@@ -18,5 +19,6 @@ void TX_RegisterToECS(ECS *ecs) {
 
     TX_Register3DToECS(ecs);
     TX_RegisterBitmapToECS(ecs);
+    TX_RegisterShadeToECS(ecs);
     TX_RegisterUIToECS(ecs);
 }

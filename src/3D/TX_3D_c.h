@@ -1,6 +1,7 @@
 #ifndef TX_3D_C_H
 #define TX_3D_C_H
 
+#include <TX/ECS.h>
 #include <TX/TX_3D.h>
 #include <TX/Collections/List.h>
 #include <TX/Math/linalg.h>
@@ -89,31 +90,6 @@ typedef struct TX_RasterThreadPool {
 } TX_RasterThreadPool;
 
 void TX_Register3DToECS(ECS *ecs);
-
-void TX_AttachLightEnvironment(ECS_Handle *self, ECS_Component(void) *component);
-void TX_DetachLightEnvironment(ECS_Handle *self, ECS_Component(void) *component);
-void TX_InitLightEnvironment(void *component, void *args);
-void TX_FreeLightEnvironment(void *component);
-
-void TX_TransformPointLight(ECS_Handle *self, xform3 composed);
-void TX_AttachPointLight(ECS_Handle *self, ECS_Component(void) *component);
-void TX_DetachPointLight(ECS_Handle *self, ECS_Component(void) *component);
-
-void TX_AttachLighting(ECS_Handle *self, ECS_Component(void) *component);
-void TX_InitLighting(void *component, void *args);
-
-void TX_AttachSky(ECS_Handle *self, ECS_Component(void) *component);
-void TX_InitSky(void *component, void *args);
-
-void TX_InitSolidColor(void *component, void *args);
-void TX_InitCheckerboard(void *component, void *args);
-
-void TX_FreeShaderComponent(void *component);
-
-void TX_AttachTextureMap(ECS_Handle *self, ECS_Component(void) *component);
-void TX_DetachTextureMap(ECS_Handle *self, ECS_Component(void) *component);
-void TX_InitTextureMap(void *component, void *args);
-void TX_FreeTextureMap(void *component);
 
 void TX_InitMeshPrimitive(void *component, void *args);
 void TX_FreeMeshPrimitive(void *component);

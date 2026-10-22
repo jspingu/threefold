@@ -3,6 +3,7 @@
 #include <TX/TX_ECS.h>
 #include <TX/TX_3D.h>
 #include <TX/TX_Bitmap.h>
+#include <TX/TX_Shade.h>
 #include <TX/TX_UI.h>
 #include <stdio.h>
 
@@ -53,7 +54,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
             ECS_Components(
                 { TX_3D.World, nullptr },
                 { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault}},
-                { TX_3D.LightEnvironment, &(TX_LightEnvironment){ .ambient=0.08, .skybox_dir="assets/Nalovardo" } }
+                { TX_Shade.LightEnvironment, &(TX_LightEnvironment){ .ambient=0.08, .skybox_dir="assets/Nalovardo" } }
             ),
             ECS_Children(
                 { /* Camera */
@@ -83,10 +84,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=0.1, .g=0.9, .b=1.0 } },
-                        { TX_3D.Lighting, &(TX_OpticalMedium) { .reflectivity=1.0, .specularity=1.0, .exp=4 } },
+                        { TX_Shade.SolidColor, &(TX_SolidColor) { .r=0.1, .g=0.9, .b=1.0 } },
+                        { TX_Shade.Lighting, &(TX_OpticalMedium) { .reflectivity=1.0, .specularity=1.0, .exp=4 } },
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_3D.SolidColor, TX_3D.Lighting, {} },
+                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, {} },
                             .render_batch = Transparent,
                             .flags = TX_RASTERIZER_TEST_DEPTH
                                    | TX_RASTERIZER_SORT_TRIANGLES
@@ -103,10 +104,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1.0, .g=0.1, .b=0.8 } },
-                        { TX_3D.Lighting, &(TX_OpticalMedium) { .reflectivity=1.0, .specularity=1.0, .exp=4 } },
+                        { TX_Shade.SolidColor, &(TX_SolidColor) { .r=1.0, .g=0.1, .b=0.8 } },
+                        { TX_Shade.Lighting, &(TX_OpticalMedium) { .reflectivity=1.0, .specularity=1.0, .exp=4 } },
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_3D.SolidColor, TX_3D.Lighting, {} },
+                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, {} },
                             .render_batch = Transparent,
                             .flags = TX_RASTERIZER_TEST_DEPTH
                                    | TX_RASTERIZER_SORT_TRIANGLES
@@ -123,10 +124,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1.0, .g=1.0, .b=1.0 } },
-                        { TX_3D.Lighting, &(TX_OpticalMedium) { .reflectivity=1.0, .specularity=1.0, .exp=4 } },
+                        { TX_Shade.SolidColor, &(TX_SolidColor) { .r=1.0, .g=1.0, .b=1.0 } },
+                        { TX_Shade.Lighting, &(TX_OpticalMedium) { .reflectivity=1.0, .specularity=1.0, .exp=4 } },
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_3D.SolidColor, TX_3D.Lighting, {} },
+                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, {} },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -145,14 +146,14 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_3D.Checkerboard, &(TX_Checkerboard) {
+                        { TX_Shade.Checkerboard, &(TX_Checkerboard) {
                             .tiles = 31,
                             .r1 = 0.4, .g1 = 0.4, .b1 = 0.8,
                             .r2 = 1.0, .g2 = 1.0, .b2 = 1.0,
                         }},
-                        { TX_3D.Lighting, &(TX_OpticalMedium) { .reflectivity=0.4, .specularity=0.4, .exp=4 } },
+                        { TX_Shade.Lighting, &(TX_OpticalMedium) { .reflectivity=0.4, .specularity=0.4, .exp=4 } },
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_3D.Checkerboard, TX_3D.Lighting, {} },
+                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.Checkerboard, TX_Shade.Lighting, {} },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -168,12 +169,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_3D.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
                         { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
                         { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
-                        { TX_3D.PointLight, &(TX_PointLight) { .col={{ 1.0, 0.8, 0.2 }}, .energy=20000 } }
+                        { TX_Shade.PointLight, &(TX_PointLight) { .col={{ 1.0, 0.8, 0.2 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
+                        { TX_Shade.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_3D.SolidColor, {} },
+                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, {} },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -189,12 +190,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_3D.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
                         { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
                         { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
-                        { TX_3D.PointLight, &(TX_PointLight) { .col={{ 0.2, 1.0, 0.5 }}, .energy=20000 } }
+                        { TX_Shade.PointLight, &(TX_PointLight) { .col={{ 0.2, 1.0, 0.5 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
+                        { TX_Shade.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_3D.SolidColor, {} },
+                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, {} },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -210,12 +211,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_3D.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
                         { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
                         { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
-                        { TX_3D.PointLight, &(TX_PointLight) { .col={{ 1.0, 0.2, 0.1 }}, .energy=20000 } }
+                        { TX_Shade.PointLight, &(TX_PointLight) { .col={{ 1.0, 0.2, 0.1 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
+                        { TX_Shade.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_3D.SolidColor, {} },
+                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, {} },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -231,12 +232,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_3D.Sphere, &(TX_Sphere) { .radius=32, .nrings=16, .ring_precision=16 } },
                         { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetSphereMesh }},
                         { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformDefault} },
-                        { TX_3D.PointLight, &(TX_PointLight) { .col={{ 0.9, 0.2, 1.0 }}, .energy=20000 } }
+                        { TX_Shade.PointLight, &(TX_PointLight) { .col={{ 0.9, 0.2, 1.0 }}, .energy=20000 } }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_3D.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
+                        { TX_Shade.SolidColor, &(TX_SolidColor) { .r=1, .g=1, .b=1 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_3D.SolidColor, {} },
+                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, {} },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -252,9 +253,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_3D.TransformCompositor, &(TX_TransformCompositor){TX_ComposeTransformCubemap} }
                     ),
                     ECS_Children({ECS_Components(
-                        { TX_3D.Sky, nullptr },
+                        { TX_Shade.Sky, nullptr },
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_3D.Sky, {} },
+                            .shader_components = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.Sky, {} },
                             .render_batch = Sky
                         }}
                     )})

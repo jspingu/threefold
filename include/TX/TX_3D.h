@@ -2,12 +2,10 @@
 #define TX_3D_H
 
 #include <TX/ECS.h>
-#include <TX/TX_Bitmap.h>
+#include <TX/TX_Shade.h>
 #include <TX/Collections/List.h>
 #include <TX/Math/linalg.h>
 #include <TX/Math/stride.h>
-
-#define TX_SHADER_DECLARE(name)  SD_DECLARE_ATTR(SD_CALL, sd_vec4, name, void *, state, sd_vec4, col, TX_ShaderParams *, fragment)
 
 typedef enum TX_RasterizerFlags {
     TX_RASTERIZER_ALPHA_SCISSOR       = 1 << 0,
@@ -29,26 +27,10 @@ typedef struct TX_Model TX_Model;
 typedef struct TX_ModelInstance TX_ModelInstance;
 typedef struct TX_RasterThreadPool TX_RasterThreadPool;
 typedef struct TX_TriangleDraw TX_TriangleDraw;
-typedef struct TX_ShaderParams TX_ShaderParams;
 
 typedef xform3 (*TX_TransformCompositor)(ECS_Handle *self, xform3 lhs);
-
-typedef SD_CALL sd_vec4 (*TX_FragmentShader)(void *state, sd_vec4 col, TX_ShaderParams *fragment);
 typedef sd_vec2 (*TX_VertexProjector)(ECS_Handle *self, sd_vec3 pos, sd_vec2 midpoint);
 typedef void (*TX_RasterScanner)(ECS_Handle *self, TX_CanvasTile tile, TX_TriangleDraw *triangle, int triangle_bounds[2]);
-
-typedef struct TX_ShaderParams {
-    sd_vec3 *bg;
-    sd_vec3 *vs;
-    sd_vec3 *nrml;
-    sd_vec2 *ts;
-    sd_vec3 *vs2ws_xform[3];
-} TX_ShaderParams;
-
-typedef struct TX_ShaderCall {
-    TX_FragmentShader callback;
-    void *state;
-} TX_ShaderCall;
 
 typedef struct TX_MeshFace {
     size_t idx_verts[3];
@@ -118,49 +100,6 @@ typedef struct TX_Cubemap {
     float scale;
 } TX_Cubemap;
 
-typedef struct TX_SolidColor {
-    float r, g, b;
-} TX_SolidColor;
-
-typedef struct TX_Checkerboard {
-    int tiles;
-    float r1, g1, b1;
-    float r2, g2, b2;
-} TX_Checkerboard;
-
-typedef struct TX_TextureMap {
-    TX_Texture *texture;
-    char *texture_path;
-    float scale;
-} TX_TextureMap;
-
-typedef struct TX_ActiveLight {
-    float energy;
-    vec3 col;
-    vec3 pos;
-} TX_ActiveLight;
-
-typedef struct TX_LightEnvironment {
-    char *skybox_dir;
-    TX_Texture *sky;
-    List(TX_ActiveLight *) *lights;
-    float ambient;
-} TX_LightEnvironment;
-
-typedef struct TX_PointLight {
-    TX_LightEnvironment *environment;
-    TX_ActiveLight *active;
-    vec3 col;
-    float energy;
-} TX_PointLight;
-
-typedef struct TX_OpticalMedium {
-    TX_LightEnvironment *environment;
-    float reflectivity;
-    float specularity;
-    int exp;
-} TX_OpticalMedium;
-
 struct TX_3D {
     ECS_Component(vec3) *Position;
     ECS_Component(mat3x3) *Basis;
@@ -174,30 +113,15 @@ struct TX_3D {
     ECS_Component(TX_ParallelProjector) *ParallelProjector;
     ECS_Component(TX_PerspectiveFOV) *PerspectiveFOV;
 
-    ECS_Component(TX_LightEnvironment *) *LightEnvironment;
-    ECS_Component(TX_PointLight) *PointLight;
-
     ECS_Component(TX_Mesh *) *MeshPrimitive;
     ECS_Component(TX_Teapot) *Teapot;
     ECS_Component(TX_Torus) *Torus;
     ECS_Component(TX_Sphere) *Sphere;
     ECS_Component(TX_Rect) *Rect;
     ECS_Component(TX_Cubemap) *Cubemap;
-
-    ECS_Component(TX_ShaderCall) *SolidColor;
-    ECS_Component(TX_ShaderCall) *Checkerboard;
-    ECS_Component(TX_ShaderCall) *TextureMap;
-    ECS_Component(TX_ShaderCall) *Lighting;
-    ECS_Component(TX_ShaderCall) *Sky;
 };
 
 extern struct TX_3D TX_3D;
-
-TX_SHADER_DECLARE(TX_ShadeSolidColor)
-TX_SHADER_DECLARE(TX_ShadeCheckerboard)
-TX_SHADER_DECLARE(TX_ShadeTextureMap)
-TX_SHADER_DECLARE(TX_ShadeLighting)
-TX_SHADER_DECLARE(TX_ShadeSky)
 
 TX_Mesh *TX_GetTeapotMesh(ECS_Handle *self);
 TX_Mesh *TX_GetTorusMesh(ECS_Handle *self);

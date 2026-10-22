@@ -45,48 +45,6 @@ void TX_Register3DToECS(ECS *ecs) {
     TX_3D.Rect = ECS_RegisterComponent(ecs, TX_Rect, {});
     TX_3D.Cubemap = ECS_RegisterComponent(ecs, TX_Cubemap, {});
 
-    TX_3D.LightEnvironment = ECS_RegisterComponent(ecs, TX_LightEnvironment *, {
-        .attach = TX_AttachLightEnvironment,
-        .detach = TX_DetachLightEnvironment,
-        .init = TX_InitLightEnvironment,
-        .free = TX_FreeLightEnvironment
-    });
-
-    TX_3D.PointLight = ECS_RegisterComponent(ecs, TX_PointLight, {
-        .attach = TX_AttachPointLight,
-        .detach = TX_DetachPointLight
-    });
-
-    TX_3D.SolidColor = ECS_RegisterComponent(ecs, TX_ShaderCall, {
-        .init = TX_InitSolidColor,
-        .free = TX_FreeShaderComponent
-    });
-
-    TX_3D.Checkerboard = ECS_RegisterComponent(ecs, TX_ShaderCall, {
-        .init = TX_InitCheckerboard,
-        .free = TX_FreeShaderComponent
-    });
-
-    TX_3D.Lighting = ECS_RegisterComponent(ecs, TX_ShaderCall, {
-        .attach = TX_AttachLighting,
-        .init = TX_InitLighting,
-        .free = TX_FreeShaderComponent
-    });
-
-    TX_3D.Sky = ECS_RegisterComponent(ecs, TX_ShaderCall, {
-        .attach = TX_AttachSky,
-        .init = TX_InitSky,
-        .free = TX_FreeShaderComponent
-    });
-
-    TX_3D.TextureMap = ECS_RegisterComponent(ecs, TX_ShaderCall, {
-        .attach = TX_AttachTextureMap,
-        .detach = TX_DetachTextureMap,
-        .init = TX_InitTextureMap,
-        .free = TX_FreeTextureMap
-    });
-
     ECS_RegisterSystem(TX_SystemGroups.Render, SD_SELECT(TX_RenderWorld), TX_3D.Rasterizer);
     ECS_RegisterSystem(TX_SystemGroups.Transform, TX_TransformModel, TX_3D.Model);
-    ECS_RegisterSystem(TX_SystemGroups.Transform, TX_TransformPointLight, TX_3D.PointLight);
 }

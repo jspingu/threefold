@@ -6,6 +6,11 @@
 #define ECS_Component(type)                      typeof(type)
 #define ECS_SystemGroup(callback_type)           typeof(callback_type)
 
+// The `SDL_arraysize` pattern used here is leading to exponential growth in macro expansion with nested children
+// clangd has been struggling to parse the scene in main.c for a while now, so this strategy should really be changed
+// We can null-terminate by considering nullptr in the `component` member of ECS_ComponentConstruction as a sentinel
+// Same can be done for ECS_Contruction where it is considered a sentinel if `component_constructions` and `children` are nullptr
+
 #define ECS_GetComponent(e,component)            ( (typeof(component))ECS_GetComponentActual(e, component) )
 #define ECS_AttachComponents(e,...)              ( ECS_AttachComponentsCount(e, (ECS_ComponentConstruction []){__VA_ARGS__}, SDL_arraysize(((ECS_ComponentConstruction []){__VA_ARGS__}))) )
 #define ECS_DetachComponents(e,...)              ( ECS_DetachComponentsCount(e, (void *[]){__VA_ARGS__}, SDL_arraysize(((void *[]){__VA_ARGS__}))) )

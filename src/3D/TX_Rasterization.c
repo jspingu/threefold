@@ -281,7 +281,6 @@ static void Span(TX_CanvasTile tile, TX_TriangleDraw *triangle, int triangle_bou
     /* True if long edge is left edge */
     bool le_left = ((idxs[0] + 2) % 3 == idxs[2]);
 
-    /* Precompute gradients for scanline interpolation */
     sd_float grad01 = sd_float_set((triangle->ss_verts[idxs[1]].x - triangle->ss_verts[idxs[0]].x) / (triangle->ss_verts[idxs[1]].y - triangle->ss_verts[idxs[0]].y));
     sd_float grad12 = sd_float_set((triangle->ss_verts[idxs[2]].x - triangle->ss_verts[idxs[1]].x) / (triangle->ss_verts[idxs[2]].y - triangle->ss_verts[idxs[1]].y));
     sd_float grad02 = sd_float_set((triangle->ss_verts[idxs[2]].x - triangle->ss_verts[idxs[0]].x) / (triangle->ss_verts[idxs[2]].y - triangle->ss_verts[idxs[0]].y));
