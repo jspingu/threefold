@@ -23,13 +23,25 @@ static ECS_ComponentConstruction ECS_ConstructComponent(ECS_ComponentConstructio
 }
 
 static ECS_Construction ECS_PrepareConstruction(ECS_Construction c) {
-    ECS_ComponentConstruction *components = SDL_malloc(sizeof(ECS_ComponentConstruction) * c.ncomponent_constructions);
-    ECS_Construction *children = SDL_malloc(sizeof(ECS_Construction) * c.nchildren);
+    size_t ncomponent_constructions = 0;
+    size_t nchildren = 0;
+
+    if (c.component_constructions)
+        for (ECS_ComponentConstruction *cc = c.component_constructions; cc->component; ++cc)
+            ncomponent_constructions += 1;
+
+    if (c.children)
+        for (ECS_Construction *child = c.children; child->component_constructions || child->children; ++child)
+            nchildren += 1;
+
+    ECS_ComponentConstruction *components = SDL_malloc(sizeof(ECS_ComponentConstruction) * ncomponent_constructions);
+    ECS_Construction *children = SDL_malloc(sizeof(ECS_Construction) * nchildren);
     Bitset *seen_components = Bitset_Create();
     size_t nunique_components = 0;
 
-    for (size_t i = 0; i < c.ncomponent_constructions; ++i) {
+    for (size_t i = 0; i < ncomponent_constructions; ++i) {
         ECS_Handle *component = c.component_constructions[i].component;
+
         if (!Bitset_Test(seen_components, component->index)) {
             components[nunique_components++] = ECS_ConstructComponent(c.component_constructions[i]);
             Bitset_Set(seen_components, component->index);
@@ -38,14 +50,14 @@ static ECS_Construction ECS_PrepareConstruction(ECS_Construction c) {
 
     Bitset_Free(seen_components);
 
-    for (size_t i = 0; i < c.nchildren; ++i)
+    for (size_t i = 0; i < nchildren; ++i)
         children[i] = ECS_PrepareConstruction(c.children[i]);
 
     return (ECS_Construction) {
         .component_constructions = components,
         .children = children,
         .ncomponent_constructions = nunique_components,
-        .nchildren = c.nchildren
+        .nchildren = nchildren
     };
 }
 
@@ -110,35 +122,34 @@ ECS_Handle *ECS_GetDescendantWithComponent(ECS_Handle *e, void *component, bool 
     return nullptr;
 }
 
-void ECS_AttachComponentsCount(ECS_Handle *e, ECS_ComponentConstruction *ccs, size_t count) {
+void ECS_AttachComponentsActual(ECS_Handle *e, ECS_ComponentConstruction *ccs) {
     ECS_EntityHeader header = e->ecs->headers[e->index];
 
-    for (size_t i = 0; i < count; ++i) {
-        ECS_ComponentConstruction cc = ccs[i];
-        ECS_Handle *component = cc.component;
+    for (ECS_ComponentConstruction *cc = ccs; cc->component; ++cc) {
+        ECS_Handle *component = cc->component;
 
         if (!Bitset_Test(header.active_components, component->index) && !ECS_IsComponentAttachmentQueued(e, component->index))
-            List_Push(header.components_attach, ECS_ConstructComponent(cc));
+            List_Push(header.components_attach, ECS_ConstructComponent(*cc));
     }
 }
 
-void ECS_DetachComponentsCount(ECS_Handle *e, void **components, size_t count) {
+void ECS_DetachComponentsActual(ECS_Handle *e, void **components) {
     ECS_EntityHeader header = e->ecs->headers[e->index];
 
-    for (size_t i = 0; i < count; ++i) {
-        ECS_Handle *component = components[i];
+    for (void **component = components; *component; ++component) {
+        ECS_Handle *c = *component;
 
-        if (Bitset_Test(header.active_components, component->index) && !ECS_IsComponentDetachmentQueued(e, component->index))
-            List_Push(header.components_detach, component);
+        if (Bitset_Test(header.active_components, c->index) && !ECS_IsComponentDetachmentQueued(e, c->index))
+            List_Push(header.components_detach, c);
     }
+    
 }
 
-void ECS_AddChildrenCount(ECS_Handle *e, ECS_Construction *children, size_t count) {
+void ECS_AddChildrenActual(ECS_Handle *e, ECS_Construction *children) {
     ECS_EntityHeader header = e->ecs->headers[e->index];
-    ECS_Construction *new_construction = List_PushSpace(header.children_add, count);
 
-    for (size_t i = 0; i < count; ++i)
-        new_construction[i] = ECS_PrepareConstruction(children[i]);
+    for (ECS_Construction *c = children; c->component_constructions || c->children; ++c)
+        List_Push(header.children_add, ECS_PrepareConstruction(*c));
 }
 
 ECS_Handle *ECS_NextEntity(ECS_Handle *e) {

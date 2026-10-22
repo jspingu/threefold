@@ -314,15 +314,17 @@ void *ECS_RegisterSystemGroup(ECS *ecs) {
     return new_group.handle;
 }
 
-SDL_FunctionPointer *ECS_RegisterSystemActual(void *system_group, void **dependencies, size_t ndependencies) {
+SDL_FunctionPointer *ECS_RegisterSystemActual(void *system_group, void **dependencies) {
     ECS_Handle *group_handle = system_group;
     ECS_SystemGroup group = List_Get(group_handle->ecs->system_groups, group_handle->index);
     ECS_System *new_system = List_PushSpace(group.systems, 1);
+    size_t ndependencies = 0;
 
-    *new_system = (ECS_System) {
-        .dependencies = SDL_malloc(sizeof(size_t) * ndependencies),
-        .ndependencies = ndependencies
-    };
+    for (void **dep = dependencies; *dep; ++dep)
+        ndependencies += 1;
+
+    new_system->dependencies = SDL_malloc(sizeof(size_t) * ndependencies);
+    new_system->ndependencies = ndependencies;
 
     for (size_t i = 0; i < ndependencies; ++i) {
         ECS_Handle *component = dependencies[i];
