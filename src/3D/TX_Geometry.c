@@ -108,8 +108,8 @@ void TX_AttachModelInstance(ECS_Handle *self, ECS_Component(void) *component) {
     TX_ShaderCall *shader_pipeline = SDL_malloc(sizeof(TX_ShaderCall) * (mdlinst->nshaders + 1));
 
     for (size_t i = 0; i < mdlinst->nshaders; ++i) {
-        TX_ShaderCall *shader_component = ECS_GetComponent(self, mdlinst->shader_components[i]);
-        shader_pipeline[i] = *shader_component;
+        TX_ShaderCall *shader = ECS_GetComponent(self, mdlinst->shader_pipeline[i]);
+        shader_pipeline[i] = *shader;
     }
 
     shader_pipeline[mdlinst->nshaders] = (TX_ShaderCall){};
@@ -148,19 +148,19 @@ void TX_InitModelInstance(void *component, void *args) {
     mdlinst->flags = mdlinst_args->flags;
     mdlinst->nshaders = 0;
 
-    while (mdlinst_args->shader_components[mdlinst->nshaders])
+    while (mdlinst_args->shader_pipeline[mdlinst->nshaders])
         mdlinst->nshaders += 1;
 
-    mdlinst->shader_components = SDL_memcpy(
+    mdlinst->shader_pipeline = SDL_memcpy(
         SDL_malloc(sizeof(ECS_Component(TX_ShaderCall) *) * (mdlinst->nshaders + 1)),
-        mdlinst_args->shader_components,
+        mdlinst_args->shader_pipeline,
         sizeof(ECS_Component(TX_ShaderCall) *) * (mdlinst->nshaders + 1)
     );
 }
 
 void TX_FreeModelInstance(void *component) {
     TX_ModelInstance *mdlinst = component;
-    SDL_free(mdlinst->shader_components);
+    SDL_free(mdlinst->shader_pipeline);
 }
 
 void TX_FreeRenderInstance(TX_RenderInstance *instance) {

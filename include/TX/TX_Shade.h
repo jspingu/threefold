@@ -67,6 +67,15 @@ typedef struct TX_TextureMap {
     float scale;
 } TX_TextureMap;
 
+typedef struct TX_TileMap {
+    TX_Texture *texture;
+    char *texture_path;
+    float tile_width, tile_height;
+    float tile_unit;
+    int htiles, vtiles;
+    int x, y;
+} TX_TileMap;
+
 struct TX_Shade {
     ECS_Component(TX_LightEnvironment *) *LightEnvironment;
     ECS_Component(TX_PointLight) *PointLight;
@@ -74,6 +83,7 @@ struct TX_Shade {
     ECS_Component(TX_ShaderCall) *SolidColor;
     ECS_Component(TX_ShaderCall) *Checkerboard;
     ECS_Component(TX_ShaderCall) *TextureMap;
+    ECS_Component(TX_ShaderCall) *TileMap;
     ECS_Component(TX_ShaderCall) *Lighting;
     ECS_Component(TX_ShaderCall) *Sky;
 };
@@ -83,6 +93,7 @@ extern struct TX_Shade TX_Shade;
 TX_SHADER_DECLARE(TX_ShadeSolidColor)
 TX_SHADER_DECLARE(TX_ShadeCheckerboard)
 TX_SHADER_DECLARE(TX_ShadeTextureMap)
+TX_SHADER_DECLARE(TX_ShadeTileMap)
 TX_SHADER_DECLARE(TX_ShadeLighting)
 TX_SHADER_DECLARE(TX_ShadeSky)
 

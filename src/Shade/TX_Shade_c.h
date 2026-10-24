@@ -30,4 +30,9 @@ void TX_DetachTextureMap(ECS_Handle *self, ECS_Component(void) *component);
 void TX_InitTextureMap(void *component, void *args);
 void TX_FreeTextureMap(void *component);
 
+void TX_AttachTileMap(ECS_Handle *self, ECS_Component(void) *component);
+void TX_DetachTileMap(ECS_Handle *self, ECS_Component(void) *component);
+void TX_InitTileMap(void *component, void *args);
+void TX_FreeTileMap(void *component);
+
 #endif /* TX_SHADE_C_H */

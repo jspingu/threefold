@@ -64,7 +64,7 @@ typedef struct TX_Model {
 
 typedef struct TX_ModelInstance {
     TX_RenderInstance *instance;
-    ECS_Component(TX_ShaderCall) **shader_components;
+    ECS_Component(TX_ShaderCall) **shader_pipeline;
     size_t nshaders;
     size_t render_batch;
     TX_RasterizerFlags flags;

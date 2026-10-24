@@ -6,8 +6,8 @@
 struct TX_Shade TX_Shade;
 
 void TX_FreeShaderCall(void *component) {
-    TX_ShaderCall *shader_component = component;
-    SDL_free(shader_component->state);
+    TX_ShaderCall *shader = component;
+    SDL_free(shader->state);
 }
 
 void TX_RegisterShadeToECS(ECS *ecs) {
@@ -33,6 +33,20 @@ void TX_RegisterShadeToECS(ECS *ecs) {
         .free = TX_FreeShaderCall
     });
 
+    TX_Shade.TextureMap = ECS_RegisterComponent(ecs, TX_ShaderCall, {
+        .attach = TX_AttachTextureMap,
+        .detach = TX_DetachTextureMap,
+        .init = TX_InitTextureMap,
+        .free = TX_FreeTextureMap
+    });
+
+    TX_Shade.TileMap = ECS_RegisterComponent(ecs, TX_ShaderCall, {
+        .attach = TX_AttachTileMap,
+        .detach = TX_DetachTileMap,
+        .init = TX_InitTileMap,
+        .free = TX_FreeTileMap
+    });
+
     TX_Shade.Lighting = ECS_RegisterComponent(ecs, TX_ShaderCall, {
         .attach = TX_AttachLighting,
         .init = TX_InitLighting,
@@ -43,13 +57,6 @@ void TX_RegisterShadeToECS(ECS *ecs) {
         .attach = TX_AttachSky,
         .init = TX_InitSky,
         .free = TX_FreeShaderCall
-    });
-
-    TX_Shade.TextureMap = ECS_RegisterComponent(ecs, TX_ShaderCall, {
-        .attach = TX_AttachTextureMap,
-        .detach = TX_DetachTextureMap,
-        .init = TX_InitTextureMap,
-        .free = TX_FreeTextureMap
     });
 
     ECS_RegisterSystem(TX_SystemGroups.Transform, TX_TransformPointLight, TX_Shade.PointLight);

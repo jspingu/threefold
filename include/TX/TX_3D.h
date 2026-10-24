@@ -73,7 +73,7 @@ typedef struct TX_ModelArgs {
 } TX_ModelArgs;
 
 typedef struct TX_ModelInstanceArgs {
-    ECS_Component(TX_ShaderCall) **shader_components;
+    ECS_Component(TX_ShaderCall) **shader_pipeline;
     size_t render_batch;
     TX_RasterizerFlags flags;
 } TX_ModelInstanceArgs;

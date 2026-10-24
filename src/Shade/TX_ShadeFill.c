@@ -29,52 +29,105 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeTextureMap)(void *state, sd_vec4 col, TX_Shad
     return TX_SampleNearest(texture_map->texture, *fragment->ts) ;
 }
 
+SD_CALL sd_vec4 SD_VARIANT(TX_ShadeTileMap)(void *state, sd_vec4 col, TX_ShaderParams *fragment) {
+    (void)col;
+    TX_TileMap *tile_map = state;
+    sd_vec2 tile_coord = sd_vec2_muls(*fragment->ts, sd_float_set(tile_map->tile_unit));
+            tile_coord = sd_vec2_add(tile_coord, sd_vec2_set(
+                tile_map->x * tile_map->tile_width,
+                tile_map->y * tile_map->tile_height
+            ));
+
+    return TX_SampleNearest(tile_map->texture, tile_coord);
+}
+
 #ifndef SD_SRC_VARIANT
 
+void TX_InitSolidColor(void *component, void *args) {
+    TX_ShaderCall *shader = component;
+    shader->callback = SD_SELECT(TX_ShadeSolidColor);
+    shader->state = SDL_malloc(sizeof(TX_SolidColor));
+    SDL_memcpy(shader->state, args, sizeof(TX_SolidColor));
+}
+
+void TX_InitCheckerboard(void *component, void *args) {
+    TX_ShaderCall *shader = component;
+    shader->callback = SD_SELECT(TX_ShadeCheckerboard);
+    shader->state = SDL_malloc(sizeof(TX_Checkerboard));
+    SDL_memcpy(shader->state, args, sizeof(TX_Checkerboard));
+}
+
 void TX_AttachTextureMap(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_ShaderCall *shader_component = ECS_GetComponent(self, component);
-    TX_TextureMap *texture_map = shader_component->state;
+    TX_ShaderCall *shader = ECS_GetComponent(self, component);
+    TX_TextureMap *texture_map = shader->state;
     ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.TextureBank, false);
     texture_map->texture = TX_GetResource(tb, TX_Bitmap.TextureBank, texture_map->texture_path);
 }
 
 void TX_DetachTextureMap(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_ShaderCall *shader_component = ECS_GetComponent(self, component);
-    TX_TextureMap *texture_map = shader_component->state;
+    TX_ShaderCall *shader = ECS_GetComponent(self, component);
+    TX_TextureMap *texture_map = shader->state;
     ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.TextureBank, false);
     TX_ReleaseResource(tb, TX_Bitmap.TextureBank, texture_map->texture_path);
 }
 
-void TX_InitSolidColor(void *component, void *args) {
-    TX_ShaderCall *shader_component = component;
-    shader_component->callback = SD_SELECT(TX_ShadeSolidColor);
-    shader_component->state = SDL_malloc(sizeof(TX_SolidColor));
-    SDL_memcpy(shader_component->state, args, sizeof(TX_SolidColor));
-}
-
-void TX_InitCheckerboard(void *component, void *args) {
-    TX_ShaderCall *shader_component = component;
-    shader_component->callback = SD_SELECT(TX_ShadeCheckerboard);
-    shader_component->state = SDL_malloc(sizeof(TX_Checkerboard));
-    SDL_memcpy(shader_component->state, args, sizeof(TX_Checkerboard));
-}
-
 void TX_InitTextureMap(void *component, void *args) {
-    TX_ShaderCall *shader_component = component;
-    shader_component->callback = SD_SELECT(TX_ShadeTextureMap);
-    shader_component->state = SDL_malloc(sizeof(TX_TextureMap));
+    TX_ShaderCall *shader = component;
+    shader->callback = SD_SELECT(TX_ShadeTextureMap);
+    shader->state = SDL_malloc(sizeof(TX_TextureMap));
 
-    TX_TextureMap *texture_map = shader_component->state;
+    TX_TextureMap *texture_map = shader->state;
     char *path = args;
     texture_map->texture_path = SDL_malloc(SDL_strlen(path) + 1);
     SDL_strlcpy(texture_map->texture_path, path, TX_RESOURCE_PATHLEN);
 }
 
 void TX_FreeTextureMap(void *component) {
-    TX_ShaderCall *shader_component = component;
-    TX_TextureMap *texture_map = shader_component->state;
+    TX_ShaderCall *shader = component;
+    TX_TextureMap *texture_map = shader->state;
     SDL_free(texture_map->texture_path);
     SDL_free(texture_map);
+}
+
+void TX_AttachTileMap(ECS_Handle *self, ECS_Component(void) *component) {
+    TX_ShaderCall *shader = ECS_GetComponent(self, component);
+    TX_TileMap *tile_map = shader->state;
+    ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.TextureBank, false);
+    TX_Texture *texture = TX_GetResource(tb, TX_Bitmap.TextureBank, tile_map->texture_path);
+
+    /* Normalized tile dimensions */
+    tile_map->texture = texture;
+    tile_map->tile_width = (float)texture->width / (texture->unit * tile_map->htiles);
+    tile_map->tile_height = (float)texture->height / (texture->unit * tile_map->vtiles);
+    tile_map->tile_unit = SDL_max(tile_map->tile_width, tile_map->tile_height);
+}
+
+void TX_DetachTileMap(ECS_Handle *self, ECS_Component(void) *component) {
+    TX_ShaderCall *shader = ECS_GetComponent(self, component);
+    TX_TileMap *tile_map = shader->state;
+    ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.TextureBank, false);
+    TX_ReleaseResource(tb, TX_Bitmap.TextureBank, tile_map->texture_path);
+}
+
+void TX_InitTileMap(void *component, void *args) {
+    TX_ShaderCall *shader = component;
+    shader->callback = SD_SELECT(TX_ShadeTileMap);
+    shader->state = SDL_malloc(sizeof(TX_TileMap));
+
+    TX_TileMap *tile_map = shader->state;
+    SDL_memcpy(shader->state, args, sizeof(TX_TileMap));
+
+    TX_TileMap *tile_map_args = args;
+    char *path = tile_map_args->texture_path;
+    tile_map->texture_path = SDL_malloc(SDL_strlen(path) + 1);
+    SDL_strlcpy(tile_map->texture_path, path, TX_RESOURCE_PATHLEN);
+}
+
+void TX_FreeTileMap(void *component) {
+    TX_ShaderCall *shader = component;
+    TX_TileMap *tile_map = shader->state;
+    SDL_free(tile_map->texture_path);
+    SDL_free(tile_map);
 }
 
 #endif /* SD_SRC_VARIANT */
