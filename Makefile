@@ -55,18 +55,23 @@ OBJS_VECTORIZE_AVX2 = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_avx2.o)
 OBJS_VECTORIZE_SSE2 = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_sse2.o)
 OBJS_VECTORIZE_SVE = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_sve.o)
 OBJS_VECTORIZE_NEON = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_neon.o)
+OBJS_VECTORIZE_RVV = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_rvv.o)
 
 DEPS_VECTORIZE_AVX512F = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_avx512f.d)
 DEPS_VECTORIZE_AVX2 = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_avx2.d)
 DEPS_VECTORIZE_SSE2 = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_sse2.d)
 DEPS_VECTORIZE_SVE = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_sve.d)
 DEPS_VECTORIZE_NEON = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_neon.d)
+DEPS_VECTORIZE_RVV = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_rvv.d)
 
 PREDEFINED_MACROS := $(shell $(CC) $(CFLAGS) -E -dM - < /dev/null)
 PREDEFINED_MACROS := $(filter-out __ARM_NEON_SVE_BRIDGE,$(PREDEFINED_MACROS))
+PREDEFINED_MACROS := $(filter-out __riscv_vector,$(PREDEFINED_MACROS))
+PREDEFINED_MACROS := $(filter-out __riscv_v_%,$(PREDEFINED_MACROS))
 
 TARGET_ARCH := $(findstring x86_64,$(PREDEFINED_MACROS)) $(findstring i386,$(PREDEFINED_MACROS)) \
-               $(findstring aarch64,$(PREDEFINED_MACROS)) $(findstring arm,$(PREDEFINED_MACROS))
+               $(findstring aarch64,$(PREDEFINED_MACROS)) $(findstring arm,$(PREDEFINED_MACROS)) \
+               $(findstring riscv,$(PREDEFINED_MACROS))
 TARGET_ARCH := $(firstword $(TARGET_ARCH))
 
 ifeq ($(TARGET_ARCH),x86_64)
@@ -85,11 +90,16 @@ ifeq ($(TARGET_ARCH),arm)
 POSSIBLE_SIMD_EXTENSIONS = NEON
 endif
 
-AVAILABLE_SIMD_EXTENSIONS = $(findstring AVX512F,$(PREDEFINED_MACROS)) \
-							$(findstring AVX2,$(PREDEFINED_MACROS))    \
-							$(findstring SSE2,$(PREDEFINED_MACROS))    \
-							$(findstring SVE,$(PREDEFINED_MACROS))     \
-							$(findstring NEON,$(PREDEFINED_MACROS))
+ifeq ($(TARGET_ARCH),riscv)
+POSSIBLE_SIMD_EXTENSIONS = RVV
+endif
+
+AVAILABLE_SIMD_EXTENSIONS = $(findstring AVX512F,$(PREDEFINED_MACROS))                     \
+                            $(findstring AVX2,$(PREDEFINED_MACROS))                        \
+                            $(findstring SSE2,$(PREDEFINED_MACROS))                        \
+                            $(findstring SVE,$(PREDEFINED_MACROS))                         \
+                            $(findstring NEON,$(PREDEFINED_MACROS))                        \
+                            $(patsubst %,RVV,$(findstring __riscv_v,$(PREDEFINED_MACROS)))
 
 BASE_SIMD_EXTENSION = $(firstword $(AVAILABLE_SIMD_EXTENSIONS))
 SIMD_VARIANTS = $(filter-out $(AVAILABLE_SIMD_EXTENSIONS),$(POSSIBLE_SIMD_EXTENSIONS))
@@ -137,6 +147,10 @@ $(OBJS_VECTORIZE_SVE): $(BLDDIR)/%_sve.o: %.c
 $(OBJS_VECTORIZE_NEON): $(BLDDIR)/%_neon.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(OPTFLAGS) $(DEPFLAGS) -march=armv7 -DSD_DISPATCH_DYNAMIC -DSD_SRC_VARIANT -c $< -o $@
+
+$(OBJS_VECTORIZE_RVV): $(BLDDIR)/%_rvv.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(DEPFLAGS) -march=rv64gcv -DSD_DISPATCH_DYNAMIC -DSD_SRC_VARIANT -c $< -o $@
 
 $(BLDDIR)/gamma.o: $(BLDDIR)/gamma.c
 	@mkdir -p $(BLDDIR)

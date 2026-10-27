@@ -31,6 +31,7 @@ CFLAGS="-march=native" VECTORIZATION="static" make
 Supported extensions:
 - x86: SSE2, AVX2, AVX512F
 - ARM: NEON (v7), SVE
+- RISC-V: RVV (V)
 
 # Showcase
 

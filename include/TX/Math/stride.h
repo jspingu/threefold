@@ -3,7 +3,8 @@
  *
  * Supported extensions:
  *  - x86: SSE2, AVX2, AVX512F
- *  - ARM: NEON, SVE
+ *  - ARM: NEON(v7), SVE
+ *  - RISC-V: RVV(V)
  */
 
 #ifndef STRIDE_H
@@ -22,6 +23,10 @@
 
 #ifdef __ARM_NEON
 #include <arm_neon.h>
+#endif
+
+#ifdef __riscv_v_intrinsic
+#include <riscv_vector.h>
 #endif
 
 #ifdef __x86_64__
@@ -89,6 +94,12 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
     #define SD_VARIANT(fnname)  fnname##_neon
     SD_DEFINE_TYPES_FIXED(neon, float32x4_t, int32x4_t, uint32x4_t)
     SD_TYPEDEFS(neon)
+#elifdef __riscv_v
+    /* LMUL=2 will be used for all internal RVV types, which is the maximum allowed for NFIELD=4 tuples used by sd_vec4 */
+    /* vbool16_t is used as the mask type to account for the length multipler */
+    #define SD_VARIANT(fnname)  fnname##_rvv
+    SD_DEFINE_TYPES_SCALABLE(rvv, vfloat32m2_t, vfloat32m2x2_t, vfloat32m2x3_t, vfloat32m2x4_t, vint32m2_t, vbool16_t)
+    SD_TYPEDEFS(rvv)
 #else
     #define SD_VARIANT(fnname)  fnname##_scalar
     SD_TYPEDEFS(scalar)
@@ -126,6 +137,8 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
     #define SD_SELECT(fnname)  ( fnname##_sve )
 #elifdef __ARM_NEON
     #define SD_SELECT(fnname)  ( fnname##_neon )
+#elifdef __riscv_v
+    #define SD_SELECT(fnname)  ( fnname##_rvv )
 #else
     #define SD_SELECT(fnname)  ( fnname##_scalar )
 #endif
@@ -165,6 +178,10 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
     #define SD_SELECT(fnname)  ( SDL_HasNEON() ? fnname##_neon : fnname##_scalar )
 #endif
 #endif /* __arm__ */
+
+#ifdef __riscv
+    #error "Dynamic dispatch for RISC-V is not supported yet. Please configure static dispatch for RISC-V targets"
+#endif
 
 #ifndef SD_SELECT
     #define SD_SELECT(fnname)  ( fnname##_scalar )
@@ -222,6 +239,11 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
     #define sd_vw(v)  _Generic((v),  \
         sd_vec4: svget4              \
     )(v, 3)
+#elifdef __riscv_v
+    #define sd_vx(v)  __riscv_vget_f32m2((v), 0)
+    #define sd_vy(v)  __riscv_vget_f32m2((v), 1)
+    #define sd_vz(v)  __riscv_vget_f32m2((v), 2)
+    #define sd_vw(v)  __riscv_vget_f32m2((v), 3)
 #else
     #define sd_vx(v)  (v).x
     #define sd_vy(v)  (v).y
@@ -332,7 +354,7 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
         );                                        \
     }
 
-#ifdef __ARM_FEATURE_SVE
+#if defined(__ARM_FEATURE_SVE) || defined(__riscv_v)
     static constexpr size_t SD_ALIGN = alignof(float);
 #else
     static constexpr size_t SD_ALIGN = alignof(sd_float);
@@ -341,6 +363,8 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
 static inline size_t sd_length(void) {
 #ifdef __ARM_FEATURE_SVE
     return svcntw();
+#elifdef __riscv_v
+    return __riscv_vsetvlmax_e32m2();
 #else
     return sizeof(sd_float) / 4;
 #endif
@@ -357,6 +381,8 @@ static inline size_t sd_log_length(void) {
     return __builtin_ctz(svcntw());
 #elifdef __ARM_NEON
     return 2;
+#elifdef __riscv_v
+    return __builtin_ctz(sd_length());
 #else
     return 0;
 #endif
@@ -381,6 +407,8 @@ static inline size_t sd_bounding_size(size_t n) {
 static inline sd_vec2 sd_vec2_create(sd_float x, sd_float y) {
 #ifdef __ARM_FEATURE_SVE
     return svcreate2(x, y);
+#elifdef __riscv_v
+    return __riscv_vcreate_v_f32m2x2(x, y);
 #else
     return (sd_vec2){x, y};
 #endif
@@ -389,6 +417,8 @@ static inline sd_vec2 sd_vec2_create(sd_float x, sd_float y) {
 static inline sd_vec3 sd_vec3_create(sd_float x, sd_float y, sd_float z) {
 #ifdef __ARM_FEATURE_SVE
     return svcreate3(x, y, z);
+#elifdef __riscv_v
+    return __riscv_vcreate_v_f32m2x3(x, y, z);
 #else
     return (sd_vec3){x, y, z};
 #endif
@@ -397,6 +427,8 @@ static inline sd_vec3 sd_vec3_create(sd_float x, sd_float y, sd_float z) {
 static inline sd_vec4 sd_vec4_create(sd_float x, sd_float y, sd_float z, sd_float w) {
 #ifdef __ARM_FEATURE_SVE
     return svcreate4(x, y, z, w);
+#elifdef __riscv_v
+    return __riscv_vcreate_v_f32m2x4(x, y, z, w);
 #else
     return (sd_vec4){x, y, z, w};
 #endif
@@ -414,6 +446,8 @@ static inline sd_mask sd_mask_set(bool b) {
 #elifdef __ARM_NEON
     uint32x4_t tst = vdupq_n_u32(b);
     return vtstq_u32(tst, tst);
+#elifdef __riscv_v
+    return __riscv_vmsgtu(__riscv_vmv_v_x_u32m2(b, sd_length()), 0, sd_length());
 #else
     return b;
 #endif
@@ -430,6 +464,8 @@ static inline sd_mask sd_mask_and(sd_mask lhs, sd_mask rhs) {
     return svand_z(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vandq_u32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmand(lhs, rhs, sd_length());
 #else
     return lhs && rhs;
 #endif
@@ -446,6 +482,8 @@ static inline sd_mask sd_mask_or(sd_mask lhs, sd_mask rhs) {
     return svorr_z(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vorrq_u32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmor(lhs, rhs, sd_length());
 #else
     return lhs || rhs;
 #endif
@@ -462,6 +500,8 @@ static inline sd_mask sd_mask_not(sd_mask m) {
     return svnot_z(svptrue_b32(), m);
 #elifdef __ARM_NEON
     return vmvnq_u32(m);
+#elifdef __riscv_v
+    return __riscv_vmnot(m, sd_length());
 #else
     return !m;
 #endif
@@ -478,6 +518,8 @@ static inline sd_mask sd_mask_andn(sd_mask lhs, sd_mask rhs) {
     return svbic_z(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vbicq_u32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmandn(lhs, rhs, sd_length());
 #else
     return lhs && !rhs;
 #endif
@@ -494,6 +536,8 @@ static inline sd_int sd_int_set(int32_t i) {
     return svdup_s32(i);
 #elifdef __ARM_NEON
     return vdupq_n_s32(i);
+#elifdef __riscv_v
+    return __riscv_vmv_v_x_i32m2(i, sd_length());
 #else
     return i;
 #endif
@@ -510,6 +554,8 @@ static inline sd_int sd_int_add(sd_int lhs, sd_int rhs) {
     return svadd_x(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vaddq_s32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vadd(lhs, rhs, sd_length());
 #else
     return lhs + rhs;
 #endif
@@ -526,6 +572,8 @@ static inline sd_int sd_int_sub(sd_int lhs, sd_int rhs) {
     return svsub_x(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vsubq_s32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vsub(lhs, rhs, sd_length());
 #else
     return lhs - rhs;
 #endif
@@ -550,6 +598,8 @@ static inline sd_int sd_int_mul(sd_int lhs, sd_int rhs) {
     return svmul_x(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vmulq_s32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmul(lhs, rhs, sd_length());
 #else
     return lhs * rhs;
 #endif
@@ -566,6 +616,8 @@ static inline sd_mask sd_int_lt(sd_int lhs, sd_int rhs) {
     return svcmplt(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vcltq_s32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmslt(lhs, rhs, sd_length());
 #else
     return lhs < rhs;
 #endif
@@ -582,6 +634,8 @@ static inline sd_mask sd_int_gt(sd_int lhs, sd_int rhs) {
     return svcmpgt(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vcgtq_s32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmsgt(lhs, rhs, sd_length());
 #else
     return lhs > rhs;
 #endif
@@ -598,6 +652,8 @@ static inline sd_int sd_int_and(sd_int lhs, sd_int rhs) {
     return svand_x(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vandq_s32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vand(lhs, rhs, sd_length());
 #else
     return lhs & rhs;
 #endif
@@ -614,6 +670,8 @@ static inline sd_int sd_int_or(sd_int lhs, sd_int rhs) {
     return svorr_x(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vorrq_s32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vor(lhs, rhs, sd_length());
 #else
     return lhs | rhs;
 #endif
@@ -631,6 +689,8 @@ static inline sd_int sd_int_shl(sd_int i, int shift) {
 #elifdef __ARM_NEON
     int32x4_t shiftv = vdupq_n_s32(shift);
     return vshlq_s32(i, shiftv);
+#elifdef __riscv_v
+    return __riscv_vsll(i, shift, sd_length());
 #else
     return i << shift;
 #endif
@@ -648,6 +708,8 @@ static inline sd_int sd_int_shr(sd_int i, int shift) {
 #elifdef __ARM_NEON
     int32x4_t shiftv = vdupq_n_s32(-shift);
     return vshlq_s32(i, shiftv);
+#elifdef __riscv_v
+    return __riscv_vsra(i, shift, sd_length());
 #else
     return i >> shift;
 #endif
@@ -670,6 +732,8 @@ static inline sd_int sd_int_mask_blend(sd_int bg, sd_int fg, sd_mask mask) {
     return svsel(mask, fg, bg);
 #elifdef __ARM_NEON
     return vbslq_s32(mask, fg, bg);
+#elifdef __riscv_v
+    return __riscv_vmerge(bg, fg, mask, sd_length());
 #else
     return mask ? fg : bg;
 #endif
@@ -694,6 +758,9 @@ static inline sd_int sd_int_gather_u8(const uint8_t *buf, sd_int index) {
     return svld1ub_gather_offset_s32(svptrue_b32(), buf, index);
 #elifdef __ARM_NEON
     return (sd_int){buf[index[0]], buf[index[1]], buf[index[2]], buf[index[3]]};
+#elifdef __riscv_v
+    vuint8mf2_t u8 = __riscv_vluxei32(buf, __riscv_vreinterpret_u32m2(index), sd_length());
+    return __riscv_vreinterpret_i32m2(__riscv_vzext_vf4(u8, sd_length()));
 #else
     return buf[index];
 #endif
@@ -714,6 +781,8 @@ static inline void sd_int_store(sd_int *dst, size_t index, sd_int i) {
     svst1_vnum(svptrue_b32(), (int32_t *)dst, index, i);
 #elifdef __ARM_NEON
     vst1q_s32((int32_t *)dst + index * sd_length(), i);
+#elifdef __riscv_v
+    __riscv_vse32((int32_t *)dst + index * sd_length(), i, sd_length());
 #else
     dst[index] = i;
 #endif
@@ -730,6 +799,8 @@ static inline void sd_int_storeu(int32_t *dst, sd_int i) {
     svst1(svptrue_b32(), dst, i);
 #elifdef __ARM_NEON
     vst1q_s32(dst, i);
+#elifdef __riscv_v
+    __riscv_vse32(dst, i, sd_length());
 #else
     *dst = i;
 #endif
@@ -746,6 +817,8 @@ static inline sd_int sd_float_to_int(sd_float f) {
     return svcvt_s32_x(svptrue_b32(), f);
 #elifdef __ARM_NEON
     return vcvtq_s32_f32(f);
+#elifdef __riscv_v
+    return __riscv_vfcvt_rtz_x(f, sd_length());
 #else
     return (int32_t)f;
 #endif
@@ -762,6 +835,8 @@ static inline sd_float sd_int_to_float(sd_int i) {
     return svcvt_f32_x(svptrue_b32(), i);
 #elifdef __ARM_NEON
     return vcvtq_f32_s32(i);
+#elifdef __riscv_v
+    return __riscv_vfcvt_f(i, sd_length());
 #else
     return (float)i;
 #endif
@@ -778,6 +853,8 @@ static inline sd_float sd_float_set(float f) {
     return svdup_f32(f);
 #elifdef __ARM_NEON
     return vdupq_n_f32(f);
+#elifdef __riscv_v
+    return __riscv_vfmv_v_f_f32m2(f, sd_length());
 #else
     return f;
 #endif
@@ -830,6 +907,8 @@ static inline sd_float sd_float_add(sd_float lhs, sd_float rhs) {
     return svadd_x(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vaddq_f32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vfadd(lhs, rhs, sd_length());
 #else
     return lhs + rhs;
 #endif
@@ -849,6 +928,8 @@ static inline sd_float sd_float_sub(sd_float lhs, sd_float rhs) {
     return svsub_x(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vsubq_f32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vfsub(lhs, rhs, sd_length());
 #else
     return lhs - rhs;
 #endif
@@ -868,6 +949,8 @@ static inline sd_float sd_float_mul(sd_float lhs, sd_float rhs) {
     return svmul_x(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vmulq_f32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vfmul(lhs, rhs, sd_length());
 #else
     return lhs * rhs;
 #endif
@@ -891,6 +974,8 @@ static inline sd_float sd_float_abs(sd_float f) {
     return svabs_x(svptrue_b32(), f);
 #elifdef __ARM_NEON
     return vabsq_f32(f);
+#elifdef __riscv_v
+    return __riscv_vfabs(f, sd_length());
 #else
     return SDL_fabsf(f);
 #endif
@@ -909,6 +994,8 @@ static inline sd_float sd_float_negate(sd_float f) {
     return svneg_x(svptrue_b32(), f);
 #elifdef __ARM_NEON
     return vnegq_f32(f);
+#elifdef __riscv_v
+    return __riscv_vfneg(f, sd_length());
 #else
     return -f;
 #endif
@@ -935,6 +1022,10 @@ static inline sd_float sd_float_rcp(sd_float f) {
 #elifdef __ARM_NEON
     float32x4_t est = vrecpeq_f32(f);
     return vmulq_f32(est, vrecpsq_f32(f, est));
+#elifdef __riscv_v
+    vfloat32m2_t est = __riscv_vfrec7(f, sd_length());
+    vfloat32m2_t two = sd_float_set(2);
+    return __riscv_vfmul(est, __riscv_vfnmsub(f, est, two, sd_length()), sd_length());
 #else
     return 1 / f;
 #endif
@@ -970,6 +1061,12 @@ static inline sd_float sd_float_rsqrt(sd_float f) {
     float32x4_t est = vrsqrteq_f32(f);
     float32x4_t sqrest = vmulq_f32(est, est);
     return vmulq_f32(est, vrsqrtsq_f32(f, sqrest));
+#elifdef __riscv_v
+    vfloat32m2_t est = __riscv_vfrsqrt7(f, sd_length());
+    vfloat32m2_t hlfest = __riscv_vfmul(est, sd_float_set(0.5), sd_length());
+    vfloat32m2_t sqrest = __riscv_vfmul(est, est, sd_length());
+    vfloat32m2_t three = sd_float_set(3);
+    return __riscv_vfmul(hlfest, __riscv_vfnmsub(f, sqrest, three, sd_length()), sd_length());
 #else
     return 1 / SDL_sqrtf(f);
 #endif
@@ -998,6 +1095,8 @@ static inline sd_float sd_float_fmadd(sd_float multiplicand, sd_float multiplier
     return svmad_x(svptrue_b32(), multiplicand, multiplier, addend);
 #elifdef __ARM_NEON
     return vmlaq_f32(addend, multiplicand, multiplier);
+#elifdef __riscv_v
+    return __riscv_vfmadd(multiplicand, multiplier, addend, sd_length());
 #else
     return sd_float_add(sd_float_mul(multiplicand, multiplier), addend);
 #endif
@@ -1036,6 +1135,8 @@ static inline sd_float sd_float_fmsub(sd_float multiplicand, sd_float multiplier
     return svnmsb_x(svptrue_b32(), multiplicand, multiplier, subtrahend);
 #elifdef __ARM_NEON
     return vmlaq_f32(vnegq_f32(subtrahend), multiplicand, multiplier);
+#elifdef __riscv_v
+    return __riscv_vfmsub(multiplicand, multiplier, subtrahend, sd_length());
 #else
     return sd_float_sub(sd_float_mul(multiplicand, multiplier), subtrahend);
 #endif
@@ -1068,6 +1169,8 @@ static inline sd_float sd_float_min(sd_float lhs, sd_float rhs) {
     return svmin_x(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vminq_f32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vfmin(lhs, rhs, sd_length());
 #else
     return SDL_min(lhs, rhs);
 #endif
@@ -1087,6 +1190,8 @@ static inline sd_float sd_float_max(sd_float lhs, sd_float rhs) {
     return svmax_x(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vmaxq_f32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vfmax(lhs, rhs, sd_length());
 #else
     return SDL_max(lhs, rhs);
 #endif
@@ -1134,6 +1239,8 @@ static inline sd_mask sd_float_lt(sd_float lhs, sd_float rhs) {
     return svcmplt(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vcltq_f32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmflt(lhs, rhs, sd_length());
 #else
     return lhs < rhs;
 #endif
@@ -1150,6 +1257,8 @@ static inline sd_mask sd_float_gt(sd_float lhs, sd_float rhs) {
     return svcmpgt(svptrue_b32(), lhs, rhs);
 #elifdef __ARM_NEON
     return vcgtq_f32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmfgt(lhs, rhs, sd_length());
 #else
     return lhs > rhs;
 #endif
@@ -1172,6 +1281,8 @@ static inline sd_float sd_float_mask_blend(sd_float bg, sd_float fg, sd_mask mas
     return svsel(mask, fg, bg);
 #elifdef __ARM_NEON
     return vbslq_f32(mask, fg, bg);
+#elifdef __riscv_v
+    return __riscv_vmerge(bg, fg, mask, sd_length());
 #else
     return mask ? fg : bg;
 #endif
@@ -1212,6 +1323,8 @@ static inline sd_float sd_float_range(void) {
     return svcvt_f32_x(svptrue_b32(), svindex_s32(0, 1));
 #elifdef __ARM_NEON
     return (sd_float){0,1,2,3};
+#elifdef __riscv_v
+    return __riscv_vfcvt_f(__riscv_vid_v_u32m2(sd_length()), sd_length());
 #else
     return 0;
 #endif
@@ -1239,6 +1352,9 @@ static inline sd_float sd_float_gather(float *buf, sd_int index) {
     return svld1_gather_index(svptrue_b32(), buf, index);
 #elifdef __ARM_NEON
     return (sd_float){buf[index[0]], buf[index[1]], buf[index[2]], buf[index[3]]};
+#elifdef __riscv_v
+    vuint32m2_t byte_offset = __riscv_vsll(__riscv_vreinterpret_u32m2(index), 2, sd_length());
+    return __riscv_vluxei32(buf, byte_offset, sd_length());
 #else
     return buf[index];
 #endif
@@ -1259,6 +1375,10 @@ static inline sd_vec3 sd_vec3_gather_strided(sd_vec3 *buf, sd_int index) {
 }
 
 static inline sd_vec4 sd_vec4_gather(float *buf, sd_int index) {
+#ifdef __riscv_v
+    vuint32m2_t byte_offset = __riscv_vsll(__riscv_vreinterpret_u32m2(index), 4, sd_length());
+    return __riscv_vluxseg4ei32_v_f32m2x4(buf, byte_offset, sd_length());
+#else
     sd_int base = sd_int_shl(index, 2);
 
     return sd_vec4_create(
@@ -1280,6 +1400,8 @@ static inline sd_float sd_float_load(sd_float *src, size_t index) {
     return svld1_vnum(svptrue_b32(), (float *)src, index);
 #elifdef __ARM_NEON
     return vld1q_f32((float *)src + index * sd_length());
+#elifdef __riscv_v
+    return __riscv_vle32_v_f32m2((float *)src + index * sd_length(), sd_length());
 #else
     return src[index];
 #endif
@@ -1326,6 +1448,8 @@ static inline void sd_float_store(sd_float *dst, size_t index, sd_float f) {
     svst1_vnum(svptrue_b32(), (float *)dst, index, f);
 #elifdef __ARM_NEON
     vst1q_f32((float *)dst + index * sd_length(), f);
+#elifdef __riscv_v
+    __riscv_vse32((float *)dst + index * sd_length(), f, sd_length());
 #else
     dst[index] = f;
 #endif
