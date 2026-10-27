@@ -1286,26 +1286,32 @@ static inline sd_float sd_float_load(sd_float *src, size_t index) {
 }
 
 static inline sd_vec2 sd_vec2_load(sd_vec2 *src, size_t index) {
+    float *base = (float *)src + index * sd_length() * 2;
+
     return sd_vec2_create(
-        sd_float_load((sd_float *)src, index * 2 + 0),
-        sd_float_load((sd_float *)src, index * 2 + 1)
+        sd_float_load((sd_float *)base, 0),
+        sd_float_load((sd_float *)base, 1)
     );
 }
 
 static inline sd_vec3 sd_vec3_load(sd_vec3 *src, size_t index) {
+    float *base = (float *)src + index * sd_length() * 3;
+
     return sd_vec3_create(
-        sd_float_load((sd_float *)src, index * 3 + 0),
-        sd_float_load((sd_float *)src, index * 3 + 1),
-        sd_float_load((sd_float *)src, index * 3 + 2)
+        sd_float_load((sd_float *)base, 0),
+        sd_float_load((sd_float *)base, 1),
+        sd_float_load((sd_float *)base, 2)
     );
 }
 
 static inline sd_vec4 sd_vec4_load(sd_vec4 *src, size_t index) {
+    float *base = (float *)src + index * sd_length() * 4;
+
     return sd_vec4_create(
-        sd_float_load((sd_float *)src, index * 4 + 0),
-        sd_float_load((sd_float *)src, index * 4 + 1),
-        sd_float_load((sd_float *)src, index * 4 + 2),
-        sd_float_load((sd_float *)src, index * 4 + 3)
+        sd_float_load((sd_float *)base, 0),
+        sd_float_load((sd_float *)base, 1),
+        sd_float_load((sd_float *)base, 2),
+        sd_float_load((sd_float *)base, 3)
     );
 }
 
@@ -1326,21 +1332,24 @@ static inline void sd_float_store(sd_float *dst, size_t index, sd_float f) {
 }
 
 static inline void sd_vec2_store(sd_vec2 *src, size_t index, sd_vec2 v) {
-    sd_float_store((sd_float *)src, index * 2 + 0, sd_vx(v));
-    sd_float_store((sd_float *)src, index * 2 + 1, sd_vy(v));
+    float *base = (float *)src + index * sd_length() * 2;
+    sd_float_store((sd_float *)base, 0, sd_vx(v));
+    sd_float_store((sd_float *)base, 1, sd_vy(v));
 }
 
 static inline void sd_vec3_store(sd_vec3 *src, size_t index, sd_vec3 v) {
-    sd_float_store((sd_float *)src, index * 3 + 0, sd_vx(v));
-    sd_float_store((sd_float *)src, index * 3 + 1, sd_vy(v));
-    sd_float_store((sd_float *)src, index * 3 + 2, sd_vz(v));
+    float *base = (float *)src + index * sd_length() * 3;
+    sd_float_store((sd_float *)base, 0, sd_vx(v));
+    sd_float_store((sd_float *)base, 1, sd_vy(v));
+    sd_float_store((sd_float *)base, 2, sd_vz(v));
 }
 
 static inline void sd_vec4_store(sd_vec4 *src, size_t index, sd_vec4 v) {
-    sd_float_store((sd_float *)src, index * 4 + 0, sd_vx(v));
-    sd_float_store((sd_float *)src, index * 4 + 1, sd_vy(v));
-    sd_float_store((sd_float *)src, index * 4 + 2, sd_vz(v));
-    sd_float_store((sd_float *)src, index * 4 + 3, sd_vw(v));
+    float *base = (float *)src + index * sd_length() * 4;
+    sd_float_store((sd_float *)base, 0, sd_vx(v));
+    sd_float_store((sd_float *)base, 1, sd_vy(v));
+    sd_float_store((sd_float *)base, 2, sd_vz(v));
+    sd_float_store((sd_float *)base, 3, sd_vw(v));
 }
 
 static inline float sd_float_loads(sd_float *src, size_t index) {
