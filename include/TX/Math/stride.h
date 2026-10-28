@@ -766,6 +766,24 @@ static inline sd_int sd_int_gather_u8(const uint8_t *buf, sd_int index) {
 #endif
 }
 
+static inline int32_t sd_int_first(sd_int i) {
+#ifdef __AVX512F__
+    return _mm512_cvtsi512_si32(i);
+#elifdef __AVX2__
+    return _mm256_cvtsi256_si32(i);
+#elifdef __SSE2__
+    return _mm_cvtsi128_si32(i);
+#elifdef __ARM_FEATURE_SVE
+    return svlasta(svptrue_b32(), i);
+#elifdef __ARM_NEON
+    return vgetq_lane_s32(i, 0);
+#elifdef __riscv_v
+    return __riscv_vmv_x(i);
+#else
+    return i;
+#endif
+}
+
 static inline int32_t sd_int_loads(sd_int *src, size_t index) {
     return ((int32_t *)src)[index];
 }
@@ -1387,6 +1405,49 @@ static inline sd_vec4 sd_vec4_gather(float *buf, sd_int index) {
         sd_float_gather(buf + 2, base),
         sd_float_gather(buf + 3, base)
     );
+#endif
+}
+
+static inline float sd_float_first(sd_float f) {
+#ifdef __AVX512F__
+    return _mm512_cvtss_f32(f);
+#elifdef __AVX2__
+    return _mm256_cvtss_f32(f);
+#elifdef __SSE2__
+    return _mm_cvtss_f32(f);
+#elifdef __ARM_FEATURE_SVE
+    return svlasta(svptrue_b32(), f);
+#elifdef __ARM_NEON
+    return vgetq_lane_f32(f, 0);
+#elifdef __riscv_v
+    return __riscv_vfmv_f(f);
+#else
+    return f;
+#endif
+}
+
+static inline sd_vec2_scalar sd_vec2_first(sd_vec2 v) {
+    return (sd_vec2_scalar) {
+        .x = sd_float_first(sd_vx(v)),
+        .y = sd_float_first(sd_vy(v))
+    };
+}
+
+static inline sd_vec3_scalar sd_vec3_first(sd_vec3 v) {
+    return (sd_vec3_scalar) {
+        .x = sd_float_first(sd_vx(v)),
+        .y = sd_float_first(sd_vy(v)),
+        .z = sd_float_first(sd_vz(v))
+    };
+}
+
+static inline sd_vec4_scalar sd_vec4_first(sd_vec4 v) {
+    return (sd_vec4_scalar) {
+        .x = sd_float_first(sd_vx(v)),
+        .y = sd_float_first(sd_vy(v)),
+        .z = sd_float_first(sd_vz(v)),
+        .w = sd_float_first(sd_vw(v))
+    };
 }
 
 static inline sd_float sd_float_load(sd_float *src, size_t index) {

@@ -372,7 +372,7 @@ static void QueueFlagBatchTriangles(ECS_Handle *self, TX_FlagBatch *fb) {
                         sd_vec2_set(canvas->width * 0.5f, canvas->height * 0.5f)
                     );
 
-                    sd_vec2_scalar projected_scalar = sd_vec2_loads(&projected, 0);
+                    sd_vec2_scalar projected_scalar = sd_vec2_first(projected);
                     SDL_memcpy(clipped + nclipped++, &projected_scalar, sizeof(vec2));
                 }
             }
