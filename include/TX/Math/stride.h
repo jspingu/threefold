@@ -826,7 +826,7 @@ static inline void sd_int_storeu(int32_t *dst, sd_int i) {
 #endif
 }
 
-static inline sd_int sd_float_to_int(sd_float f) {
+static inline sd_int sd_float_toi(sd_float f) {
 #ifdef __AVX512F__
     return _mm512_cvttps_epi32(f);
 #elifdef __AVX2__
@@ -844,7 +844,7 @@ static inline sd_int sd_float_to_int(sd_float f) {
 #endif
 }
 
-static inline sd_float sd_int_to_float(sd_int i) {
+static inline sd_float sd_int_tof(sd_int i) {
 #ifdef __AVX512F__
     return _mm512_cvtepi32_ps(i);
 #elifdef __AVX2__
@@ -1095,7 +1095,7 @@ static inline sd_float sd_float_rsqrt(sd_float f) {
 SD_DEFINE_VECFNS_UNARY(rsqrt, rsqrt)
 
 static inline sd_float sd_float_trunc(sd_float f) {
-    return sd_int_to_float(sd_float_to_int(f));
+    return sd_int_tof(sd_float_toi(f));
 }
 
 SD_DEFINE_VECFNS_UNARY(trunc, trunc)

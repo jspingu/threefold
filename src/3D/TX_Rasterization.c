@@ -272,33 +272,37 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
 
 static void Span(TX_CanvasTile tile, TX_TriangleDraw *triangle, int triangle_bounds[2]) {
     /* Sort by ascending y */
+    vec2 *ss = triangle->ss_verts;
     int idxs[] = { 0, 1, 2 };
 
-    if (triangle->ss_verts[idxs[0]].y > triangle->ss_verts[idxs[1]].y) swap(&idxs[0], &idxs[1]);
-    if (triangle->ss_verts[idxs[1]].y > triangle->ss_verts[idxs[2]].y) swap(&idxs[1], &idxs[2]);
-    if (triangle->ss_verts[idxs[0]].y > triangle->ss_verts[idxs[1]].y) swap(&idxs[0], &idxs[1]);
+    if (ss[idxs[0]].y > ss[idxs[1]].y) swap(&idxs[0], &idxs[1]);
+    if (ss[idxs[1]].y > ss[idxs[2]].y) swap(&idxs[1], &idxs[2]);
+    if (ss[idxs[0]].y > ss[idxs[1]].y) swap(&idxs[0], &idxs[1]);
 
     /* True if long edge is left edge */
     bool le_left = ((idxs[0] + 2) % 3 == idxs[2]);
 
-    sd_float grad01 = sd_float_set((triangle->ss_verts[idxs[1]].x - triangle->ss_verts[idxs[0]].x) / (triangle->ss_verts[idxs[1]].y - triangle->ss_verts[idxs[0]].y));
-    sd_float grad12 = sd_float_set((triangle->ss_verts[idxs[2]].x - triangle->ss_verts[idxs[1]].x) / (triangle->ss_verts[idxs[2]].y - triangle->ss_verts[idxs[1]].y));
-    sd_float grad02 = sd_float_set((triangle->ss_verts[idxs[2]].x - triangle->ss_verts[idxs[0]].x) / (triangle->ss_verts[idxs[2]].y - triangle->ss_verts[idxs[0]].y));
+    sd_float grad01 = sd_float_set((ss[idxs[1]].x - ss[idxs[0]].x) / (ss[idxs[1]].y - ss[idxs[0]].y));
+    sd_float grad12 = sd_float_set((ss[idxs[2]].x - ss[idxs[1]].x) / (ss[idxs[2]].y - ss[idxs[1]].y));
+    sd_float grad02 = sd_float_set((ss[idxs[2]].x - ss[idxs[0]].x) / (ss[idxs[2]].y - ss[idxs[0]].y));
+
+    sd_float sd_tl = sd_float_set(tile.left);
+    sd_float sd_tr = sd_float_set(tile.right);
 
     size_t sd_top = sd_qot(triangle_bounds[0]);
     size_t sd_bottom = sd_bounding_length(triangle_bounds[1]);
 
     for (size_t i = sd_top; i < sd_bottom; ++i) {
         sd_float y = sd_float_add(sd_float_range(), sd_float_set(i * sd_length() + 0.5f));
-        sd_float offset0 = sd_float_sub(y, sd_float_set(triangle->ss_verts[idxs[0]].y));
-        sd_float offset1 = sd_float_sub(y, sd_float_set(triangle->ss_verts[idxs[1]].y));
+        sd_float offset0 = sd_float_sub(y, sd_float_set(ss[idxs[0]].y));
+        sd_float offset1 = sd_float_sub(y, sd_float_set(ss[idxs[1]].y));
 
-        sd_float x01 = sd_float_fmadd(grad01, offset0, sd_float_set(triangle->ss_verts[idxs[0]].x));
-        sd_float x12 = sd_float_fmadd(grad12, offset1, sd_float_set(triangle->ss_verts[idxs[1]].x));
-        sd_float x02 = sd_float_fmadd(grad02, offset0, sd_float_set(triangle->ss_verts[idxs[0]].x));
+        sd_float x01 = sd_float_fmadd(grad01, offset0, sd_float_set(ss[idxs[0]].x));
+        sd_float x12 = sd_float_fmadd(grad12, offset1, sd_float_set(ss[idxs[1]].x));
+        sd_float x02 = sd_float_fmadd(grad02, offset0, sd_float_set(ss[idxs[0]].x));
 
-        sd_int left = sd_float_to_int(sd_float_add(sd_float_clamp(le_left ? x02 : sd_float_max(x01, x12), sd_float_set(tile.left), sd_float_set(tile.right)), sd_float_set(0.5f)));
-        sd_int right = sd_float_to_int(sd_float_add(sd_float_clamp(le_left ? sd_float_min(x01, x12) : x02, sd_float_set(tile.left), sd_float_set(tile.right)), sd_float_set(0.5f)));
+        sd_int left = sd_float_toi(sd_float_add(sd_float_clamp(le_left ? x02 : sd_float_max(x01, x12), sd_tl, sd_tr), sd_float_set(0.5)));
+        sd_int right = sd_float_toi(sd_float_add(sd_float_clamp(le_left ? sd_float_min(x01, x12) : x02, sd_tl, sd_tr), sd_float_set(0.5)));
 
         sd_int_store(tile.scanlines[0], i - sd_qot(tile.top), left);
         sd_int_store(tile.scanlines[1], i - sd_qot(tile.top), right);

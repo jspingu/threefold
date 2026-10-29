@@ -58,9 +58,9 @@ static inline sd_vec4 TX_SampleNearest(TX_Texture *texture, sd_vec2 ts) {
     sd_float px_y = sd_float_clamp(sd_float_mul(sd_vy(ts), unit), sd_float_zero(), sd_float_set(texture->height - 1));
 
     sd_int pixel_index = sd_int_add(sd_int_mul(
-        sd_float_to_int(px_y),
+        sd_float_toi(px_y),
         sd_int_set(texture->width)
-    ), sd_float_to_int(px_x));
+    ), sd_float_toi(px_x));
 
     return sd_vec4_gather(texture->color, pixel_index);
 }
@@ -114,8 +114,8 @@ static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
 
     sd_int pixel_index = sd_int_mul(vtile, sd_int_set(texture->width * texture->unit * 2));
            pixel_index = sd_int_add(pixel_index, sd_int_mul(htile, sd_int_set(texture->unit * 2)));
-           pixel_index = sd_int_add(pixel_index, sd_int_mul(sd_float_to_int(sd_vy(tile_coord)), sd_int_set(texture->width)));
-           pixel_index = sd_int_add(pixel_index, sd_float_to_int(sd_vx(tile_coord)));
+           pixel_index = sd_int_add(pixel_index, sd_int_mul(sd_float_toi(sd_vy(tile_coord)), sd_int_set(texture->width)));
+           pixel_index = sd_int_add(pixel_index, sd_float_toi(sd_vx(tile_coord)));
 
     return sd_vec4_gather(texture->color, pixel_index);
 }

@@ -23,14 +23,14 @@ static void PresentSubCanvas(TX_CanvasWorkerData *wd) {
 
             sd_int byte = sd_int_set(0xFF);
 
-            sd_int r = sd_float_to_int(sd_vx(col));
+            sd_int r = sd_float_toi(sd_vx(col));
                    r = sd_int_gather_u8(gamma_encode_lut, r);
                    r = sd_int_shl(r, 16);
-            sd_int g = sd_float_to_int(sd_vy(col));
+            sd_int g = sd_float_toi(sd_vy(col));
                    g = sd_int_gather_u8(gamma_encode_lut, g);
                    g = sd_int_and(g, byte);
                    g = sd_int_shl(g, 8);
-            sd_int b = sd_float_to_int(sd_vz(col));
+            sd_int b = sd_float_toi(sd_vz(col));
                    b = sd_int_gather_u8(gamma_encode_lut, b);
                    b = sd_int_and(b, byte);
 
