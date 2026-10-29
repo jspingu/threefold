@@ -9,11 +9,11 @@
 #define ECS_GetComponent(e,component)            ( (typeof(component))ECS_GetComponentActual(e, component) )
 
 #define ECS_AttachComponents(e,...)              ( ECS_AttachComponentsActual(e, (ECS_ComponentConstruction []){__VA_ARGS__,{}}) )
-#define ECS_DetachComponents(e,...)              ( ECS_DetachComponentsActual(e, (void *[]){__VA_ARGS__,{}}) )
+#define ECS_DetachComponents(e,...)              ( ECS_DetachComponentsActual(e, (void *[]){__VA_ARGS__,nullptr}) )
 #define ECS_AddChildren(e,...)                   ( ECS_AddChildrenActual(e, (ECS_Construction []){__VA_ARGS__,{}}) )
 
 #define ECS_RegisterComponent(ecs,cmp_type,...)  ( ECS_RegisterComponentActual(ecs, sizeof(cmp_type), (ECS_ComponentCallbacks)__VA_ARGS__) )
-#define ECS_RegisterSystem(group,callback,...)   ( *(typeof(group))ECS_RegisterSystemActual(group, (void *[]){__VA_ARGS__,{}}) = callback )
+#define ECS_RegisterSystem(group,callback,...)   ( *(typeof(group))ECS_RegisterSystemActual(group, (void *[]){__VA_ARGS__,nullptr}) = callback )
 
 #define ECS_Components(...)  .component_constructions = (ECS_ComponentConstruction []){__VA_ARGS__,{}}
 #define ECS_Children(...)    .children = (ECS_Construction []){__VA_ARGS__,{}}

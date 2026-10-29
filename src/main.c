@@ -87,7 +87,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_Shade.SolidColor, &(TX_SolidColor) { .r = 0.1, .g = 0.9, .b = 1.0 }},
                         { TX_Shade.Lighting, &(TX_OpticalMedium) { .reflectivity = 1.0, .specularity = 1.0, .exp = 4 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, {}},
+                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, nullptr },
                             .render_batch = Transparent,
                             .flags = TX_RASTERIZER_TEST_DEPTH
                                    | TX_RASTERIZER_SORT_TRIANGLES
@@ -107,7 +107,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_Shade.SolidColor, &(TX_SolidColor) { .r = 1.0, .g = 0.1, .b = 0.8 }},
                         { TX_Shade.Lighting, &(TX_OpticalMedium) { .reflectivity = 1.0, .specularity = 1.0, .exp = 4 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, {}},
+                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, nullptr },
                             .render_batch = Transparent,
                             .flags = TX_RASTERIZER_TEST_DEPTH
                                    | TX_RASTERIZER_SORT_TRIANGLES
@@ -127,7 +127,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_Shade.SolidColor, &(TX_SolidColor) { .r = 1.0, .g = 1.0, .b = 1.0 }},
                         { TX_Shade.Lighting, &(TX_OpticalMedium) { .reflectivity = 1.0, .specularity = 1.0, .exp = 4 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, {}},
+                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, nullptr },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -153,7 +153,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         }},
                         { TX_Shade.Lighting, &(TX_OpticalMedium) { .reflectivity = 0.4, .specularity = 0.4, .exp = 4 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.Checkerboard, TX_Shade.Lighting, {}},
+                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.Checkerboard, TX_Shade.Lighting, nullptr },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -174,7 +174,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     ECS_Children({ECS_Components(
                         { TX_Shade.SolidColor, &(TX_SolidColor) { .r = 1, .g = 1, .b = 1 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, {}},
+                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, nullptr },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -195,7 +195,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     ECS_Children({ECS_Components(
                         { TX_Shade.SolidColor, &(TX_SolidColor) { .r = 1, .g = 1, .b = 1 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, {}},
+                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, nullptr },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -216,7 +216,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     ECS_Children({ECS_Components(
                         { TX_Shade.SolidColor, &(TX_SolidColor) { .r = 1, .g = 1, .b = 1 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, {}},
+                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, nullptr },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -237,7 +237,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     ECS_Children({ECS_Components(
                         { TX_Shade.SolidColor, &(TX_SolidColor) { .r = 1, .g = 1, .b = 1 }},
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, {}},
+                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, nullptr },
                             .render_batch = Opaque,
                             .flags = TX_RASTERIZER_CULL_BACKFACE
                                    | TX_RASTERIZER_TEST_DEPTH
@@ -255,7 +255,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     ECS_Children({ECS_Components(
                         { TX_Shade.Sky, nullptr },
                         { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.Sky, {}},
+                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.Sky, nullptr },
                             .render_batch = Sky
                         }}
                     )})
