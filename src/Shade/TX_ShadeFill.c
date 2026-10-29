@@ -13,13 +13,15 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeCheckerboard)(void *state, sd_vec4 col, TX_Sh
     (void)col;
     TX_Checkerboard *checkerboard = state;
     sd_vec2 tile_coord = sd_vec2_muls(*fragment->ts, sd_float_set(checkerboard->tiles));
-    sd_int tile_idx = sd_int_add(sd_int_mul(sd_float_to_int(sd_vy(tile_coord)), sd_int_set(checkerboard->tiles)), sd_float_to_int(sd_vx(tile_coord)));
+
+    sd_int tile_idx = sd_int_mul(sd_float_to_int(sd_vy(tile_coord)), sd_int_set(checkerboard->tiles));
+           tile_idx = sd_int_add(tile_idx, sd_float_to_int(sd_vx(tile_coord)));
+
     sd_mask tile_mask = sd_int_gt(sd_int_and(tile_idx, sd_int_set(1)), sd_int_set(0));
 
-    return sd_vec4_mask_blend(
+    return sd_vec4_sel(tile_mask,
         sd_vec4_set(checkerboard->r1, checkerboard->g1, checkerboard->b1, 1),
-        sd_vec4_set(checkerboard->r2, checkerboard->g2, checkerboard->b2, 1),
-        tile_mask
+        sd_vec4_set(checkerboard->r2, checkerboard->g2, checkerboard->b2, 1)
     );
 }
 

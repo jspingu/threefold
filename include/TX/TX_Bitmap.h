@@ -105,12 +105,10 @@ static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
     sd_mask across_xy = sd_mask_andn(sd_float_lt(sd_vz(dir), sd_float_zero()), sd_mask_or(mask_zy, mask_xz));
 
     sd_mask across = sd_mask_or(sd_mask_or(across_zy, across_xz), across_xy);
-    sd_int vtile = sd_int_mask_blend(sd_int_set(0), sd_int_set(1), across);
+    sd_int vtile = sd_int_sel(across, sd_int_set(1), sd_int_set(0));
+    sd_int htile = sd_int_sel(mask_zy, sd_int_set(0), sd_int_sel(mask_xz, sd_int_set(1), sd_int_set(2)));
 
-    sd_int htile = sd_int_mask_blend(sd_int_set(2), sd_int_set(1), mask_xz);           
-           htile = sd_int_mask_blend(htile, sd_int_set(0), mask_zy);
-
-    sd_vec2 tile_coord = sd_vec2_mask_blend(sd_vec2_mask_blend(xy, xz, mask_xz), zy, mask_zy);
+    sd_vec2 tile_coord = sd_vec2_sel(mask_zy, zy, sd_vec2_sel(mask_xz, xz, xy));
             tile_coord = sd_vec2_fsmadd(tile_coord, unit, sd_vec2_create(unit, unit));
             tile_coord = sd_vec2_clamp(tile_coord, sd_float_zero(), sd_float_set(texture->unit * 2 - 1));
 

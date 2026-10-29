@@ -412,7 +412,7 @@ static inline sd_vec2 sd_vec2_create(sd_float x, sd_float y) {
 #elifdef __riscv_v
     return __riscv_vcreate_v_f32m2x2(x, y);
 #else
-    return (sd_vec2){x, y};
+    return (sd_vec2) { x, y };
 #endif
 }
 
@@ -422,7 +422,7 @@ static inline sd_vec3 sd_vec3_create(sd_float x, sd_float y, sd_float z) {
 #elifdef __riscv_v
     return __riscv_vcreate_v_f32m2x3(x, y, z);
 #else
-    return (sd_vec3){x, y, z};
+    return (sd_vec3) { x, y, z };
 #endif
 }
 
@@ -432,7 +432,7 @@ static inline sd_vec4 sd_vec4_create(sd_float x, sd_float y, sd_float z, sd_floa
 #elifdef __riscv_v
     return __riscv_vcreate_v_f32m2x4(x, y, z, w);
 #else
-    return (sd_vec4){x, y, z, w};
+    return (sd_vec4) { x, y, z, w };
 #endif
 }
 
@@ -717,7 +717,7 @@ static inline sd_int sd_int_shr(sd_int i, int shift) {
 #endif
 }
 
-static inline sd_int sd_int_mask_blend(sd_int bg, sd_int fg, sd_mask mask) {
+static inline sd_int sd_int_sel(sd_mask mask, sd_int fg, sd_int bg) {
 #ifdef __AVX512F__
     return _mm512_mask_blend_epi32(mask, bg, fg);
 #elifdef __AVX2__
@@ -759,7 +759,7 @@ static inline sd_int sd_int_gather_u8(const uint8_t *buf, sd_int index) {
 #elifdef __ARM_FEATURE_SVE
     return svld1ub_gather_offset_s32(svptrue_b32(), buf, index);
 #elifdef __ARM_NEON
-    return (sd_int){buf[index[0]], buf[index[1]], buf[index[2]], buf[index[3]]};
+    return (sd_int) { buf[index[0]], buf[index[1]], buf[index[2]], buf[index[3]] };
 #elifdef __riscv_v
     vuint8mf2_t u8 = __riscv_vluxei32(buf, __riscv_vreinterpret_u32m2(index), sd_length());
     return __riscv_vreinterpret_i32m2(__riscv_vzext_vf4(u8, sd_length()));
@@ -1288,7 +1288,7 @@ static inline sd_mask sd_float_between(sd_float f, float min, float max) {
     return sd_mask_and(sd_float_gt(f, sd_float_set(min)), sd_float_lt(f, sd_float_set(max)));
 }
 
-static inline sd_float sd_float_mask_blend(sd_float bg, sd_float fg, sd_mask mask) {
+static inline sd_float sd_float_sel(sd_mask mask, sd_float fg, sd_float bg) {
 #ifdef __AVX512F__
     return _mm512_mask_blend_ps(mask, bg, fg);
 #elifdef __AVX2__
@@ -1308,27 +1308,27 @@ static inline sd_float sd_float_mask_blend(sd_float bg, sd_float fg, sd_mask mas
 #endif
 }
 
-static inline sd_vec2 sd_vec2_mask_blend(sd_vec2 bg, sd_vec2 fg, sd_mask mask) {
+static inline sd_vec2 sd_vec2_sel(sd_mask mask, sd_vec2 fg, sd_vec2 bg) {
     return sd_vec2_create(
-        sd_float_mask_blend(sd_vx(bg), sd_vx(fg), mask),
-        sd_float_mask_blend(sd_vy(bg), sd_vy(fg), mask)
+        sd_float_sel(mask, sd_vx(fg), sd_vx(bg)),
+        sd_float_sel(mask, sd_vy(fg), sd_vy(bg))
     );
 }
 
-static inline sd_vec3 sd_vec3_mask_blend(sd_vec3 bg, sd_vec3 fg, sd_mask mask) {
+static inline sd_vec3 sd_vec3_sel(sd_mask mask, sd_vec3 fg, sd_vec3 bg) {
     return sd_vec3_create(
-        sd_float_mask_blend(sd_vx(bg), sd_vx(fg), mask),
-        sd_float_mask_blend(sd_vy(bg), sd_vy(fg), mask),
-        sd_float_mask_blend(sd_vz(bg), sd_vz(fg), mask)
+        sd_float_sel(mask, sd_vx(fg), sd_vx(bg)),
+        sd_float_sel(mask, sd_vy(fg), sd_vy(bg)),
+        sd_float_sel(mask, sd_vz(fg), sd_vz(bg))
     );
 }
 
-static inline sd_vec4 sd_vec4_mask_blend(sd_vec4 bg, sd_vec4 fg, sd_mask mask) {
+static inline sd_vec4 sd_vec4_sel(sd_mask mask, sd_vec4 fg, sd_vec4 bg) {
     return sd_vec4_create(
-        sd_float_mask_blend(sd_vx(bg), sd_vx(fg), mask),
-        sd_float_mask_blend(sd_vy(bg), sd_vy(fg), mask),
-        sd_float_mask_blend(sd_vz(bg), sd_vz(fg), mask),
-        sd_float_mask_blend(sd_vw(bg), sd_vw(fg), mask)
+        sd_float_sel(mask, sd_vx(fg), sd_vx(bg)),
+        sd_float_sel(mask, sd_vy(fg), sd_vy(bg)),
+        sd_float_sel(mask, sd_vz(fg), sd_vz(bg)),
+        sd_float_sel(mask, sd_vw(fg), sd_vw(bg))
     );
 }
 
@@ -1342,7 +1342,7 @@ static inline sd_float sd_float_range(void) {
 #elifdef __ARM_FEATURE_SVE
     return svcvt_f32_x(svptrue_b32(), svindex_s32(0, 1));
 #elifdef __ARM_NEON
-    return (sd_float){0,1,2,3};
+    return (sd_float) { 0, 1, 2, 3 };
 #elifdef __riscv_v
     return __riscv_vfcvt_f(__riscv_vid_v_u32m2(sd_length()), sd_length());
 #else
@@ -1371,7 +1371,7 @@ static inline sd_float sd_float_gather(float *buf, sd_int index) {
 #elifdef __ARM_FEATURE_SVE
     return svld1_gather_index(svptrue_b32(), buf, index);
 #elifdef __ARM_NEON
-    return (sd_float){buf[index[0]], buf[index[1]], buf[index[2]], buf[index[3]]};
+    return (sd_float) { buf[index[0]], buf[index[1]], buf[index[2]], buf[index[3]] };
 #elifdef __riscv_v
     vuint32m2_t byte_offset = __riscv_vsll(__riscv_vreinterpret_u32m2(index), 2, sd_length());
     return __riscv_vluxei32(buf, byte_offset, sd_length());
@@ -1519,24 +1519,24 @@ static inline void sd_float_store(sd_float *dst, size_t index, sd_float f) {
 }
 
 static inline void sd_vec2_store(sd_vec2 *src, size_t index, sd_vec2 v) {
-    float *base = (float *)src + index * sd_length() * 2;
-    sd_float_store((sd_float *)base, 0, sd_vx(v));
-    sd_float_store((sd_float *)base, 1, sd_vy(v));
+    float *sd_base = (float *)src + index * sd_length() * 2;
+    sd_float_store((sd_float *)sd_base, 0, sd_vx(v));
+    sd_float_store((sd_float *)sd_base, 1, sd_vy(v));
 }
 
 static inline void sd_vec3_store(sd_vec3 *src, size_t index, sd_vec3 v) {
-    float *base = (float *)src + index * sd_length() * 3;
-    sd_float_store((sd_float *)base, 0, sd_vx(v));
-    sd_float_store((sd_float *)base, 1, sd_vy(v));
-    sd_float_store((sd_float *)base, 2, sd_vz(v));
+    float *sd_base = (float *)src + index * sd_length() * 3;
+    sd_float_store((sd_float *)sd_base, 0, sd_vx(v));
+    sd_float_store((sd_float *)sd_base, 1, sd_vy(v));
+    sd_float_store((sd_float *)sd_base, 2, sd_vz(v));
 }
 
 static inline void sd_vec4_store(sd_vec4 *src, size_t index, sd_vec4 v) {
-    float *base = (float *)src + index * sd_length() * 4;
-    sd_float_store((sd_float *)base, 0, sd_vx(v));
-    sd_float_store((sd_float *)base, 1, sd_vy(v));
-    sd_float_store((sd_float *)base, 2, sd_vz(v));
-    sd_float_store((sd_float *)base, 3, sd_vw(v));
+    float *sd_base = (float *)src + index * sd_length() * 4;
+    sd_float_store((sd_float *)sd_base, 0, sd_vx(v));
+    sd_float_store((sd_float *)sd_base, 1, sd_vy(v));
+    sd_float_store((sd_float *)sd_base, 2, sd_vz(v));
+    sd_float_store((sd_float *)sd_base, 3, sd_vw(v));
 }
 
 static inline float sd_float_loads(sd_float *src, size_t index) {

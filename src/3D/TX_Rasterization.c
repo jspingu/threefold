@@ -142,9 +142,9 @@ void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_Triangle
                 mask = sd_mask_and(mask, sd_float_gt(inv_z, bg_z));
 
             if (triangle->flags & TX_RASTERIZER_WRITE_DEPTH)
-                sd_float_store(canvas->depth, base + j, sd_float_mask_blend(bg_z, inv_z, mask));
+                sd_float_store(canvas->depth, base + j, sd_float_sel(mask, inv_z, bg_z));
 
-            sd_vec3_store(canvas->color, base + j, sd_vec3_mask_blend(bg, sd_vxyz(col), mask));
+            sd_vec3_store(canvas->color, base + j, sd_vec3_sel(mask, sd_vxyz(col), bg));
         }
     }
 }
@@ -263,9 +263,9 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
                 mask = sd_mask_and(mask, sd_float_gt(inv_z, bg_z));
 
             if (triangle->flags & TX_RASTERIZER_WRITE_DEPTH)
-                sd_float_store(canvas->depth, base + j, sd_float_mask_blend(bg_z, inv_z, mask));
+                sd_float_store(canvas->depth, base + j, sd_float_sel(mask, inv_z, bg_z));
 
-            sd_vec3_store(canvas->color, base + j, sd_vec3_mask_blend(bg, sd_vxyz(col), mask));
+            sd_vec3_store(canvas->color, base + j, sd_vec3_sel(mask, sd_vxyz(col), bg));
         }
     }
 }
