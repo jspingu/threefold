@@ -198,6 +198,7 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
     attr typeof(rettype) fnname##_sse2(SD_PARAMS(__VA_ARGS__));          \
     attr typeof(rettype) fnname##_sve(SD_PARAMS(__VA_ARGS__));           \
     attr typeof(rettype) fnname##_neon(SD_PARAMS(__VA_ARGS__));          \
+    attr typeof(rettype) fnname##_rvv(SD_PARAMS(__VA_ARGS__));           \
     attr typeof(rettype) fnname##_scalar(SD_PARAMS(__VA_ARGS__));        \
     attr static inline typeof(rettype) fnname(SD_PARAMS(__VA_ARGS__)) {  \
         typeof(&fnname) sd_fn = SD_SELECT(fnname);                       \
@@ -212,6 +213,7 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
     void fnname##_sse2(SD_PARAMS(__VA_ARGS__));          \
     void fnname##_sve(SD_PARAMS(__VA_ARGS__));           \
     void fnname##_neon(SD_PARAMS(__VA_ARGS__));          \
+    void fnname##_rvv(SD_PARAMS(__VA_ARGS__));           \
     void fnname##_scalar(SD_PARAMS(__VA_ARGS__));        \
     static inline void fnname(SD_PARAMS(__VA_ARGS__)) {  \
         typeof(&fnname) sd_fn = SD_SELECT(fnname);       \
