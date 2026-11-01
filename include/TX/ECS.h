@@ -76,6 +76,7 @@ typedef struct ECS_Construction {
 } ECS_Construction;
 
 void *ECS_GetComponentActual(ECS_Handle *e, void *component);
+ECS_Handle *ECS_GetParent(ECS_Handle *e);
 ECS_Handle **ECS_GetChildren(ECS_Handle *e);
 size_t ECS_GetChildCount(ECS_Handle *e);
 
