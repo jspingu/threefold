@@ -129,8 +129,8 @@ TX_Mesh *TX_GetSphereMesh(ECS_Handle *self);
 TX_Mesh *TX_GetRectMesh(ECS_Handle *self);
 TX_Mesh *TX_GetCubemapMesh(ECS_Handle *self);
 
-xform3 TX_GetEntityTransform(ECS_Handle *self);
-void TX_TransformEntity(ECS_Handle *self, xform3 lhs);
+xform3 TX_GetTransform(ECS_Handle *self);
+void TX_PropagateTransform(ECS_Handle *self, xform3 lhs);
 
 xform3 TX_ComposeTransformDefault(ECS_Handle *self, xform3 lhs);
 xform3 TX_ComposeTransformBillboard(ECS_Handle *self, xform3 lhs);

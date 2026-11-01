@@ -48,7 +48,7 @@ static int CompareTriangles(const void *a, const void *b) {
 void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_TriangleDraw *triangle, int triangle_bounds[2]) {
     TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
     TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
-    xform3 scalar_vs2ws_xform = TX_GetEntityTransform(self);
+    xform3 scalar_vs2ws_xform = TX_GetTransform(self);
 
     sd_vec3 vs2ws_xform_i = sd_vec3_set(scalar_vs2ws_xform.basis.x.x, scalar_vs2ws_xform.basis.x.y, scalar_vs2ws_xform.basis.x.z);
     sd_vec3 vs2ws_xform_j = sd_vec3_set(scalar_vs2ws_xform.basis.y.x, scalar_vs2ws_xform.basis.y.y, scalar_vs2ws_xform.basis.y.z);
@@ -153,7 +153,7 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
     TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
     TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
     TX_PerspectiveFOV *perspective_fov = ECS_GetComponent(self, TX_3D.PerspectiveFOV);
-    xform3 scalar_vs2ws_xform = TX_GetEntityTransform(self);
+    xform3 scalar_vs2ws_xform = TX_GetTransform(self);
 
     sd_vec3 vs2ws_xform_i = sd_vec3_set(scalar_vs2ws_xform.basis.x.x, scalar_vs2ws_xform.basis.x.y, scalar_vs2ws_xform.basis.x.z);
     sd_vec3 vs2ws_xform_j = sd_vec3_set(scalar_vs2ws_xform.basis.y.x, scalar_vs2ws_xform.basis.y.y, scalar_vs2ws_xform.basis.y.z);
@@ -457,14 +457,14 @@ void SD_VARIANT(TX_RenderWorld)(ECS_Handle *self) {
 
     /* Transform registered world geometry */
     List(TX_WorldGeometry *) *geometry = world->geometry;
-    xform3 cam_xform = TX_GetEntityTransform(self);
+    xform3 cam_xform = TX_GetTransform(self);
 
     xform3 ws2vs_xform = {
         mat3x3_transpose(cam_xform.basis),
         vec3_mul(mat3x3_mul(mat3x3_transpose(cam_xform.basis), cam_xform.translation), -1)
     };
 
-    TX_TransformEntity(rasterizer->world, ws2vs_xform);
+    TX_PropagateTransform(rasterizer->world, ws2vs_xform);
 
     List_ForEach(geometry, wg, {
         size_t sd_count = sd_bounding_length(wg->mesh->nverts);

@@ -21,7 +21,7 @@ sd_vec2 SD_VARIANT(TX_ProjectPerspective)(ECS_Handle *self, sd_vec3 pos, sd_vec2
 
 #ifndef SD_SRC_VARIANT
 
-xform3 TX_GetEntityTransform(ECS_Handle *self) {
+xform3 TX_GetTransform(ECS_Handle *self) {
     mat3x3 *basis = ECS_GetComponent(self, TX_3D.Basis);
     vec3 *position = ECS_GetComponent(self, TX_3D.Position);
 
@@ -31,21 +31,23 @@ xform3 TX_GetEntityTransform(ECS_Handle *self) {
     };
 }
 
-void TX_TransformEntity(ECS_Handle *self, xform3 lhs) {
+void TX_PropagateTransform(ECS_Handle *self, xform3 lhs) {
     TX_TransformCompositor *compose = ECS_GetComponent(self, TX_3D.TransformCompositor);
-    if (!compose) return;
+    
+    if (!compose)
+        return;
 
     xform3 composed = (*compose)(self, lhs);
     ECS_ProcessEntitySystemGroup(self, TX_SystemGroups.Transform, composed);
-    ECS_ForEachChild(self, c, TX_TransformEntity(c, composed); );
+    ECS_ForEachChild(self, c, TX_PropagateTransform(c, composed); );
 }
 
 xform3 TX_ComposeTransformDefault(ECS_Handle *self, xform3 lhs) {
-    return xform3_apply(lhs, TX_GetEntityTransform(self));
+    return xform3_apply(lhs, TX_GetTransform(self));
 }
 
 xform3 TX_ComposeTransformBillboard(ECS_Handle *self, xform3 lhs) {
-    xform3 local = TX_GetEntityTransform(self);
+    xform3 local = TX_GetTransform(self);
 
     return (xform3) {
         local.basis,
@@ -54,7 +56,7 @@ xform3 TX_ComposeTransformBillboard(ECS_Handle *self, xform3 lhs) {
 }
 
 xform3 TX_ComposeTransformCubemap(ECS_Handle *self, xform3 lhs) {
-    xform3 local = TX_GetEntityTransform(self);
+    xform3 local = TX_GetTransform(self);
 
     return (xform3) {
         mat3x3_mul(lhs.basis, local.basis),
@@ -64,7 +66,7 @@ xform3 TX_ComposeTransformCubemap(ECS_Handle *self, xform3 lhs) {
 
 xform3 TX_ComposeTransformAbsolute(ECS_Handle *self, xform3 lhs) {
     (void)lhs;
-    return TX_GetEntityTransform(self);
+    return TX_GetTransform(self);
 }
 
 #endif /* SD_SRC_VARIANT */
