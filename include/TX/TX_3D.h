@@ -152,6 +152,7 @@ SD_DECLARE(TX_WorldGeometry *, TX_RegisterGeometry, ECS_Handle *, self, TX_Mesh 
 void TX_FreeRenderInstance(TX_RenderInstance *instance);
 
 TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_ShaderCall *shader_pipeline, size_t render_batch, TX_RasterizerFlags flags);
+void TX_SetGeometryTransform(TX_WorldGeometry *geometry, xform3 transform);
 void TX_FreeWorldGeometry(TX_WorldGeometry *geometry);
 
 SD_DECLARE(sd_vec2, TX_ProjectParallel, ECS_Handle *, self, sd_vec3, point, sd_vec2, midpoint)

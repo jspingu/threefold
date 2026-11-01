@@ -89,9 +89,13 @@ TX_RenderInstance *TX_InstanceWorldGeometry(TX_WorldGeometry *geometry, TX_Shade
     return instance;
 }
 
+void TX_SetGeometryTransform(TX_WorldGeometry *geometry, xform3 transform) {
+    geometry->xform = transform;
+}
+
 void TX_TransformModel(ECS_Handle *self, xform3 composed) {
     TX_Model *model = ECS_GetComponent(self, TX_3D.Model);
-    model->geometry->xform = composed;
+    TX_SetGeometryTransform(model->geometry, composed);
 }
 
 void TX_AttachModel(ECS_Handle *self, ECS_Component(void) *component) {
