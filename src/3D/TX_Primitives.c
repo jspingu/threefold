@@ -4,10 +4,37 @@
 #include <TX/Collections/List.h>
 #include <TX/Math/linalg.h>
 
+TX_Mesh *TX_CreateRectMesh(float width, float height) {
+    vec3 ws_verts[4] = {
+        { .x = -width * 0.5f, .y = height * 0.5f },
+        { .x = width * 0.5f, .y = height * 0.5f },
+        { .x = -width * 0.5f, .y = -height * 0.5f },
+        { .x = width * 0.5f, .y = -height * 0.5f },
+    };
+
+    float unit = SDL_max(width, height);
+
+    vec2 ts_verts[4] = {
+        vec2_zero,
+        { .x = width / unit },
+        { .y = height / unit },
+        { .x = width / unit, .y = height / unit },
+    };
+
+    TX_MeshFace faces[2] = {
+        { .idx_verts = { 0, 1, 2 }, .idx_tverts = { 0, 1, 2 } },
+        { .idx_verts = { 1, 3, 2 }, .idx_tverts = { 1, 3, 2 } },
+    };
+
+    return TX_CreateMesh(ws_verts, nullptr, ts_verts, faces, 4, 4, 2);
+}
+
 TX_Mesh *TX_GetTeapotMesh(ECS_Handle *self) {
     TX_Mesh **mesh = ECS_GetComponent(self, TX_3D.MeshPrimitive);
     TX_Teapot *teapot = ECS_GetComponent(self, TX_3D.Teapot);
-    if (*mesh) return *mesh;
+
+    if (*mesh)
+        return *mesh;
 
     SDL_IOStream *teapot_data = SDL_IOFromFile("assets/teapot_surface1.norm", "r");
     Uint8 chr;
@@ -91,7 +118,9 @@ TX_Mesh *TX_GetTeapotMesh(ECS_Handle *self) {
 TX_Mesh *TX_GetTorusMesh(ECS_Handle *self) {
     TX_Mesh **mesh = ECS_GetComponent(self, TX_3D.MeshPrimitive);
     TX_Torus *torus = ECS_GetComponent(self, TX_3D.Torus);
-    if (*mesh) return *mesh;
+
+    if (*mesh)
+        return *mesh;
 
     TX_Sculpture *torus_sculpt = TX_CreateSculpture();
     List(TX_PolyChain *) *rings = List_Create(TX_PolyChain *);
@@ -121,7 +150,9 @@ TX_Mesh *TX_GetTorusMesh(ECS_Handle *self) {
 TX_Mesh *TX_GetSphereMesh(ECS_Handle *self) {
     TX_Mesh **mesh = ECS_GetComponent(self, TX_3D.MeshPrimitive);
     TX_Sphere *sphere = ECS_GetComponent(self, TX_3D.Sphere);
-    if (*mesh) return *mesh;
+
+    if (*mesh)
+        return *mesh;
 
     TX_Sculpture *sphere_sculpt = TX_CreateSculpture();
     List(TX_PolyChain *) *rings = List_Create(TX_PolyChain *);
@@ -160,37 +191,20 @@ TX_Mesh *TX_GetSphereMesh(ECS_Handle *self) {
 TX_Mesh *TX_GetRectMesh(ECS_Handle *self) {
     TX_Mesh **mesh = ECS_GetComponent(self, TX_3D.MeshPrimitive);
     TX_Rect *rect = ECS_GetComponent(self, TX_3D.Rect);
-    if (*mesh) return *mesh;
 
-    vec3 ws_verts[4] = {
-        { .x = -rect->width * 0.5f, .y = rect->height * 0.5f },
-        { .x = rect->width * 0.5f, .y = rect->height * 0.5f },
-        { .x = -rect->width * 0.5f, .y = -rect->height * 0.5f },
-        { .x = rect->width * 0.5f, .y = -rect->height * 0.5f },
-    };
+    if (*mesh)
+        return *mesh;
 
-    float unit = SDL_max(rect->width, rect->height);
-
-    vec2 ts_verts[4] = {
-        vec2_zero,
-        { .x = rect->width / unit },
-        { .y = rect->height / unit },
-        { .x = rect->width / unit, .y = rect->height / unit },
-    };
-
-    TX_MeshFace faces[2] = {
-        { .idx_verts = { 0, 1, 2 }, .idx_tverts = { 0, 1, 2 } },
-        { .idx_verts = { 1, 3, 2 }, .idx_tverts = { 1, 3, 2 } },
-    };
-
-    *mesh = TX_CreateMesh(ws_verts, nullptr, ts_verts, faces, 4, 4, 2);
+    *mesh = TX_CreateRectMesh(rect->width, rect->height);
     return *mesh;
 }
 
 TX_Mesh *TX_GetCubemapMesh(ECS_Handle *self) {
     TX_Mesh **mesh = ECS_GetComponent(self, TX_3D.MeshPrimitive);
     TX_Cubemap *cubemap = ECS_GetComponent(self, TX_3D.Cubemap);
-    if (*mesh) return *mesh;
+
+    if (*mesh)
+        return *mesh;
 
     vec3 ws_verts[8] = {
         { .x=-1, .y=1, .z=-1 }, { .x=1, .y=1, .z=-1 },

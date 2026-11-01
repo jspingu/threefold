@@ -123,6 +123,7 @@ struct TX_3D {
 
 extern struct TX_3D TX_3D;
 
+TX_Mesh *TX_CreateRectMesh(float width, float height);
 TX_Mesh *TX_GetTeapotMesh(ECS_Handle *self);
 TX_Mesh *TX_GetTorusMesh(ECS_Handle *self);
 TX_Mesh *TX_GetSphereMesh(ECS_Handle *self);
