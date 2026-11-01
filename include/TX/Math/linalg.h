@@ -14,14 +14,14 @@
 )(lhs, rhs)
 
 typedef union vec2 {
-    float entries[2];
+    float xy[2];
     struct {
         float x, y;
     };
 } vec2;
 
 typedef union vec3 {
-    float entries[3];
+    float xyz[3];
     struct {
         float x, y, z;
     };
