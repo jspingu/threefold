@@ -19,6 +19,8 @@ void TX_AdvanceInputState(ECS_Handle *e);
 void TX_InitInputState(void *component, void *args);
 void TX_FreeInputState(void *component);
 
+void TX_AttachLayout(ECS_Handle *self, ECS_Component(void) *component);
+
 void TX_RegisterUIToECS(ECS *ecs);
 
 #endif /* TX_UI_C_H */

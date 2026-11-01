@@ -16,6 +16,7 @@ void TX_RegisterToECS(ECS *ecs) {
     TX_SystemGroups.Render = ECS_RegisterSystemGroup(ecs);
     TX_SystemGroups.RenderPresent = ECS_RegisterSystemGroup(ecs);
     TX_SystemGroups.Transform = ECS_RegisterSystemGroup(ecs);
+    TX_SystemGroups.Layout = ECS_RegisterSystemGroup(ecs);
 
     TX_Register3DToECS(ecs);
     TX_RegisterBitmapToECS(ecs);

@@ -46,10 +46,61 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
             .width = WIDTH,
             .height = HEIGHT
         }},
-        { Components.GrabMouse, &(bool) {}}
+        { Components.GrabMouse, &(bool) {}},
+        { TX_UI.Layout, &(TX_Layout) {
+            .align = { TX_LAYOUT_ALIGN_START, TX_LAYOUT_ALIGN_END }
+        }}
     );
 
     ECS_AddChildren(root, 
+        { /* UI world */
+            ECS_Components(
+                { TX_3D.World, nullptr },
+                { TX_UI.Layout, &(TX_Layout) {
+                    .dim = { .x = 64 },
+                    .pad = { .x = 8, .y = 8 },
+                    .grow = { .y = 1 },
+                    .flow = TX_LAYOUT_FLOW_VERTICAL,
+                    .align = { TX_LAYOUT_ALIGN_START, TX_LAYOUT_ALIGN_END }
+                }}
+            ),
+            ECS_Children(
+                { /* UI Rasterizer */
+                    ECS_Components(
+                        { TX_3D.ParallelProjector, &(TX_ParallelProjector) {
+                            .scale = { .x = 1, .y = 1 }
+                        }},
+                        { TX_3D.Rasterizer, &(TX_Rasterizer) {
+                            .project = SD_SELECT(TX_ProjectParallel),
+                            .scan = SD_SELECT(TX_ScanLinear)
+                        }}
+                    )
+                },
+                {
+                    ECS_Components(
+                        { TX_UI.Layout, &(TX_Layout) {
+                            .grow = { .y = 1 },
+                            .dim = { .x = 32 }
+                        }}
+                    )
+                },
+                {
+                    ECS_Components(
+                        { TX_UI.Layout, &(TX_Layout) {
+                            .dim = { .x = 32, .y = 64 }
+                        }}
+                    )
+                },
+                {
+                    ECS_Components(
+                        { TX_UI.Layout, &(TX_Layout) {
+                            .grow = { .y = 2 },
+                            .dim = { .x = 64 }
+                        }}
+                    )
+                }
+            )
+        },
         { /* Main world */
             ECS_Components(
                 { TX_3D.World, nullptr },

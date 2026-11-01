@@ -3,12 +3,43 @@
 
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
+#include <TX/TX_3D.h>
+#include <TX/TX_Bitmap.h>
+#include <TX/Collections/List.h>
 #include <TX/Math/linalg.h>
+
+typedef enum TX_LayoutFlow {
+    TX_LAYOUT_FLOW_HORIZONTAL,
+    TX_LAYOUT_FLOW_VERTICAL
+} TX_LayoutFlow;
+
+typedef enum TX_LayoutAlign {
+    TX_LAYOUT_ALIGN_START,
+    TX_LAYOUT_ALIGN_CENTER,
+    TX_LAYOUT_ALIGN_END
+} TX_LayoutAlign;
 
 typedef struct TX_InputState TX_InputState;
 
+typedef struct TX_Layout {
+    vec2 pos;
+    vec2 dim, grow;
+    vec2 pad, gap;
+    TX_LayoutFlow flow;
+    TX_LayoutAlign align[2];
+} TX_Layout;
+
+// typedef struct TX_Text {
+//     char *str;
+//     char *font_path;
+//     TX_Texture *font_texture;
+//     List(TX_RenderInstance *) *instances;
+// } TX_Text;
+
 struct TX_UI {
     ECS_Component(TX_InputState) *InputState;
+    ECS_Component(TX_Layout) *Layout;
+    // ECS_Component(TX_Text) *Text;
 };
 
 extern struct TX_UI TX_UI;

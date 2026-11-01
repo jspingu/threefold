@@ -11,6 +11,7 @@ typedef void (*TX_PostUpdateCallback)(ECS_Handle *);
 typedef void (*TX_RenderCallback)(ECS_Handle *);
 typedef void (*TX_RenderPresentCallback)(ECS_Handle *);
 typedef void (*TX_TransformCallback)(ECS_Handle *, xform3);
+typedef void (*TX_LayoutCallback)(ECS_Handle *, vec2, vec2);
 
 struct TX_SystemGroups {
     ECS_SystemGroup(TX_SDLEventCallback) *SDLEvent;
@@ -19,6 +20,7 @@ struct TX_SystemGroups {
     ECS_SystemGroup(TX_RenderCallback) *Render;
     ECS_SystemGroup(TX_RenderPresentCallback) *RenderPresent;
     ECS_SystemGroup(TX_TransformCallback) *Transform;
+    ECS_SystemGroup(TX_LayoutCallback) *Layout;
 };
 
 extern struct TX_SystemGroups TX_SystemGroups;
