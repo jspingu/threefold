@@ -48,6 +48,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         }},
         { Components.GrabMouse, &(bool) {}},
         { TX_UI.Layout, &(TX_Layout) {
+            .dim = { .x = WIDTH, .y = HEIGHT },
             .align = { TX_LAYOUT_ALIGN_START, TX_LAYOUT_ALIGN_END }
         }}
     );
@@ -57,11 +58,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
             ECS_Components(
                 { TX_3D.World, nullptr },
                 { TX_UI.Layout, &(TX_Layout) {
-                    .dim = { .x = 64 },
+                    .dim = { .x = 128 },
                     .pad = { .x = 8, .y = 8 },
+                    .gap = { .x = 8, .y = 8 },
                     .grow = { .y = 1 },
                     .flow = TX_LAYOUT_FLOW_VERTICAL,
-                    .align = { TX_LAYOUT_ALIGN_START, TX_LAYOUT_ALIGN_END }
+                    .align = { TX_LAYOUT_ALIGN_CENTER, TX_LAYOUT_ALIGN_END }
                 }}
             ),
             ECS_Children(
@@ -87,7 +89,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 {
                     ECS_Components(
                         { TX_UI.Layout, &(TX_Layout) {
-                            .dim = { .x = 32, .y = 64 }
+                            .dim = { .y = 64 },
+                            .grow = { .x = 1 }
                         }}
                     )
                 },

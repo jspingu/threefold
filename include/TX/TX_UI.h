@@ -28,6 +28,10 @@ typedef struct TX_Layout {
     vec2 pad, gap;
     TX_LayoutFlow flow;
     TX_LayoutAlign align[2];
+
+    TX_Mesh *rect;
+    TX_WorldGeometry *test_geom;
+    TX_SolidColor *color;
 } TX_Layout;
 
 // typedef struct TX_Text {

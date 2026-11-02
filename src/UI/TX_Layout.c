@@ -14,6 +14,28 @@ void TX_PropagateLayout(ECS_Handle *self, vec2 pos, vec2 dim) {
     layout->pos = pos;
     layout->dim = dim;
 
+    ECS_Handle *world = ECS_GetAncestorWithComponent(self, TX_3D.World, false);
+
+    if (world) {
+        if (layout->test_geom) {
+            TX_FreeWorldGeometry(layout->test_geom);
+            TX_FreeMesh(layout->rect);
+        }
+
+        layout->rect = TX_CreateRectMesh(dim.x, dim.y);
+        layout->test_geom = TX_RegisterGeometry(world, layout->rect);
+
+        TX_SetGeometryTransform(layout->test_geom, (xform3) {
+            mat3x3_identity,
+            { .x = pos.x, .y = pos.y }
+        });
+
+        TX_InstanceWorldGeometry(layout->test_geom,
+            (TX_ShaderCall []) { { SD_SELECT(TX_ShadeSolidColor), layout->color } , {}},
+            0, 0
+        );
+    }
+
     /* Broadcast layout change to matching systems */
     ECS_ProcessEntitySystemGroup(self, TX_SystemGroups.Layout, pos, dim);
 
@@ -39,17 +61,10 @@ void TX_PropagateLayout(ECS_Handle *self, vec2 pos, vec2 dim) {
 
     /* Select starting position in the flow axis based on alignment */
     float flow_start = pos.xy[flow] + (float [3]) {
-        layout->pad.xy[flow],                              // TX_LAYOUT_ALIGN_START
-        (dim.xy[flow] - flow_length) / 2,                  // TX_LAYOUT_ALIGN_CENTER
-        dim.xy[flow] - layout->pad.xy[flow] - flow_length  // TX_LAYOUT_ALIGN_END
+        layout->pad.xy[flow] - dim.xy[flow] / 2,               // TX_LAYOUT_ALIGN_START
+        -flow_length / 2,                                      // TX_LAYOUT_ALIGN_CENTER
+        dim.xy[flow] / 2 - layout->pad.xy[flow] - flow_length  // TX_LAYOUT_ALIGN_END
     }[layout->align[flow]];
-
-    /* Select starting position in the flow axis based on alignment */
-    // float flow_start = pos.xy[flow] + (float [3]) {
-    //     layout->pad.xy[flow] - dim.xy[flow] / 2,               // TX_LAYOUT_ALIGN_START
-    //     -flow_length / 2,                                      // TX_LAYOUT_ALIGN_CENTER
-    //     dim.xy[flow] / 2 - layout->pad.xy[flow] - flow_length  // TX_LAYOUT_ALIGN_END
-    // }[layout->align[flow]];
 
     /* If the flow axis is vertical, iterate child layouts in reverse so they are arranged from top to bottom (negative y is down) */
     bool rev = flow == TX_LAYOUT_FLOW_VERTICAL;
@@ -63,24 +78,15 @@ void TX_PropagateLayout(ECS_Handle *self, vec2 pos, vec2 dim) {
 
         /* Select starting position in the perpendicular axis based on alignment */
         float perp_start = pos.xy[perp] + (float [3]) {
-            layout->pad.xy[perp],                              // TX_LAYOUT_ALIGN_START
-            (dim.xy[perp] - perp_length) / 2,                  // TX_LAYOUT_ALIGN_CENTER
-            dim.xy[perp] - layout->pad.xy[perp] - perp_length  // TX_LAYOUT_ALIGN_END
+            layout->pad.xy[perp] - dim.xy[perp] / 2,               // TX_LAYOUT_ALIGN_START
+            -perp_length / 2,                                      // TX_LAYOUT_ALIGN_CENTER
+            dim.xy[perp] / 2 - layout->pad.xy[perp] - perp_length  // TX_LAYOUT_ALIGN_END
         }[layout->align[perp]];
 
-        // /* Select starting position in the perpendicular axis based on alignment */
-        // float perp_start = pos.xy[perp] + (float [3]) {
-        //     layout->pad.xy[perp] - dim.xy[perp] / 2,               // TX_LAYOUT_ALIGN_START
-        //     -perp_length / 2,                                      // TX_LAYOUT_ALIGN_CENTER
-        //     dim.xy[perp] / 2 - layout->pad.xy[perp] - perp_length  // TX_LAYOUT_ALIGN_END
-        // }[layout->align[perp]];
-
-        cl_position.xy[flow] = flow_start;
-        cl_position.xy[perp] = perp_start;
         cl_dimensions.xy[flow] = cl->grow.xy[flow] ? flow_rem * cl->grow.xy[flow] / flow_whole : cl->dim.xy[flow];
         cl_dimensions.xy[perp] = perp_length;
-        // cl_position.xy[flow] = flow_start + cl_dimensions.xy[flow] / 2;
-        // cl_position.xy[perp] = perp_start + perp_length / 2;
+        cl_position.xy[flow] = flow_start + cl_dimensions.xy[flow] / 2;
+        cl_position.xy[perp] = perp_start + perp_length / 2;
         flow_start += cl_dimensions.xy[flow] + layout->gap.xy[flow];
         TX_PropagateLayout(child, cl_position, cl_dimensions);
     }
@@ -114,9 +120,20 @@ void TX_InitLayout(void *component, void *args) {
     TX_Layout *layout = component;
     SDL_memcpy(layout, args, sizeof(TX_Layout));
     layout->cls = List_Create(ECS_Handle *);
+
+    layout->color = SDL_malloc(sizeof(TX_SolidColor));
+    layout->color->r = 0.8;
+    layout->color->g = 0.2;
+    layout->color->b = 0.7;
 }
 
 void TX_FreeLayout(void *component) {
     TX_Layout *layout = component;
     List_Free(layout->cls);
+    SDL_free(layout->color);
+
+    if (layout->test_geom) {
+        TX_FreeWorldGeometry(layout->test_geom);
+        TX_FreeMesh(layout->rect);
+    }
 }
