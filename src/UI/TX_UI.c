@@ -12,7 +12,10 @@ void TX_RegisterUIToECS(ECS *ecs) {
     });
 
     TX_UI.Layout = ECS_RegisterComponent(ecs, TX_Layout, {
-        .attach = TX_AttachLayout
+        .attach = TX_AttachLayout,
+        .detach = TX_DetachLayout,
+        .init = TX_InitLayout,
+        .free = TX_FreeLayout
     });
 
     ECS_RegisterSystem(TX_SystemGroups.SDLEvent, TX_NotifyInputState, TX_UI.InputState);

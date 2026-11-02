@@ -22,6 +22,7 @@ typedef enum TX_LayoutAlign {
 typedef struct TX_InputState TX_InputState;
 
 typedef struct TX_Layout {
+    List(ECS_Handle *) *cls;
     vec2 pos;
     vec2 dim, grow;
     vec2 pad, gap;

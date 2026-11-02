@@ -20,6 +20,9 @@ void TX_InitInputState(void *component, void *args);
 void TX_FreeInputState(void *component);
 
 void TX_AttachLayout(ECS_Handle *self, ECS_Component(void) *component);
+void TX_DetachLayout(ECS_Handle *self, ECS_Component(void) *component);
+void TX_InitLayout(void *component, void *args);
+void TX_FreeLayout(void *component);
 
 void TX_RegisterUIToECS(ECS *ecs);
 
