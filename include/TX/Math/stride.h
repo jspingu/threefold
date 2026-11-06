@@ -256,6 +256,81 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
 #define sd_vxy(v)   ( sd_vec2_create(sd_vx(v), sd_vy(v)) )
 #define sd_vxyz(v)  ( sd_vec3_create(sd_vx(v), sd_vy(v), sd_vz(v)) )
 
+#define SD_DEFINE_VECFNS_TERNARY_VVV(name,base)                              \
+    static inline sd_vec2 sd_vec2_##name(sd_vec2 a, sd_vec2 b, sd_vec2 c) {  \
+        return sd_vec2_create(                                               \
+            sd_float_##base(sd_vx(a), sd_vx(b), sd_vx(c)),                   \
+            sd_float_##base(sd_vy(a), sd_vy(b), sd_vy(c))                    \
+        );                                                                   \
+    }                                                                        \
+                                                                             \
+    static inline sd_vec3 sd_vec3_##name(sd_vec3 a, sd_vec3 b, sd_vec3 c) {  \
+        return sd_vec3_create(                                               \
+            sd_float_##base(sd_vx(a), sd_vx(b), sd_vx(c)),                   \
+            sd_float_##base(sd_vy(a), sd_vy(b), sd_vy(c)),                   \
+            sd_float_##base(sd_vz(a), sd_vz(b), sd_vz(c))                    \
+        );                                                                   \
+    }                                                                        \
+                                                                             \
+    static inline sd_vec4 sd_vec4_##name(sd_vec4 a, sd_vec4 b, sd_vec4 c) {  \
+        return sd_vec4_create(                                               \
+            sd_float_##base(sd_vx(a), sd_vx(b), sd_vx(c)),                   \
+            sd_float_##base(sd_vy(a), sd_vy(b), sd_vy(c)),                   \
+            sd_float_##base(sd_vz(a), sd_vz(b), sd_vz(c)),                   \
+            sd_float_##base(sd_vw(a), sd_vw(b), sd_vw(c))                    \
+        );                                                                   \
+    }
+
+#define SD_DEFINE_VECFNS_TERNARY_VVS(name,base)                               \
+    static inline sd_vec2 sd_vec2_##name(sd_vec2 a, sd_vec2 b, sd_float c) {  \
+        return sd_vec2_create(                                                \
+            sd_float_##base(sd_vx(a), sd_vx(b), c),                           \
+            sd_float_##base(sd_vy(a), sd_vy(b), c)                            \
+        );                                                                    \
+    }                                                                         \
+                                                                              \
+    static inline sd_vec3 sd_vec3_##name(sd_vec3 a, sd_vec3 b, sd_float c) {  \
+        return sd_vec3_create(                                                \
+            sd_float_##base(sd_vx(a), sd_vx(b), c),                           \
+            sd_float_##base(sd_vy(a), sd_vy(b), c),                           \
+            sd_float_##base(sd_vz(a), sd_vz(b), c)                            \
+        );                                                                    \
+    }                                                                         \
+                                                                              \
+    static inline sd_vec4 sd_vec4_##name(sd_vec4 a, sd_vec4 b, sd_float c) {  \
+        return sd_vec4_create(                                                \
+            sd_float_##base(sd_vx(a), sd_vx(b), c),                           \
+            sd_float_##base(sd_vy(a), sd_vy(b), c),                           \
+            sd_float_##base(sd_vz(a), sd_vz(b), c),                           \
+            sd_float_##base(sd_vw(a), sd_vw(b), c)                            \
+        );                                                                    \
+    }
+
+#define SD_DEFINE_VECFNS_TERNARY_VSS(name,base)                                \
+    static inline sd_vec2 sd_vec2_##name(sd_vec2 a, sd_float b, sd_float c) {  \
+        return sd_vec2_create(                                                 \
+            sd_float_##base(sd_vx(a), b, c),                                   \
+            sd_float_##base(sd_vy(a), b, c)                                    \
+        );                                                                     \
+    }                                                                          \
+                                                                               \
+    static inline sd_vec3 sd_vec3_##name(sd_vec3 a, sd_float b, sd_float c) {  \
+        return sd_vec3_create(                                                 \
+            sd_float_##base(sd_vx(a), b, c),                                   \
+            sd_float_##base(sd_vy(a), b, c),                                   \
+            sd_float_##base(sd_vz(a), b, c)                                    \
+        );                                                                     \
+    }                                                                          \
+                                                                               \
+    static inline sd_vec4 sd_vec4_##name(sd_vec4 a, sd_float b, sd_float c) {  \
+        return sd_vec4_create(                                                 \
+            sd_float_##base(sd_vx(a), b, c),                                   \
+            sd_float_##base(sd_vy(a), b, c),                                   \
+            sd_float_##base(sd_vz(a), b, c),                                   \
+            sd_float_##base(sd_vw(a), b, c)                                    \
+        );                                                                     \
+    }
+
 #define SD_DEFINE_VECFNS_BINARY_VV(name,base)                         \
     static inline sd_vec2 sd_vec2_##name(sd_vec2 lhs, sd_vec2 rhs) {  \
         return sd_vec2_create(                                        \
@@ -1146,29 +1221,8 @@ static inline sd_float sd_float_mla(sd_float addend, sd_float multiplicand, sd_f
 #endif
 }
 
-static inline sd_vec2 sd_vec2_mlsa(sd_vec2 addend, sd_vec2 multiplicand, sd_float multiplier) {
-    return sd_vec2_create(
-        sd_float_mla(sd_vx(addend), sd_vx(multiplicand), multiplier),
-        sd_float_mla(sd_vy(addend), sd_vy(multiplicand), multiplier)
-    );
-}
-
-static inline sd_vec3 sd_vec3_mlsa(sd_vec3 addend, sd_vec3 multiplicand, sd_float multiplier) {
-    return sd_vec3_create(
-        sd_float_mla(sd_vx(addend), sd_vx(multiplicand), multiplier),
-        sd_float_mla(sd_vy(addend), sd_vy(multiplicand), multiplier),
-        sd_float_mla(sd_vz(addend), sd_vz(multiplicand), multiplier)
-    );
-}
-
-static inline sd_vec4 sd_vec4_mlsa(sd_vec4 addend, sd_vec4 multiplicand, sd_float multiplier) {
-    return sd_vec4_create(
-        sd_float_mla(sd_vx(addend), sd_vx(multiplicand), multiplier),
-        sd_float_mla(sd_vy(addend), sd_vy(multiplicand), multiplier),
-        sd_float_mla(sd_vz(addend), sd_vz(multiplicand), multiplier),
-        sd_float_mla(sd_vw(addend), sd_vw(multiplicand), multiplier)
-    );
-}
+SD_DEFINE_VECFNS_TERNARY_VVS(mlsa, mla)
+SD_DEFINE_VECFNS_TERNARY_VVV(mla, mla)
 
 static inline sd_float sd_float_mls(sd_float minuend, sd_float multiplicand, sd_float multiplier) {
 #ifdef __AVX512F__
@@ -1186,21 +1240,15 @@ static inline sd_float sd_float_mls(sd_float minuend, sd_float multiplicand, sd_
 #endif
 }
 
+SD_DEFINE_VECFNS_TERNARY_VVS(mlss, mls)
+SD_DEFINE_VECFNS_TERNARY_VVV(mls, mls)
+
 static inline sd_float sd_float_blend(sd_float bg, sd_float fg, sd_float coeff) {
     return sd_float_mla(bg, sd_float_sub(fg, bg), coeff);
 }
 
-static inline sd_vec2 sd_vec2_blend(sd_vec2 bg, sd_vec2 fg, sd_float coeff) {
-    return sd_vec2_mlsa(bg, sd_vec2_sub(fg, bg), coeff);
-}
-
-static inline sd_vec3 sd_vec3_blend(sd_vec3 bg, sd_vec3 fg, sd_float coeff) {
-    return sd_vec3_mlsa(bg, sd_vec3_sub(fg, bg), coeff);
-}
-
-static inline sd_vec4 sd_vec4_blend(sd_vec4 bg, sd_vec4 fg, sd_float coeff) {
-    return sd_vec4_mlsa(bg, sd_vec4_sub(fg, bg), coeff);
-}
+SD_DEFINE_VECFNS_TERNARY_VVS(blends, blend)
+SD_DEFINE_VECFNS_TERNARY_VVV(blend, blend)
 
 static inline sd_float sd_float_min(sd_float lhs, sd_float rhs) {
 #ifdef __AVX512F__
@@ -1248,29 +1296,8 @@ static inline sd_float sd_float_clamp(sd_float f, sd_float min, sd_float max) {
     return sd_float_min(sd_float_max(f, min), max);
 }
 
-static inline sd_vec2 sd_vec2_clamp(sd_vec2 v, sd_float min, sd_float max) {
-    return sd_vec2_create(
-        sd_float_clamp(sd_vx(v), min, max),
-        sd_float_clamp(sd_vy(v), min, max)
-    );
-}
-
-static inline sd_vec3 sd_vec3_clamp(sd_vec3 v, sd_float min, sd_float max) {
-    return sd_vec3_create(
-        sd_float_clamp(sd_vx(v), min, max),
-        sd_float_clamp(sd_vy(v), min, max),
-        sd_float_clamp(sd_vz(v), min, max)
-    );
-}
-
-static inline sd_vec4 sd_vec4_clamp(sd_vec4 v, sd_float min, sd_float max) {
-    return sd_vec4_create(
-        sd_float_clamp(sd_vx(v), min, max),
-        sd_float_clamp(sd_vy(v), min, max),
-        sd_float_clamp(sd_vz(v), min, max),
-        sd_float_clamp(sd_vw(v), min, max)
-    );
-}
+SD_DEFINE_VECFNS_TERNARY_VVV(clamp, clamp)
+SD_DEFINE_VECFNS_TERNARY_VSS(clamps, clamp)
 
 static inline sd_mask sd_float_lt(sd_float lhs, sd_float rhs) {
 #ifdef __AVX512F__

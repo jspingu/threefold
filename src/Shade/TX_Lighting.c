@@ -40,7 +40,7 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_Shader
 
         sd_vec3 power_in = sd_vec3_muls(light_col, sd_float_mul(sd_float_mul(light_energy, rcpsql), dp));
         sd_vec3 power_out = sd_vec3_muls(power_in, rf_coeff);
-        out = sd_vec3_add(out, sd_vec3_mul(sd_vxyz(col), sd_vec3_mlsa(power_out, power_out, sp_coeff)));
+        out = sd_vec3_mla(out, sd_vxyz(col), sd_vec3_mlsa(power_out, power_out, sp_coeff));
     });
 
     sd_vec3 dir_vs = sd_vec3_reflect(sd_vec3_normalize(*fragment->vs), *fragment->nrml);

@@ -53,9 +53,8 @@ struct TX_Bitmap {
 extern struct TX_Bitmap TX_Bitmap;
 
 static inline sd_vec4 TX_SampleNearest(TX_Texture *texture, sd_vec2 uts) {
-    sd_float x = sd_float_clamp(sd_vx(uts), sd_float_zero(), sd_float_set(texture->width - 1));
-    sd_float y = sd_float_clamp(sd_vy(uts), sd_float_zero(), sd_float_set(texture->height - 1));
-    sd_int idx = sd_int_mla(sd_float_toi(x), sd_float_toi(y), sd_int_set(texture->width));
+    uts = sd_vec2_clamp(uts, sd_vec2_zero(), sd_vec2_set(texture->width - 1, texture->height - 1));
+    sd_int idx = sd_int_mla(sd_float_toi(sd_vx(uts)), sd_float_toi(sd_vy(uts)), sd_int_set(texture->width));
     return sd_vec4_gather(texture->color, idx);
 }
 

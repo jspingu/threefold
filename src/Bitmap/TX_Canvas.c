@@ -18,7 +18,7 @@ static void PresentSubCanvas(TX_CanvasWorkerData *wd) {
 
         for (int j = 0; j < qot; ++j) {
             sd_vec3 col = sd_vec3_load(canvas->color, sd_base + j);
-            col = sd_vec3_clamp(col, sd_float_zero(), sd_float_one());
+            col = sd_vec3_clamps(col, sd_float_zero(), sd_float_one());
             col = sd_vec3_muls(col, sd_float_set(0xFFFF));
 
             sd_int byte = sd_int_set(0xFF);
