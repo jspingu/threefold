@@ -58,6 +58,27 @@ static inline sd_vec4 TX_SampleNearest(TX_Texture *texture, sd_vec2 uts) {
     return sd_vec4_gather(texture->color, idx);
 }
 
+static inline sd_vec4 TX_SampleBilinear(TX_Texture *texture, sd_vec2 uts, sd_vec3 bg) {
+    sd_int pitch = sd_int_set(texture->width);
+    sd_vec2 dm1 = sd_vec2_set(texture->width - 1, texture->height - 1);
+    sd_vec2 tl = sd_vec2_clamp(sd_vec2_subs(uts, sd_float_set(0.5)), sd_vec2_zero(), dm1);
+    sd_vec2 br = sd_vec2_min(sd_vec2_adds(tl, sd_float_one()), dm1);
+
+    sd_vec4 s00 = sd_vec4_gather(texture->color, sd_int_mla(sd_float_toi(sd_vx(tl)), sd_float_toi(sd_vy(tl)), pitch));
+    sd_vec4 s01 = sd_vec4_gather(texture->color, sd_int_mla(sd_float_toi(sd_vx(br)), sd_float_toi(sd_vy(tl)), pitch));
+    sd_vec4 s10 = sd_vec4_gather(texture->color, sd_int_mla(sd_float_toi(sd_vx(tl)), sd_float_toi(sd_vy(br)), pitch));
+    sd_vec4 s11 = sd_vec4_gather(texture->color, sd_int_mla(sd_float_toi(sd_vx(br)), sd_float_toi(sd_vy(br)), pitch));
+
+    sd_vec3 c00 = sd_vec3_blends(bg, sd_vxyz(s00), sd_vw(s00));
+    sd_vec3 c01 = sd_vec3_blends(bg, sd_vxyz(s01), sd_vw(s01));
+    sd_vec3 c10 = sd_vec3_blends(bg, sd_vxyz(s10), sd_vw(s10));
+    sd_vec3 c11 = sd_vec3_blends(bg, sd_vxyz(s11), sd_vw(s11));
+
+    sd_vec2 lerp = sd_vec2_frac(tl);
+    sd_vec3 c = sd_vec3_blends(sd_vec3_blends(c00, c01, sd_vx(lerp)), sd_vec3_blends(c10, c11, sd_vx(lerp)), sd_vy(lerp));
+    return sd_vec4_create(sd_vx(c), sd_vy(c), sd_vz(c), sd_float_one());
+}
+
 static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
     /* 
      * Sample a cubemap texture given a direction vector.
