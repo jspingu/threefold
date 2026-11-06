@@ -70,8 +70,8 @@ typedef struct TX_TextureMap {
 typedef struct TX_TileMap {
     TX_Texture *texture;
     char *texture_path;
-    float tile_width, tile_height;
-    float tile_unit;
+    int tile_width, tile_height;
+    int tile_unit;
     int htiles, vtiles;
     int x, y;
 } TX_TileMap;

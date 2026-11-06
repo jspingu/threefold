@@ -28,19 +28,21 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeCheckerboard)(void *state, sd_vec4 col, TX_Sh
 SD_CALL sd_vec4 SD_VARIANT(TX_ShadeTextureMap)(void *state, sd_vec4 col, TX_ShaderParams *fragment) {
     (void)col;
     TX_TextureMap *texture_map = state;
-    return TX_SampleNearest(texture_map->texture, *fragment->ts) ;
+    sd_vec2 uts = sd_vec2_muls(*fragment->ts, sd_float_set(texture_map->texture->unit));
+    return TX_SampleNearest(texture_map->texture, uts);
 }
 
 SD_CALL sd_vec4 SD_VARIANT(TX_ShadeTileMap)(void *state, sd_vec4 col, TX_ShaderParams *fragment) {
     (void)col;
     TX_TileMap *tile_map = state;
-    sd_vec2 tile_coord = sd_vec2_muls(*fragment->ts, sd_float_set(tile_map->tile_unit));
-            tile_coord = sd_vec2_add(tile_coord, sd_vec2_set(
-                tile_map->x * tile_map->tile_width,
-                tile_map->y * tile_map->tile_height
-            ));
+    sd_float tile_unit = sd_float_set(tile_map->tile_unit);
 
-    return TX_SampleNearest(tile_map->texture, tile_coord);
+    sd_vec2 uts = sd_vec2_mlsa(sd_vec2_set(
+        tile_map->x * tile_map->tile_width,
+        tile_map->y * tile_map->tile_height
+    ), *fragment->ts, tile_unit);
+
+    return TX_SampleNearest(tile_map->texture, uts);
 }
 
 #ifndef SD_SRC_VARIANT
@@ -96,11 +98,9 @@ void TX_AttachTileMap(ECS_Handle *self, ECS_Component(void) *component) {
     TX_TileMap *tile_map = shader->state;
     ECS_Handle *tb = ECS_GetAncestorWithComponent(self, TX_Bitmap.TextureBank, false);
     TX_Texture *texture = TX_GetResource(tb, TX_Bitmap.TextureBank, tile_map->texture_path);
-
-    /* Normalized tile dimensions */
     tile_map->texture = texture;
-    tile_map->tile_width = (float)texture->width / (texture->unit * tile_map->htiles);
-    tile_map->tile_height = (float)texture->height / (texture->unit * tile_map->vtiles);
+    tile_map->tile_width = texture->width / tile_map->htiles;
+    tile_map->tile_height = texture->height / tile_map->vtiles;
     tile_map->tile_unit = SDL_max(tile_map->tile_width, tile_map->tile_height);
 }
 
@@ -117,10 +117,9 @@ void TX_InitTileMap(void *component, void *args) {
     shader->state = SDL_malloc(sizeof(TX_TileMap));
 
     TX_TileMap *tile_map = shader->state;
-    SDL_memcpy(shader->state, args, sizeof(TX_TileMap));
-
     TX_TileMap *tile_map_args = args;
     char *path = tile_map_args->texture_path;
+    SDL_memcpy(shader->state, args, sizeof(TX_TileMap));
     tile_map->texture_path = SDL_malloc(SDL_strlen(path) + 1);
     SDL_strlcpy(tile_map->texture_path, path, TX_RESOURCE_PATHLEN);
 }
