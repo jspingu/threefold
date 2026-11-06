@@ -53,21 +53,16 @@ struct TX_Bitmap {
 extern struct TX_Bitmap TX_Bitmap;
 
 static inline sd_vec4 TX_SampleNearest(TX_Texture *texture, sd_vec2 uts) {
-    sd_float px_x = sd_float_clamp(sd_vx(uts), sd_float_zero(), sd_float_set(texture->width - 1));
-    sd_float px_y = sd_float_clamp(sd_vy(uts), sd_float_zero(), sd_float_set(texture->height - 1));
-
-    sd_int pixel_index = sd_int_add(sd_int_mul(
-        sd_float_toi(px_y),
-        sd_int_set(texture->width)
-    ), sd_float_toi(px_x));
-
-    return sd_vec4_gather(texture->color, pixel_index);
+    sd_float x = sd_float_clamp(sd_vx(uts), sd_float_zero(), sd_float_set(texture->width - 1));
+    sd_float y = sd_float_clamp(sd_vy(uts), sd_float_zero(), sd_float_set(texture->height - 1));
+    sd_int idx = sd_int_mla(sd_float_toi(x), sd_float_toi(y), sd_int_set(texture->width));
+    return sd_vec4_gather(texture->color, idx);
 }
 
 static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
     /* 
-     * Samples a cubemap texture using a direction vector.
-     * Only textures returned by TX_CubemapBank are supported.
+     * Sample a cubemap texture given a direction vector.
+     * Cubemap textures with a suitable layout can be obtained from CubemapBank.
      *
      * Expected texture layout:
      *
@@ -84,9 +79,7 @@ static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
      * +------------+------------+------------+
      */
 
-    sd_float unit = sd_float_set(texture->unit);
     sd_vec3 rcp = sd_vec3_rcp(dir);
-
     sd_vec2 zy = sd_vec2_muls(sd_vec2_create(sd_vz(dir), sd_vy(dir)), sd_vx(rcp));
     sd_vec2 xz = sd_vec2_muls(sd_vec2_create(sd_vx(dir), sd_vz(dir)), sd_vy(rcp));
     sd_vec2 xy = sd_vec2_muls(sd_vec2_create(sd_vx(dir), sd_vy(dir)), sd_vz(rcp));
@@ -102,21 +95,17 @@ static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
     sd_mask across_zy = sd_mask_and(sd_float_lt(sd_vx(dir), sd_float_zero()), mask_zy);
     sd_mask across_xz = sd_mask_and(sd_float_lt(sd_vy(dir), sd_float_zero()), mask_xz);
     sd_mask across_xy = sd_mask_andn(sd_float_lt(sd_vz(dir), sd_float_zero()), sd_mask_or(mask_zy, mask_xz));
-
     sd_mask across = sd_mask_or(sd_mask_or(across_zy, across_xz), across_xy);
-    sd_int vtile = sd_int_sel(across, sd_int_set(1), sd_int_set(0));
-    sd_int htile = sd_int_sel(mask_zy, sd_int_set(0), sd_int_sel(mask_xz, sd_int_set(1), sd_int_set(2)));
 
-    sd_vec2 tile_coord = sd_vec2_sel(mask_zy, zy, sd_vec2_sel(mask_xz, xz, xy));
-            tile_coord = sd_vec2_mlsa(sd_vec2_create(unit, unit), tile_coord, unit);
-            tile_coord = sd_vec2_clamp(tile_coord, sd_float_zero(), sd_float_set(texture->unit * 2 - 1));
+    sd_float hunit = sd_float_sel(mask_zy, sd_float_set(0), sd_float_sel(mask_xz, sd_float_set(2), sd_float_set(4)));
+    sd_float vunit = sd_float_sel(across, sd_float_set(2), sd_float_set(0));
 
-    sd_int pixel_index = sd_int_mul(vtile, sd_int_set(texture->width * texture->unit * 2));
-           pixel_index = sd_int_add(pixel_index, sd_int_mul(htile, sd_int_set(texture->unit * 2)));
-           pixel_index = sd_int_add(pixel_index, sd_int_mul(sd_float_toi(sd_vy(tile_coord)), sd_int_set(texture->width)));
-           pixel_index = sd_int_add(pixel_index, sd_float_toi(sd_vx(tile_coord)));
+    sd_vec2 uts = sd_vec2_sel(mask_zy, zy, sd_vec2_sel(mask_xz, xz, xy));
+            uts = sd_vec2_adds(uts, sd_float_one());
+            uts = sd_vec2_add(uts, sd_vec2_create(hunit, vunit));
+            uts = sd_vec2_muls(uts, sd_float_set(texture->unit));
 
-    return sd_vec4_gather(texture->color, pixel_index);
+    return TX_SampleNearest(texture, uts);
 }
 
 #endif /* TX_BITMAP_H */

@@ -607,6 +607,30 @@ static inline sd_int sd_int_mul(sd_int lhs, sd_int rhs) {
 #endif
 }
 
+static inline sd_int sd_int_mla(sd_int addend, sd_int multiplicand, sd_int multiplier) {
+#ifdef __ARM_FEATURE_SVE
+    return svmla_x(svptrue_b32(), addend, multiplicand, multiplier);
+#elifdef __ARM_NEON
+    return vmlaq_s32(addend, multiplicand, multiplier);
+#elifdef __riscv_v
+    return __riscv_vmacc(addend, multiplicand, multiplier, sd_length());
+#else
+    return sd_int_add(addend, sd_int_mul(multiplier, multiplicand));
+#endif
+}
+
+static inline sd_int sd_int_mls(sd_int minumend, sd_int multiplicand, sd_int multiplier) {
+#ifdef __ARM_FEATURE_SVE
+    return svmls_x(svptrue_b32(), minumend, multiplicand, multiplier);
+#elifdef __ARM_NEON
+    return vmlsq_s32(minumend, multiplicand, multiplier);
+#elifdef __riscv_v
+    return __riscv_vnmsac(minumend, multiplicand, multiplier, sd_length());
+#else
+    return sd_int_sub(minumend, sd_int_mul(multiplier, multiplicand));
+#endif
+}
+
 static inline sd_mask sd_int_lt(sd_int lhs, sd_int rhs) {
 #ifdef __AVX512F__
     return _mm512_cmplt_epi32_mask(lhs, rhs);

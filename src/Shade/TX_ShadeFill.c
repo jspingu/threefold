@@ -13,10 +13,9 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeCheckerboard)(void *state, sd_vec4 col, TX_Sh
     (void)col;
     TX_Checkerboard *checkerboard = state;
     sd_vec2 tile_coord = sd_vec2_muls(*fragment->ts, sd_float_set(checkerboard->tiles));
-
-    sd_int tile_idx = sd_int_mul(sd_float_toi(sd_vy(tile_coord)), sd_int_set(checkerboard->tiles));
-           tile_idx = sd_int_add(tile_idx, sd_float_toi(sd_vx(tile_coord)));
-
+    sd_int tile_x = sd_float_toi(sd_vx(tile_coord));
+    sd_int tile_y = sd_float_toi(sd_vy(tile_coord));
+    sd_int tile_idx = sd_int_mla(tile_x, tile_y, sd_int_set(checkerboard->tiles));
     sd_mask tile_mask = sd_int_gt(sd_int_and(tile_idx, sd_int_set(1)), sd_int_set(0));
 
     return sd_vec4_sel(tile_mask,
