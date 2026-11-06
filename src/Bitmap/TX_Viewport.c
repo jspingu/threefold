@@ -13,7 +13,7 @@ void TX_InitViewport(void *component, void *args) {
         vp_args->title,
         vp_args->width,
         vp_args->height,
-        SDL_WINDOW_RESIZABLE,
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_HIGH_PIXEL_DENSITY,
         &vp->window,
         &vp->renderer
     );
@@ -27,6 +27,8 @@ void TX_InitViewport(void *component, void *args) {
         vp->width,
         vp->height
     );
+
+    SDL_SetTextureScaleMode(vp->texture, SDL_SCALEMODE_PIXELART);
 }
 
 void TX_FreeViewport(void *component) {
