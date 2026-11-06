@@ -1106,76 +1106,76 @@ static inline sd_float sd_float_frac(sd_float f) {
 
 SD_DEFINE_VECFNS_UNARY(frac, frac)
 
-static inline sd_float sd_float_fmadd(sd_float multiplicand, sd_float multiplier, sd_float addend) {
+static inline sd_float sd_float_mla(sd_float addend, sd_float multiplicand, sd_float multiplier) {
 #ifdef __AVX512F__
     return _mm512_fmadd_ps(multiplicand, multiplier, addend);
 #elifdef __AVX2__
     return _mm256_fmadd_ps(multiplicand, multiplier, addend);
 #elifdef __ARM_FEATURE_SVE
-    return svmad_x(svptrue_b32(), multiplicand, multiplier, addend);
+    return svmla_x(svptrue_b32(), addend, multiplicand, multiplier);
 #elifdef __ARM_NEON
     return vmlaq_f32(addend, multiplicand, multiplier);
 #elifdef __riscv_v
-    return __riscv_vfmadd(multiplicand, multiplier, addend, sd_length());
+    return __riscv_vfmacc(addend, multiplicand, multiplier, sd_length());
 #else
-    return sd_float_add(sd_float_mul(multiplicand, multiplier), addend);
+    return sd_float_add(addend, sd_float_mul(multiplicand, multiplier));
 #endif
 }
 
-static inline sd_vec2 sd_vec2_fsmadd(sd_vec2 multiplicand, sd_float multiplier, sd_vec2 addend) {
+static inline sd_vec2 sd_vec2_mlsa(sd_vec2 addend, sd_vec2 multiplicand, sd_float multiplier) {
     return sd_vec2_create(
-        sd_float_fmadd(sd_vx(multiplicand), multiplier, sd_vx(addend)),
-        sd_float_fmadd(sd_vy(multiplicand), multiplier, sd_vy(addend))
+        sd_float_mla(sd_vx(addend), sd_vx(multiplicand), multiplier),
+        sd_float_mla(sd_vy(addend), sd_vy(multiplicand), multiplier)
     );
 }
 
-static inline sd_vec3 sd_vec3_fsmadd(sd_vec3 multiplicand, sd_float multiplier, sd_vec3 addend) {
+static inline sd_vec3 sd_vec3_mlsa(sd_vec3 addend, sd_vec3 multiplicand, sd_float multiplier) {
     return sd_vec3_create(
-        sd_float_fmadd(sd_vx(multiplicand), multiplier, sd_vx(addend)),
-        sd_float_fmadd(sd_vy(multiplicand), multiplier, sd_vy(addend)),
-        sd_float_fmadd(sd_vz(multiplicand), multiplier, sd_vz(addend))
+        sd_float_mla(sd_vx(addend), sd_vx(multiplicand), multiplier),
+        sd_float_mla(sd_vy(addend), sd_vy(multiplicand), multiplier),
+        sd_float_mla(sd_vz(addend), sd_vz(multiplicand), multiplier)
     );
 }
 
-static inline sd_vec4 sd_vec4_fsmadd(sd_vec4 multiplicand, sd_float multiplier, sd_vec4 addend) {
+static inline sd_vec4 sd_vec4_mlsa(sd_vec4 addend, sd_vec4 multiplicand, sd_float multiplier) {
     return sd_vec4_create(
-        sd_float_fmadd(sd_vx(multiplicand), multiplier, sd_vx(addend)),
-        sd_float_fmadd(sd_vy(multiplicand), multiplier, sd_vy(addend)),
-        sd_float_fmadd(sd_vz(multiplicand), multiplier, sd_vz(addend)),
-        sd_float_fmadd(sd_vw(multiplicand), multiplier, sd_vw(addend))
+        sd_float_mla(sd_vx(addend), sd_vx(multiplicand), multiplier),
+        sd_float_mla(sd_vy(addend), sd_vy(multiplicand), multiplier),
+        sd_float_mla(sd_vz(addend), sd_vz(multiplicand), multiplier),
+        sd_float_mla(sd_vw(addend), sd_vw(multiplicand), multiplier)
     );
 }
 
-static inline sd_float sd_float_fmsub(sd_float multiplicand, sd_float multiplier, sd_float subtrahend) {
+static inline sd_float sd_float_mls(sd_float minuend, sd_float multiplicand, sd_float multiplier) {
 #ifdef __AVX512F__
-    return _mm512_fmsub_ps(multiplicand, multiplier, subtrahend);
+    return _mm512_fnmadd_ps(multiplicand, multiplier, minuend);
 #elifdef __AVX2__
-    return _mm256_fmsub_ps(multiplicand, multiplier, subtrahend);
+    return _mm256_fnmadd_ps(multiplicand, multiplier, minuend);
 #elifdef __ARM_FEATURE_SVE
-    return svnmsb_x(svptrue_b32(), multiplicand, multiplier, subtrahend);
+    return svmls_x(svptrue_b32(), minuend, multiplicand, multiplier);
 #elifdef __ARM_NEON
-    return vmlaq_f32(vnegq_f32(subtrahend), multiplicand, multiplier);
+    return vmlsq_f32(minuend, multiplicand, multiplier);
 #elifdef __riscv_v
-    return __riscv_vfmsub(multiplicand, multiplier, subtrahend, sd_length());
+    return __riscv_vfnmsub(minuend, multiplicand, multiplier, sd_length());
 #else
-    return sd_float_sub(sd_float_mul(multiplicand, multiplier), subtrahend);
+    return sd_float_sub(minuend, sd_float_mul(multiplicand, multiplier));
 #endif
 }
 
 static inline sd_float sd_float_blend(sd_float bg, sd_float fg, sd_float coeff) {
-    return sd_float_fmadd(sd_float_sub(fg, bg), coeff, bg);
+    return sd_float_mla(bg, sd_float_sub(fg, bg), coeff);
 }
 
 static inline sd_vec2 sd_vec2_blend(sd_vec2 bg, sd_vec2 fg, sd_float coeff) {
-    return sd_vec2_fsmadd(sd_vec2_sub(fg, bg), coeff, bg);
+    return sd_vec2_mlsa(bg, sd_vec2_sub(fg, bg), coeff);
 }
 
 static inline sd_vec3 sd_vec3_blend(sd_vec3 bg, sd_vec3 fg, sd_float coeff) {
-    return sd_vec3_fsmadd(sd_vec3_sub(fg, bg), coeff, bg);
+    return sd_vec3_mlsa(bg, sd_vec3_sub(fg, bg), coeff);
 }
 
 static inline sd_vec4 sd_vec4_blend(sd_vec4 bg, sd_vec4 fg, sd_float coeff) {
-    return sd_vec4_fsmadd(sd_vec4_sub(fg, bg), coeff, bg);
+    return sd_vec4_mlsa(bg, sd_vec4_sub(fg, bg), coeff);
 }
 
 static inline sd_float sd_float_min(sd_float lhs, sd_float rhs) {
@@ -1599,21 +1599,21 @@ static inline void sd_vec4_stores(sd_vec4 *dst, size_t index, float x, float y, 
 }
 
 static inline sd_float sd_vec2_dot(sd_vec2 lhs, sd_vec2 rhs) {
-    sd_float out = sd_float_mul(sd_vx(lhs), sd_vx(rhs));
-    return sd_float_fmadd(sd_vy(lhs), sd_vy(rhs), out);
+    sd_float acc = sd_float_mul(sd_vx(lhs), sd_vx(rhs));
+    return sd_float_mla(acc, sd_vy(lhs), sd_vy(rhs));
 }
 
 static inline sd_float sd_vec3_dot(sd_vec3 lhs, sd_vec3 rhs) {
-    sd_float out = sd_float_mul(sd_vx(lhs), sd_vx(rhs));
-    out = sd_float_fmadd(sd_vy(lhs), sd_vy(rhs), out);
-    return sd_float_fmadd(sd_vz(lhs), sd_vz(rhs), out);
+    sd_float acc = sd_float_mul(sd_vx(lhs), sd_vx(rhs));
+    acc = sd_float_mla(acc, sd_vy(lhs), sd_vy(rhs));
+    return sd_float_mla(acc, sd_vz(lhs), sd_vz(rhs));
 }
 
 static inline sd_vec3 sd_vec3_cross(sd_vec3 lhs, sd_vec3 rhs) {
     return sd_vec3_create(
-        sd_float_fmsub(sd_vy(lhs), sd_vz(rhs), sd_float_mul(sd_vz(lhs), sd_vy(rhs))),
-        sd_float_fmsub(sd_vz(lhs), sd_vx(rhs), sd_float_mul(sd_vx(lhs), sd_vz(rhs))),
-        sd_float_fmsub(sd_vx(lhs), sd_vy(rhs), sd_float_mul(sd_vy(lhs), sd_vx(rhs)))
+        sd_float_mls(sd_float_mul(sd_vy(lhs), sd_vz(rhs)), sd_vz(lhs), sd_vy(rhs)),
+        sd_float_mls(sd_float_mul(sd_vz(lhs), sd_vx(rhs)), sd_vx(lhs), sd_vz(rhs)),
+        sd_float_mls(sd_float_mul(sd_vx(lhs), sd_vy(rhs)), sd_vy(lhs), sd_vx(rhs))
     );
 }
 

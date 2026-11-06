@@ -108,7 +108,7 @@ static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
     sd_int htile = sd_int_sel(mask_zy, sd_int_set(0), sd_int_sel(mask_xz, sd_int_set(1), sd_int_set(2)));
 
     sd_vec2 tile_coord = sd_vec2_sel(mask_zy, zy, sd_vec2_sel(mask_xz, xz, xy));
-            tile_coord = sd_vec2_fsmadd(tile_coord, unit, sd_vec2_create(unit, unit));
+            tile_coord = sd_vec2_mlsa(sd_vec2_create(unit, unit), tile_coord, unit);
             tile_coord = sd_vec2_clamp(tile_coord, sd_float_zero(), sd_float_set(texture->unit * 2 - 1));
 
     sd_int pixel_index = sd_int_mul(vtile, sd_int_set(texture->width * texture->unit * 2));

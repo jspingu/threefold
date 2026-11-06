@@ -30,7 +30,7 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_Shader
                  rf_falloff = sd_float_mul(rf_falloff, rf_falloff);
                  rf_falloff = sd_float_mul(rf_falloff, rf_falloff);
 
-        sd_float rf_coeff = sd_float_fmadd(sd_float_sub(sd_float_one(), reflectivity), rf_falloff, reflectivity);
+        sd_float rf_coeff = sd_float_mla(reflectivity, sd_float_sub(sd_float_one(), reflectivity), rf_falloff);
         sd_float sp_coeff = sd_vec3_dot(eye, reflected);
 
         for (int i = 0; i < medium->exp; ++i)
@@ -40,7 +40,7 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_Shader
 
         sd_vec3 power_in = sd_vec3_muls(light_col, sd_float_mul(sd_float_mul(light_energy, rcpsql), dp));
         sd_vec3 power_out = sd_vec3_muls(power_in, rf_coeff);
-        out = sd_vec3_add(out, sd_vec3_mul(sd_vxyz(col), sd_vec3_fsmadd(power_out, sp_coeff, power_out)));
+        out = sd_vec3_add(out, sd_vec3_mul(sd_vxyz(col), sd_vec3_mlsa(power_out, power_out, sp_coeff)));
     });
 
     sd_vec3 dir_vs = sd_vec3_reflect(sd_vec3_normalize(*fragment->vs), *fragment->nrml);
@@ -50,17 +50,17 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_Shader
              rf_falloff = sd_float_mul(rf_falloff, rf_falloff);
              rf_falloff = sd_float_mul(rf_falloff, rf_falloff);
 
-    sd_float rf_coeff = sd_float_fmadd(sd_float_sub(sd_float_one(), reflectivity), rf_falloff, reflectivity);
+    sd_float rf_coeff = sd_float_mla(reflectivity, sd_float_sub(sd_float_one(), reflectivity), rf_falloff);
 
     sd_vec3 dir = sd_vec3_muls(*fragment->vs2ws_xform[0], sd_vx(dir_vs));
-            dir = sd_vec3_fsmadd(*fragment->vs2ws_xform[1], sd_vy(dir_vs), dir);
-            dir = sd_vec3_fsmadd(*fragment->vs2ws_xform[2], sd_vz(dir_vs), dir);
+            dir = sd_vec3_mlsa(dir, *fragment->vs2ws_xform[1], sd_vy(dir_vs));
+            dir = sd_vec3_mlsa(dir, *fragment->vs2ws_xform[2], sd_vz(dir_vs));
 
     sd_vec4 sky = TX_SampleCubemap(medium->environment->sky, dir);
     sd_vec3 power_in = sd_vec3_muls(sd_vxyz(sky), dp);
     sd_vec3 power_out = sd_vec3_muls(power_in, rf_coeff);
 
-    out = sd_vec3_fsmadd(sd_vec3_mul(sd_vxyz(col), power_out), specularity, out);
+    out = sd_vec3_mlsa(out, sd_vec3_mul(sd_vxyz(col), power_out), specularity);
     return sd_vec4_create(sd_vx(out), sd_vy(out), sd_vz(out), sd_vw(col));
 }
 
@@ -69,8 +69,8 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeSky)(void *state, sd_vec4 col, TX_ShaderParam
     TX_LightEnvironment **env = state;
 
     sd_vec3 dir = sd_vec3_muls(*fragment->vs2ws_xform[0], sd_vx(*fragment->vs));
-            dir = sd_vec3_fsmadd(*fragment->vs2ws_xform[1], sd_vy(*fragment->vs), dir);
-            dir = sd_vec3_fsmadd(*fragment->vs2ws_xform[2], sd_vz(*fragment->vs), dir);
+            dir = sd_vec3_mlsa(dir, *fragment->vs2ws_xform[1], sd_vy(*fragment->vs));
+            dir = sd_vec3_mlsa(dir, *fragment->vs2ws_xform[2], sd_vz(*fragment->vs));
 
     return TX_SampleCubemap((*env)->sky, dir);
 }
