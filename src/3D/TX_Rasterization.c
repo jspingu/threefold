@@ -122,7 +122,7 @@ void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_Triangle
             sd_vec4 col;
             sd_vec3 bg = sd_vec3_load(canvas->color, base + j);
             sd_float bg_z = sd_float_load(canvas->depth, base + j);
-            sd_mask mask = sd_float_between(sd_vx(ss), left, right);
+            sd_mask mask = sd_float_between(sd_vx(ss), sd_float_set(left), sd_float_set(right));
 
             TX_ShaderParams fragment = {
                 .bg = &bg,
@@ -243,7 +243,7 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
             sd_vec4 col;
             sd_vec3 bg = sd_vec3_load(canvas->color, base + j);
             sd_float bg_z = sd_float_load(canvas->depth, base + j);
-            sd_mask mask = sd_float_between(fragment_x, left, right);
+            sd_mask mask = sd_float_between(fragment_x, sd_float_set(left), sd_float_set(right));
 
             TX_ShaderParams fragment = {
                 .bg = &bg,

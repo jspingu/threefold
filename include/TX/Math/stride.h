@@ -1308,8 +1308,8 @@ static inline sd_mask sd_float_gt(sd_float lhs, sd_float rhs) {
 #endif
 }
 
-static inline sd_mask sd_float_between(sd_float f, float min, float max) {
-    return sd_mask_and(sd_float_gt(f, sd_float_set(min)), sd_float_lt(f, sd_float_set(max)));
+static inline sd_mask sd_float_between(sd_float f, sd_float min, sd_float max) {
+    return sd_mask_and(sd_float_gt(f, min), sd_float_lt(f, max));
 }
 
 static inline sd_float sd_float_sel(sd_mask mask, sd_float fg, sd_float bg) {
