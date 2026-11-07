@@ -5,7 +5,7 @@
 
 #include "TX_Bitmap_c.h"
 
-static constexpr int MIN_TILE_WIDTH = 128;
+static constexpr int MIN_TILE_WIDTH = 64;
 
 static void PresentSubCanvas(TX_CanvasWorkerData *wd) {
     TX_Canvas *canvas = ECS_GetComponent(wd->canvas, TX_Bitmap.Canvas);
