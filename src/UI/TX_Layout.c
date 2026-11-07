@@ -14,27 +14,27 @@ void TX_PropagateLayout(ECS_Handle *self, vec2 pos, vec2 dim) {
     layout->pos = pos;
     layout->dim = dim;
 
-    ECS_Handle *world = ECS_GetAncestorWithComponent(self, TX_3D.World, false);
-
-    if (world) {
-        if (layout->test_geom) {
-            TX_FreeWorldGeometry(layout->test_geom);
-            TX_FreeMesh(layout->rect);
-        }
-
-        layout->rect = TX_CreateRectMesh(dim.x, dim.y);
-        layout->test_geom = TX_RegisterGeometry(world, layout->rect);
-
-        TX_SetGeometryTransform(layout->test_geom, (xform3) {
-            mat3x3_identity,
-            { .x = pos.x, .y = pos.y }
-        });
-
-        TX_InstanceWorldGeometry(layout->test_geom,
-            (TX_ShaderCall []) { { SD_SELECT(TX_ShadeSolidColor), layout->color } , {}},
-            0, 0
-        );
-    }
+    // ECS_Handle *world = ECS_GetAncestorWithComponent(self, TX_3D.World, false);
+    //
+    // if (world) {
+    //     if (layout->test_geom) {
+    //         TX_FreeWorldGeometry(layout->test_geom);
+    //         TX_FreeMesh(layout->rect);
+    //     }
+    //
+    //     layout->rect = TX_CreateRectMesh(dim.x, dim.y);
+    //     layout->test_geom = TX_RegisterGeometry(world, layout->rect);
+    //
+    //     TX_SetGeometryTransform(layout->test_geom, (xform3) {
+    //         mat3x3_identity,
+    //         { .x = pos.x, .y = pos.y }
+    //     });
+    //
+    //     TX_InstanceWorldGeometry(layout->test_geom,
+    //         (TX_ShaderCall []) { { SD_SELECT(TX_ShadeSolidColor), layout->color } , {}},
+    //         0, 0
+    //     );
+    // }
 
     /* Broadcast layout change to matching systems */
     ECS_ProcessEntitySystemGroup(self, TX_SystemGroups.Layout, pos, dim);
@@ -122,9 +122,9 @@ void TX_InitLayout(void *component, void *args) {
     layout->cls = List_Create(ECS_Handle *);
 
     layout->color = SDL_malloc(sizeof(TX_SolidColor));
-    layout->color->r = 0.8;
-    layout->color->g = 0.2;
-    layout->color->b = 0.7;
+    layout->color->r = 1.0;
+    layout->color->g = 1.0;
+    layout->color->b = 1.0;
 }
 
 void TX_FreeLayout(void *component) {

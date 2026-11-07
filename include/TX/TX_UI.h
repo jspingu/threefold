@@ -34,17 +34,31 @@ typedef struct TX_Layout {
     TX_SolidColor *color;
 } TX_Layout;
 
-// typedef struct TX_Text {
-//     char *str;
-//     char *font_path;
-//     TX_Texture *font_texture;
-//     List(TX_RenderInstance *) *instances;
-// } TX_Text;
+typedef struct TX_TextCharacter {
+    TX_WorldGeometry *geometry;
+    TX_TileMap *tile_map;
+} TX_TextCharacter;
+
+typedef struct TX_TextArgs {
+    char *str;
+    char *spritefont_path;
+    int hchars, vchars;
+} TX_TextArgs;
+
+typedef struct TX_Text {
+    char *str, *str_init;
+    char *spritefont_path;
+    TX_Texture *spritefont;
+    TX_Mesh *rect;
+    List(TX_TextCharacter) *chars;
+    int hchars, vchars;
+    int char_width, char_height;
+} TX_Text;
 
 struct TX_UI {
     ECS_Component(TX_InputState) *InputState;
     ECS_Component(TX_Layout) *Layout;
-    // ECS_Component(TX_Text) *Text;
+    ECS_Component(TX_Text) *Text;
 };
 
 extern struct TX_UI TX_UI;
@@ -55,5 +69,9 @@ bool TX_IsKeyJustUp(ECS_Handle *self, SDL_Scancode sc);
 
 vec2 TX_GetMouseMotion(ECS_Handle *self);
 vec2 TX_GetWheelMotion(ECS_Handle *self);
+
+void TX_PropagateLayout(ECS_Handle *self, vec2 pos, vec2 dim);
+
+void TX_SetText(ECS_Handle *self, char *str);
 
 #endif /* TX_UI_H */

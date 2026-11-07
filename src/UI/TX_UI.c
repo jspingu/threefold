@@ -18,6 +18,14 @@ void TX_RegisterUIToECS(ECS *ecs) {
         .free = TX_FreeLayout
     });
 
+    TX_UI.Text = ECS_RegisterComponent(ecs, TX_Text, {
+        .attach = TX_AttachText,
+        .detach = TX_DetachText,
+        .init = TX_InitText,
+        .free = TX_FreeText
+    });
+
     ECS_RegisterSystem(TX_SystemGroups.SDLEvent, TX_NotifyInputState, TX_UI.InputState);
     ECS_RegisterSystem(TX_SystemGroups.PostUpdate, TX_AdvanceInputState, TX_UI.InputState);
+    ECS_RegisterSystem(TX_SystemGroups.Layout, TX_ArrangeText, TX_UI.Text);
 }

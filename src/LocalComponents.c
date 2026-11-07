@@ -76,9 +76,18 @@ void UpdateFreeCam(ECS_Handle *self, double delta) {
     );
 }
 
+void UpdateStats(ECS_Handle *self, double delta) {
+    ECS_Handle *vp = ECS_GetAncestorWithComponent(self, TX_Bitmap.Viewport, true);
+    TX_Viewport *c_vp = ECS_GetComponent(vp, TX_Bitmap.Viewport);
+    char (*fps_str)[64] = ECS_GetComponent(self, Components.Stats);
+    SDL_snprintf(*fps_str, 64, "threefold demo | %ix%i | FPS: %.2f", c_vp->width, c_vp->height, 1.0 / delta);
+    TX_SetText(self, *fps_str);
+}
+
 void RegisterToECS(ECS *ecs) {
     Components.GrabMouse = ECS_RegisterComponent(ecs, bool, {});
     Components.FreeCam = ECS_RegisterComponent(ecs, FreeCam, {});
+    Components.Stats = ECS_RegisterComponent(ecs, char [64], {});
 
     ECS_RegisterSystem(TX_SystemGroups.Update, UpdateGrabMouse, Components.GrabMouse);
 
@@ -87,4 +96,6 @@ void RegisterToECS(ECS *ecs) {
         TX_3D.Position,
         TX_3D.Basis
     );
+
+    ECS_RegisterSystem(TX_SystemGroups.Update, UpdateStats, Components.Stats, TX_UI.Text);
 }

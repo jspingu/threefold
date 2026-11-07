@@ -41,7 +41,7 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeTileMap)(void *state, sd_vec4 col, TX_ShaderP
         tile_map->y * tile_map->tile_height
     ), *fragment->ts, tile_unit);
 
-    return TX_SampleNearest(tile_map->texture, uts);
+    return TX_SampleBilinear(tile_map->texture, uts, *fragment->bg);
 }
 
 #ifndef SD_SRC_VARIANT

@@ -10,6 +10,7 @@ typedef struct FreeCam {
 struct LocalComponents {
     ECS_Component(FreeCam) *FreeCam;
     ECS_Component(bool) *GrabMouse;
+    ECS_Component(char [64]) *Stats;
 };
 
 extern struct LocalComponents Components;

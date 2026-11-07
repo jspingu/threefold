@@ -24,6 +24,13 @@ void TX_DetachLayout(ECS_Handle *self, ECS_Component(void) *component);
 void TX_InitLayout(void *component, void *args);
 void TX_FreeLayout(void *component);
 
+void TX_ArrangeText(ECS_Handle *self, vec2 pos, vec2 dim);
+
+void TX_AttachText(ECS_Handle *self, ECS_Component(void) *component);
+void TX_DetachText(ECS_Handle *self, ECS_Component(void) *component);
+void TX_InitText(void *component, void *args);
+void TX_FreeText(void *component);
+
 void TX_RegisterUIToECS(ECS *ecs);
 
 #endif /* TX_UI_C_H */

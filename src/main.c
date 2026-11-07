@@ -5,7 +5,6 @@
 #include <TX/TX_Bitmap.h>
 #include <TX/TX_Shade.h>
 #include <TX/TX_UI.h>
-#include <stdio.h>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
@@ -58,12 +57,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
             ECS_Components(
                 { TX_3D.World, nullptr },
                 { TX_UI.Layout, &(TX_Layout) {
-                    .dim = { .x = 128 },
-                    .pad = { .x = 8, .y = 8 },
-                    .gap = { .x = 8, .y = 8 },
-                    .grow = { .y = 1 },
-                    .flow = TX_LAYOUT_FLOW_VERTICAL,
-                    .align = { TX_LAYOUT_ALIGN_CENTER, TX_LAYOUT_ALIGN_END }
+                    .grow = { .x = 1 },
+                    .dim = { .y = 64 },
+                    .flow = TX_LAYOUT_FLOW_HORIZONTAL,
+                    .align = { TX_LAYOUT_ALIGN_START, TX_LAYOUT_ALIGN_END }
                 }}
             ),
             ECS_Children(
@@ -81,25 +78,14 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 {
                     ECS_Components(
                         { TX_UI.Layout, &(TX_Layout) {
-                            .grow = { .y = 1 },
-                            .dim = { .x = 32 }
-                        }}
-                    )
-                },
-                {
-                    ECS_Components(
-                        { TX_UI.Layout, &(TX_Layout) {
-                            .dim = { .y = 64 },
-                            .grow = { .x = 1 }
-                        }}
-                    )
-                },
-                {
-                    ECS_Components(
-                        { TX_UI.Layout, &(TX_Layout) {
-                            .grow = { .y = 2 },
-                            .dim = { .x = 64 }
-                        }}
+                            .grow = { .x = 1, .y = 1 }
+                        }},
+                        { TX_UI.Text, &(TX_TextArgs) {
+                            .spritefont_path = "assets/txmono-9x16.png",
+                            .hchars = 19,
+                            .vchars = 5
+                        }},
+                        { Components.Stats, nullptr }
                     )
                 }
             )
@@ -127,46 +113,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_3D.Basis, (mat3x3 []) { mat3x3_identity }},
                         { Components.FreeCam, &(FreeCam) {}}
                     )
-                },
-                { /* Rectangle sort test */
-                    ECS_Components(
-                        { TX_3D.Position, &(vec3) { .z = 800 }},
-                        { TX_3D.Basis, (mat3x3 []) { mat3x3_identity }},
-                        { TX_3D.MeshPrimitive, nullptr },
-                        { TX_3D.Rect, &(TX_Rect) { .width = 200, .height = 100 }},
-                        { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetRectMesh }},
-                        { TX_3D.TransformCompositor, &(TX_TransformCompositor) { TX_ComposeTransformDefault }}
-                    ),
-                    ECS_Children({ECS_Components(
-                        { TX_Shade.SolidColor, &(TX_SolidColor) { .r = 0.1, .g = 0.9, .b = 1.0 }},
-                        { TX_Shade.Lighting, &(TX_OpticalMedium) { .reflectivity = 1.0, .specularity = 1.0, .exp = 4 }},
-                        { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, nullptr },
-                            .render_batch = Transparent,
-                            .flags = TX_RASTERIZER_TEST_DEPTH
-                                   | TX_RASTERIZER_SORT_TRIANGLES
-                        }}
-                    )})
-                },
-                { /* Rectangle sort test */
-                    ECS_Components(
-                        { TX_3D.Position, &(vec3) { .x = -120, .z = 820 }},
-                        { TX_3D.Basis, (mat3x3 []) { mat3x3_rotate(mat3x3_identity, vec3_j, 1) }},
-                        { TX_3D.MeshPrimitive, nullptr },
-                        { TX_3D.Rect, &(TX_Rect) { .width = 200, .height = 100 }},
-                        { TX_3D.Model, &(TX_ModelArgs) { .get_mesh = TX_GetRectMesh }},
-                        { TX_3D.TransformCompositor, &(TX_TransformCompositor) { TX_ComposeTransformDefault }}
-                    ),
-                    ECS_Children({ECS_Components(
-                        { TX_Shade.SolidColor, &(TX_SolidColor) { .r = 1.0, .g = 0.1, .b = 0.8 }},
-                        { TX_Shade.Lighting, &(TX_OpticalMedium) { .reflectivity = 1.0, .specularity = 1.0, .exp = 4 }},
-                        { TX_3D.ModelInstance, &(TX_ModelInstanceArgs) {
-                            .shader_pipeline = (ECS_Component(TX_ShaderCall) *[]) { TX_Shade.SolidColor, TX_Shade.Lighting, nullptr },
-                            .render_batch = Transparent,
-                            .flags = TX_RASTERIZER_TEST_DEPTH
-                                   | TX_RASTERIZER_SORT_TRIANGLES
-                        }}
-                    )})
                 },
                 { /* Teapot */
                     ECS_Components(
@@ -343,16 +289,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     double delta = (double)(ticks_curr - ticks_prev) / ticks_freq;
     ticks_prev = ticks_curr;
 
-    printf("FPS: %li              \n\x1b[F", SDL_lround(1/delta));
-
     ECS_ProcessSystemGroup(TX_SystemGroups.Update, delta);
-
     ECS_Update(ecs);
-
     ECS_ProcessSystemGroup(TX_SystemGroups.PostUpdate);
     ECS_ProcessSystemGroupReverse(TX_SystemGroups.Render);
     ECS_ProcessSystemGroup(TX_SystemGroups.RenderPresent);
-
     return SDL_APP_CONTINUE;
 }
 
