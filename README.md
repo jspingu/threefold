@@ -35,8 +35,6 @@ Supported extensions:
 
 # Showcase
 
-<img width="1920" height="1200" alt="scene" src="https://github.com/user-attachments/assets/da71002f-86ac-46d6-ba63-f308e75f8652" />
+<img width="1920" height="1200" alt="scene" src="https://github.com/user-attachments/assets/e4eea128-feef-4281-ace7-1747fe843431" />
 
 Software-rendered scene — [Utah teapot](https://users.cs.utah.edu/~dejohnso/models/teapot.html) (22,855 triangles), skybox, lights, phong shading, cubemap reflections, gamma correction
-
-1920x1200@~120FPS on my X1P42100
