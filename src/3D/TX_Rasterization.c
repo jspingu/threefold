@@ -211,7 +211,7 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
                 sd_vec2_create(sd_vx(midpoint), fragment_y)
             ), normalize_ss);
 
-            sd_vec3 ray = sd_vec3_create(sd_vx(proj_plane), sd_vy(proj_plane), sd_float_one());
+            sd_vec3 ray = sd_vec3_create(proj_plane, sd_float_one());
             sd_float inv_z = sd_float_mul(sd_vec3_dot(ray, nrml), inv_nrml_disp);
             sd_float fragment_z = sd_float_rcp(inv_z);
             sd_vec3 fragment_vs = sd_vec3_muls(ray, fragment_z);

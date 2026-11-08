@@ -61,7 +61,7 @@ SD_CALL sd_vec4 SD_VARIANT(TX_ShadeLighting)(void *state, sd_vec4 col, TX_Shader
     sd_vec3 power_out = sd_vec3_muls(power_in, rf_coeff);
 
     out = sd_vec3_mlsa(out, sd_vec3_mul(sd_vxyz(col), power_out), specularity);
-    return sd_vec4_create(sd_vx(out), sd_vy(out), sd_vz(out), sd_vw(col));
+    return sd_vec4_create(out, sd_vw(col));
 }
 
 SD_CALL sd_vec4 SD_VARIANT(TX_ShadeSky)(void *state, sd_vec4 col, TX_ShaderParams *fragment) {

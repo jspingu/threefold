@@ -78,7 +78,7 @@ static inline sd_vec4 TX_SampleBilinear(TX_Texture *texture, sd_vec2 uts, sd_vec
 
     sd_vec2 lerp = sd_vec2_frac(tl);
     sd_vec3 c = sd_vec3_blends(sd_vec3_blends(c00, c01, sd_vx(lerp)), sd_vec3_blends(c10, c11, sd_vx(lerp)), sd_vy(lerp));
-    return sd_vec4_create(sd_vx(c), sd_vy(c), sd_vz(c), sd_float_one());
+    return sd_vec4_create(c, sd_float_one());
 }
 
 static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {

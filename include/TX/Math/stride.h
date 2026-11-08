@@ -256,6 +256,19 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
 #define sd_vxy(v)   ( sd_vec2_create(sd_vx(v), sd_vy(v)) )
 #define sd_vxyz(v)  ( sd_vec3_create(sd_vx(v), sd_vy(v), sd_vz(v)) )
 
+#define sd_vec2_create         sd_vec2_create2
+
+#define sd_vec3_create(x,...)  _Generic((x),  \
+    sd_float: sd_vec3_create3,                \
+    sd_vec2: sd_vec3_create2                  \
+)(x, __VA_ARGS__)
+
+#define sd_vec4_create(x,...)  _Generic((x),  \
+    sd_float: sd_vec4_create4,                \
+    sd_vec2: sd_vec4_create3,                 \
+    sd_vec3: sd_vec4_create2                  \
+)(x, __VA_ARGS__)
+
 #define SD_DEFINE_VECFNS_TERNARY_VVV(name,base)                              \
     static inline sd_vec2 sd_vec2_##name(sd_vec2 a, sd_vec2 b, sd_vec2 c) {  \
         return sd_vec2_create(                                               \
@@ -481,7 +494,7 @@ static inline size_t sd_bounding_size(size_t n) {
     return ((n + sd_length() - 1) & -sd_length()) * 4;
 }
 
-static inline sd_vec2 sd_vec2_create(sd_float x, sd_float y) {
+static inline sd_vec2 sd_vec2_create2(sd_float x, sd_float y) {
 #ifdef __ARM_FEATURE_SVE
     return svcreate2(x, y);
 #elifdef __riscv_v
@@ -491,7 +504,7 @@ static inline sd_vec2 sd_vec2_create(sd_float x, sd_float y) {
 #endif
 }
 
-static inline sd_vec3 sd_vec3_create(sd_float x, sd_float y, sd_float z) {
+static inline sd_vec3 sd_vec3_create3(sd_float x, sd_float y, sd_float z) {
 #ifdef __ARM_FEATURE_SVE
     return svcreate3(x, y, z);
 #elifdef __riscv_v
@@ -501,7 +514,11 @@ static inline sd_vec3 sd_vec3_create(sd_float x, sd_float y, sd_float z) {
 #endif
 }
 
-static inline sd_vec4 sd_vec4_create(sd_float x, sd_float y, sd_float z, sd_float w) {
+static inline sd_vec3 sd_vec3_create2(sd_vec2 xy, sd_float z) {
+    return sd_vec3_create3(sd_vx(xy), sd_vy(xy), z);
+}
+
+static inline sd_vec4 sd_vec4_create4(sd_float x, sd_float y, sd_float z, sd_float w) {
 #ifdef __ARM_FEATURE_SVE
     return svcreate4(x, y, z, w);
 #elifdef __riscv_v
@@ -509,6 +526,14 @@ static inline sd_vec4 sd_vec4_create(sd_float x, sd_float y, sd_float z, sd_floa
 #else
     return (sd_vec4) { x, y, z, w };
 #endif
+}
+
+static inline sd_vec4 sd_vec4_create3(sd_vec2 xy, sd_float z, sd_float w) {
+    return sd_vec4_create4(sd_vx(xy), sd_vy(xy), z, w);
+}
+
+static inline sd_vec4 sd_vec4_create2(sd_vec3 xyz, sd_float w) {
+    return sd_vec4_create4(sd_vx(xyz), sd_vy(xyz), sd_vz(xyz), w);
 }
 
 static inline sd_mask sd_mask_set(bool b) {
