@@ -48,7 +48,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
-          make
+          LDFLAGS=-fuse-ld=lld make
 
       - name: Build (${{ runner.arch }} MacOS)
         if: runner.os == 'macOS'
