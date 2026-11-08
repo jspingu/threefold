@@ -97,8 +97,8 @@ void SD_VARIANT(TX_ScanLinear)(ECS_Handle *self, TX_CanvasTile tile, TX_Triangle
 
         for (int j = sd_left; j < sd_right; ++j) {
             sd_vec2 ss = sd_vec2_create(
-                sd_float_add(sd_float_range(), sd_float_set(j * sd_length() + 0.5f)),
-                sd_float_add(sd_float_set(i), sd_float_set(0.5f))
+                sd_float_add(sd_float_range(), sd_float_set(j * sd_length() + 0.5)),
+                sd_float_set(i + 0.5)
             );
 
             sd_vec2 relative = sd_vec2_sub(ss, origin);
@@ -191,7 +191,7 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
     sd_vec2 ts_xform_j = sd_vec2_mlsa(sd_vec2_muls(ab_ts, sd_vx(inv_xform_j)), ac_ts, sd_vy(inv_xform_j));
     sd_vec2 ts_xform_k = sd_vec2_mlsa(sd_vec2_muls(ab_ts, sd_vx(inv_xform_k)), ac_ts, sd_vy(inv_xform_k));
 
-    sd_vec2 midpoint = sd_vec2_set(canvas->width * 0.5f, canvas->height * 0.5f);
+    sd_vec2 midpoint = sd_vec2_set(canvas->width * 0.5, canvas->height * 0.5);
     sd_float normalize_ss = sd_float_mul(sd_float_set(perspective_fov->tan_half_fov), sd_float_rcp(sd_vx(midpoint)));
 
     for (int i = triangle_bounds[0]; i < triangle_bounds[1]; ++i) {
@@ -204,27 +204,17 @@ void SD_VARIANT(TX_ScanPerspective)(ECS_Handle *self, TX_CanvasTile tile, TX_Tri
 
         for (int j = sd_left; j < sd_right; ++j) {
             sd_float fragment_x = sd_float_add(sd_float_range(), sd_float_set(j * sd_length() + 0.5));
-            sd_float fragment_y = sd_float_add(sd_float_set(i), sd_float_set(0.5));
+            sd_float fragment_y = sd_float_set(i + 0.5);
 
             sd_vec2 proj_plane = sd_vec2_muls(sd_vec2_sub(
                 sd_vec2_create(fragment_x, sd_vy(midpoint)),
                 sd_vec2_create(sd_vx(midpoint), fragment_y)
             ), normalize_ss);
 
-            sd_float inv_z = sd_float_mul(sd_vec3_dot(sd_vec3_create(
-                sd_vx(proj_plane),
-                sd_vy(proj_plane),
-                sd_float_one()
-            ), nrml), inv_nrml_disp);
-
+            sd_vec3 ray = sd_vec3_create(sd_vx(proj_plane), sd_vy(proj_plane), sd_float_one());
+            sd_float inv_z = sd_float_mul(sd_vec3_dot(ray, nrml), inv_nrml_disp);
             sd_float fragment_z = sd_float_rcp(inv_z);
-
-            sd_vec3 fragment_vs = sd_vec3_create(
-                sd_float_mul(sd_vx(proj_plane), fragment_z),
-                sd_float_mul(sd_vy(proj_plane), fragment_z),
-                fragment_z
-            );
-
+            sd_vec3 fragment_vs = sd_vec3_muls(ray, fragment_z);
             sd_vec3 relative = sd_vec3_sub(fragment_vs, origin);
             sd_vec3 fragment_nrml;
 
@@ -281,28 +271,31 @@ static void Span(TX_CanvasTile tile, TX_TriangleDraw *triangle, int triangle_bou
 
     /* True if long edge is left edge */
     bool le_left = ((idxs[0] + 2) % 3 == idxs[2]);
+    size_t sd_top = sd_qot(triangle_bounds[0]);
+    size_t sd_bottom = sd_bounding_length(triangle_bounds[1]);
 
     sd_float grad01 = sd_float_set((ss[idxs[1]].x - ss[idxs[0]].x) / (ss[idxs[1]].y - ss[idxs[0]].y));
     sd_float grad12 = sd_float_set((ss[idxs[2]].x - ss[idxs[1]].x) / (ss[idxs[2]].y - ss[idxs[1]].y));
     sd_float grad02 = sd_float_set((ss[idxs[2]].x - ss[idxs[0]].x) / (ss[idxs[2]].y - ss[idxs[0]].y));
-
-    sd_float sd_tl = sd_float_set(tile.left);
-    sd_float sd_tr = sd_float_set(tile.right);
-
-    size_t sd_top = sd_qot(triangle_bounds[0]);
-    size_t sd_bottom = sd_bounding_length(triangle_bounds[1]);
+    sd_float x0 = sd_float_set(ss[idxs[0]].x), y0 = sd_float_set(ss[idxs[0]].y);
+    sd_float x1 = sd_float_set(ss[idxs[1]].x), y1 = sd_float_set(ss[idxs[1]].y);
+    sd_float tl = sd_float_set(tile.left), tr = sd_float_set(tile.right);
+    sd_float half = sd_float_set(0.5);
 
     for (size_t i = sd_top; i < sd_bottom; ++i) {
-        sd_float y = sd_float_add(sd_float_range(), sd_float_set(i * sd_length() + 0.5f));
-        sd_float offset0 = sd_float_sub(y, sd_float_set(ss[idxs[0]].y));
-        sd_float offset1 = sd_float_sub(y, sd_float_set(ss[idxs[1]].y));
+        sd_float y = sd_float_add(sd_float_range(), sd_float_set(i * sd_length() + 0.5));
+        sd_float disp0 = sd_float_sub(y, y0);
+        sd_float disp1 = sd_float_sub(y, y1);
+        sd_float x01 = sd_float_mla(x0, grad01, disp0);
+        sd_float x12 = sd_float_mla(x1, grad12, disp1);
+        sd_float x02 = sd_float_mla(x0, grad02, disp0);
 
-        sd_float x01 = sd_float_mla(sd_float_set(ss[idxs[0]].x), grad01, offset0);
-        sd_float x12 = sd_float_mla(sd_float_set(ss[idxs[1]].x), grad12, offset1);
-        sd_float x02 = sd_float_mla(sd_float_set(ss[idxs[0]].x), grad02, offset0);
-
-        sd_int left = sd_float_toi(sd_float_add(sd_float_clamp(le_left ? x02 : sd_float_max(x01, x12), sd_tl, sd_tr), sd_float_set(0.5)));
-        sd_int right = sd_float_toi(sd_float_add(sd_float_clamp(le_left ? sd_float_min(x01, x12) : x02, sd_tl, sd_tr), sd_float_set(0.5)));
+        /* This must be a less-than-or-equal comparison, or there will be a NaN edge case when y == y1 on a bottom horizontal edge */
+        /* Bottom-right rounding guarantees that y != y1 for top horizontal edges, so this should be safe */
+        sd_mask le1 = sd_float_le(y, y1);
+        sd_float srt = sd_float_sel(le1, x01, x12);
+        sd_int left = sd_float_toi(sd_float_add(sd_float_clamp(le_left ? x02 : srt, tl, tr), half));
+        sd_int right = sd_float_toi(sd_float_add(sd_float_clamp(le_left ? srt : x02, tl, tr), half));
 
         sd_int_store(tile.scanlines[0], i - sd_qot(tile.top), left);
         sd_int_store(tile.scanlines[1], i - sd_qot(tile.top), right);
@@ -373,7 +366,7 @@ static void QueueFlagBatchTriangles(ECS_Handle *self, TX_FlagBatch *fb) {
 
                     sd_vec2 projected = rasterizer->project(self,
                         sd_vec3_set(intersect.x, intersect.y, rasterizer->near),
-                        sd_vec2_set(canvas->width * 0.5f, canvas->height * 0.5f)
+                        sd_vec2_set(canvas->width * 0.5, canvas->height * 0.5)
                     );
 
                     sd_vec2_scalar projected_scalar = sd_vec2_first(projected);
@@ -391,10 +384,10 @@ static void QueueFlagBatchTriangles(ECS_Handle *self, TX_FlagBatch *fb) {
                 if (fb->flags & TX_RASTERIZER_CULL_BACKFACE && !verts_cw)
                     continue;
 
-                int bbox_left   = (int)(SDL_min(clipped[0].x, SDL_min(clipped[j].x, clipped[j + 1].x)) + 0.5f);
-                int bbox_right  = (int)(SDL_max(clipped[0].x, SDL_max(clipped[j].x, clipped[j + 1].x)) + 0.5f);
-                int bbox_top    = (int)(SDL_min(clipped[0].y, SDL_min(clipped[j].y, clipped[j + 1].y)) + 0.5f);
-                int bbox_bottom = (int)(SDL_max(clipped[0].y, SDL_max(clipped[j].y, clipped[j + 1].y)) + 0.5f);
+                int bbox_left   = SDL_min(clipped[0].x, SDL_min(clipped[j].x, clipped[j + 1].x)) + 0.5;
+                int bbox_right  = SDL_max(clipped[0].x, SDL_max(clipped[j].x, clipped[j + 1].x)) + 0.5;
+                int bbox_top    = SDL_min(clipped[0].y, SDL_min(clipped[j].y, clipped[j + 1].y)) + 0.5;
+                int bbox_bottom = SDL_max(clipped[0].y, SDL_max(clipped[j].y, clipped[j + 1].y)) + 0.5;
 
                 TX_TriangleDraw triangle = {
                     .shader_pipeline = instance->shader_pipeline,
@@ -498,7 +491,7 @@ void SD_VARIANT(TX_RenderWorld)(ECS_Handle *self) {
                 sd_vec3_store(wg->vs_nrmls, i, sd_vec3_normalize(vs_nrml));
             }
 
-            sd_vec2_store(wg->ss_verts, i, rasterizer->project(self, vs_vert, sd_vec2_set(canvas->width * 0.5f, canvas->height * 0.5f)));
+            sd_vec2_store(wg->ss_verts, i, rasterizer->project(self, vs_vert, sd_vec2_set(canvas->width * 0.5, canvas->height * 0.5)));
         }
     });
 

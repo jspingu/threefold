@@ -63,11 +63,13 @@ static inline sd_vec4 TX_SampleBilinear(TX_Texture *texture, sd_vec2 uts, sd_vec
     sd_vec2 dm1 = sd_vec2_set(texture->width - 1, texture->height - 1);
     sd_vec2 tl = sd_vec2_clamp(sd_vec2_subs(uts, sd_float_set(0.5)), sd_vec2_zero(), dm1);
     sd_vec2 br = sd_vec2_min(sd_vec2_adds(tl, sd_float_one()), dm1);
+    sd_int tlx = sd_float_toi(sd_vx(tl)), tly = sd_float_toi(sd_vy(tl));
+    sd_int brx = sd_float_toi(sd_vx(br)), bry = sd_float_toi(sd_vy(br));
 
-    sd_vec4 s00 = sd_vec4_gather(texture->color, sd_int_mla(sd_float_toi(sd_vx(tl)), sd_float_toi(sd_vy(tl)), pitch));
-    sd_vec4 s01 = sd_vec4_gather(texture->color, sd_int_mla(sd_float_toi(sd_vx(br)), sd_float_toi(sd_vy(tl)), pitch));
-    sd_vec4 s10 = sd_vec4_gather(texture->color, sd_int_mla(sd_float_toi(sd_vx(tl)), sd_float_toi(sd_vy(br)), pitch));
-    sd_vec4 s11 = sd_vec4_gather(texture->color, sd_int_mla(sd_float_toi(sd_vx(br)), sd_float_toi(sd_vy(br)), pitch));
+    sd_vec4 s00 = sd_vec4_gather(texture->color, sd_int_mla(tlx, tly, pitch));
+    sd_vec4 s01 = sd_vec4_gather(texture->color, sd_int_mla(brx, tly, pitch));
+    sd_vec4 s10 = sd_vec4_gather(texture->color, sd_int_mla(tlx, bry, pitch));
+    sd_vec4 s11 = sd_vec4_gather(texture->color, sd_int_mla(brx, bry, pitch));
 
     sd_vec3 c00 = sd_vec3_blends(bg, sd_vxyz(s00), sd_vw(s00));
     sd_vec3 c01 = sd_vec3_blends(bg, sd_vxyz(s01), sd_vw(s01));
