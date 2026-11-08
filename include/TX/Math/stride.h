@@ -724,6 +724,78 @@ static inline sd_mask sd_int_lt(sd_int lhs, sd_int rhs) {
 #endif
 }
 
+static inline sd_mask sd_int_le(sd_int lhs, sd_int rhs) {
+#ifdef __AVX512F__
+    return _mm512_cmple_epi32_mask(lhs, rhs);
+#elifdef __AVX2__
+    return _mm256_xor_si256(_mm256_cmpgt_epi32(lhs, rhs), _mm256_set1_epi32(-1));
+#elifdef __SSE2__
+    return _mm_xor_si128(_mm_cmpgt_epi32(lhs, rhs), _mm_set1_epi32(-1));
+#elifdef __ARM_FEATURE_SVE
+    return svcmple(svptrue_b32(), lhs, rhs);
+#elifdef __ARM_NEON
+    return vcleq_s32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmsle(lhs, rhs, sd_length());
+#else
+    return lhs <= rhs;
+#endif
+}
+
+static inline sd_mask sd_int_eq(sd_int lhs, sd_int rhs) {
+#ifdef __AVX512F__
+    return _mm512_cmpeq_epi32_mask(lhs, rhs);
+#elifdef __AVX2__
+    return _mm256_cmpeq_epi32(lhs, rhs);
+#elifdef __SSE2__
+    return _mm_cmpeq_epi32(lhs, rhs);
+#elifdef __ARM_FEATURE_SVE
+    return svcmpeq(svptrue_b32(), lhs, rhs);
+#elifdef __ARM_NEON
+    return vceqq_s32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmseq(lhs, rhs, sd_length());
+#else
+    return lhs == rhs;
+#endif
+}
+
+static inline sd_mask sd_int_ne(sd_int lhs, sd_int rhs) {
+#ifdef __AVX512F__
+    return _mm512_cmpneq_epi32_mask(lhs, rhs);
+#elifdef __AVX2__
+    return _mm256_xor_si256(_mm256_cmpeq_epi32(lhs, rhs), _mm256_set1_epi32(-1));
+#elifdef __SSE2__
+    return _mm_xor_si128(_mm_cmpeq_epi32(lhs, rhs), _mm_set1_epi32(-1));
+#elifdef __ARM_FEATURE_SVE
+    return svcmpne(svptrue_b32(), lhs, rhs);
+#elifdef __ARM_NEON
+    return vmvnq_u32(vceqq_s32(lhs, rhs));
+#elifdef __riscv_v
+    return __riscv_vmsne(lhs, rhs, sd_length());
+#else
+    return lhs != rhs;
+#endif
+}
+
+static inline sd_mask sd_int_ge(sd_int lhs, sd_int rhs) {
+#ifdef __AVX512F__
+    return _mm512_cmpge_epi32_mask(lhs, rhs);
+#elifdef __AVX2__
+    return _mm256_xor_si256(_mm256_cmpgt_epi32(rhs, lhs), _mm256_set1_epi32(-1));
+#elifdef __SSE2__
+    return _mm_xor_si128(_mm_cmplt_epi32(lhs, rhs), _mm_set1_epi32(-1));
+#elifdef __ARM_FEATURE_SVE
+    return svcmpge(svptrue_b32(), lhs, rhs);
+#elifdef __ARM_NEON
+    return vcgeq_s32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmsge(lhs, rhs, sd_length());
+#else
+    return lhs <= rhs;
+#endif
+}
+
 static inline sd_mask sd_int_gt(sd_int lhs, sd_int rhs) {
 #ifdef __AVX512F__
     return _mm512_cmpgt_epi32_mask(lhs, rhs);
@@ -846,15 +918,9 @@ static inline sd_int sd_int_gather_u8(const uint8_t *buf, sd_int index) {
 #elifdef __AVX2__
     return _mm256_i32gather_epi32((int const *)buf, index, 1);
 #elifdef __SSE2__
-    alignas(SD_ALIGN) int32_t elems[4], idxs[4];
+    alignas(SD_ALIGN) int32_t idxs[4];
     SDL_memcpy(idxs, &index, sizeof(sd_int));
-
-    for (int i = 0; i < 4; ++i)
-        elems[i] = buf[idxs[i]];
-
-    sd_int out;
-    SDL_memcpy(&out, elems, sizeof(sd_int));
-    return out;
+    return _mm_set_epi32(buf[idxs[3]], buf[idxs[2]], buf[idxs[1]], buf[idxs[0]]);
 #elifdef __ARM_FEATURE_SVE
     return svld1ub_gather_offset_s32(svptrue_b32(), buf, index);
 #elifdef __ARM_NEON
@@ -1317,6 +1383,78 @@ static inline sd_mask sd_float_lt(sd_float lhs, sd_float rhs) {
 #endif
 }
 
+static inline sd_mask sd_float_le(sd_float lhs, sd_float rhs) {
+#ifdef __AVX512F__
+    return _mm512_cmp_ps_mask(lhs, rhs, _CMP_LE_OQ);
+#elifdef __AVX2__
+    return _mm256_castps_si256(_mm256_cmp_ps(lhs, rhs, _CMP_LE_OQ));
+#elifdef __SSE2__
+    return _mm_castps_si128(_mm_cmple_ps(lhs, rhs));
+#elifdef __ARM_FEATURE_SVE
+    return svcmple(svptrue_b32(), lhs, rhs);
+#elifdef __ARM_NEON
+    return vcleq_f32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmfle(lhs, rhs, sd_length());
+#else
+    return lhs <= rhs;
+#endif
+}
+
+static inline sd_mask sd_float_eq(sd_float lhs, sd_float rhs) {
+#ifdef __AVX512F__
+    return _mm512_cmp_ps_mask(lhs, rhs, _CMP_EQ_OQ);
+#elifdef __AVX2__
+    return _mm256_castps_si256(_mm256_cmp_ps(lhs, rhs, _CMP_EQ_OQ));
+#elifdef __SSE2__
+    return _mm_castps_si128(_mm_cmpeq_ps(lhs, rhs));
+#elifdef __ARM_FEATURE_SVE
+    return svcmpeq(svptrue_b32(), lhs, rhs);
+#elifdef __ARM_NEON
+    return vceqq_f32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmfeq(lhs, rhs, sd_length());
+#else
+    return lhs == rhs;
+#endif
+}
+
+static inline sd_mask sd_float_ne(sd_float lhs, sd_float rhs) {
+#ifdef __AVX512F__
+    return _mm512_cmp_ps_mask(lhs, rhs, _CMP_NEQ_OQ);
+#elifdef __AVX2__
+    return _mm256_castps_si256(_mm256_cmp_ps(lhs, rhs, _CMP_NEQ_OQ));
+#elifdef __SSE2__
+    return _mm_castps_si128(_mm_cmpneq_ps(lhs, rhs));
+#elifdef __ARM_FEATURE_SVE
+    return svcmpne(svptrue_b32(), lhs, rhs);
+#elifdef __ARM_NEON
+    return vmvnq_u32(vceqq_f32(lhs, rhs));
+#elifdef __riscv_v
+    return __riscv_vmfne(lhs, rhs, sd_length());
+#else
+    return lhs != rhs;
+#endif
+}
+
+static inline sd_mask sd_float_ge(sd_float lhs, sd_float rhs) {
+#ifdef __AVX512F__
+    return _mm512_cmp_ps_mask(lhs, rhs, _CMP_GE_OQ);
+#elifdef __AVX2__
+    return _mm256_castps_si256(_mm256_cmp_ps(lhs, rhs, _CMP_GE_OQ));
+#elifdef __SSE2__
+    return _mm_castps_si128(_mm_cmpge_ps(lhs, rhs));
+#elifdef __ARM_FEATURE_SVE
+    return svcmpge(svptrue_b32(), lhs, rhs);
+#elifdef __ARM_NEON
+    return vcgeq_f32(lhs, rhs);
+#elifdef __riscv_v
+    return __riscv_vmfge(lhs, rhs, sd_length());
+#else
+    return lhs >= rhs;
+#endif
+}
+
 static inline sd_mask sd_float_gt(sd_float lhs, sd_float rhs) {
 #ifdef __AVX512F__
     return _mm512_cmp_ps_mask(lhs, rhs, _CMP_GT_OQ);
@@ -1409,16 +1547,9 @@ static inline sd_float sd_float_gather(float *buf, sd_int index) {
 #elifdef __AVX2__
     return _mm256_i32gather_ps(buf, index, 4);
 #elifdef __SSE2__
-    alignas(SD_ALIGN) float elems[4];
     alignas(SD_ALIGN) int32_t idxs[4];
     SDL_memcpy(idxs, &index, sizeof(sd_int));
-
-    for (int i = 0; i < 4; ++i)
-        elems[i] = buf[idxs[i]];
-
-    sd_float out;
-    SDL_memcpy(&out, elems, sizeof(sd_float));
-    return out;
+    return _mm_set_ps(buf[idxs[3]], buf[idxs[2]], buf[idxs[1]], buf[idxs[0]]);
 #elifdef __ARM_FEATURE_SVE
     return svld1_gather_index(svptrue_b32(), buf, index);
 #elifdef __ARM_NEON
