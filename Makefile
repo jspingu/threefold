@@ -8,7 +8,7 @@ VECTORIZATION ?= dynamic
 CC = clang
 CFLAGS += $(shell pkg-config --cflags sdl3) -Iinclude -Wall -Wextra -Wpedantic -std=c23
 DEPFLAGS += -MMD -MP
-LDFLAGS += $(shell pkg-config --libs sdl3)
+LDFLAGS += $(shell pkg-config --libs sdl3) -fuse-ld=lld
 
 ifeq ($(BUILD),debug)
 OPTFLAGS += -Og -ggdb
@@ -16,7 +16,7 @@ CFLAGS += -fsanitize=address
 LDFLAGS += -fsanitize=address
 else
 ifeq ($(BUILD),release)
-OPTFLAGS += -O3
+OPTFLAGS += -O3 -ffast-math -flto
 else
 $(error Invalid build option '$(BUILD)'. Valid options are 'release' or 'debug')
 endif
@@ -49,6 +49,7 @@ SRCS_VECTORIZE += $(SRCDIR)/3D/TX_Transform.c
 SRCS_VECTORIZE += $(SRCDIR)/Bitmap/TX_Canvas.c
 SRCS_VECTORIZE += $(SRCDIR)/Shade/TX_Lighting.c
 SRCS_VECTORIZE += $(SRCDIR)/Shade/TX_ShadeFill.c
+SRCS_VECTORIZE += $(SRCDIR)/LocalComponents.c
 
 OBJS_VECTORIZE_AVX512F = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_avx512f.o)
 OBJS_VECTORIZE_AVX2 = $(SRCS_VECTORIZE:%.c=$(BLDDIR)/%_avx2.o)
@@ -122,7 +123,7 @@ endif
 endif
 
 $(BIN): $(OBJS_VECTORIZE) $(OBJS) $(BLDDIR)/gamma.o
-	$(CC) $^ $(LDFLAGS) -o $@
+	$(CC) $^ $(OPTFLAGS) $(LDFLAGS) -o $@
 
 $(OBJS): $(BLDDIR)/%.o: %.c
 	@mkdir -p $(dir $@)

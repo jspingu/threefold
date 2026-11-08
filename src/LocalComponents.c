@@ -5,8 +5,31 @@
 #include <TX/TX_Bitmap.h>
 #include <TX/TX_UI.h>
 #include <TX/Math/linalg.h>
+#include <TX/Math/stride.h>
 
 #include "LocalComponents.h"
+
+char *SD_VARIANT(GetSIMDBackend)(void) {
+#ifdef __AVX512F__
+    return "avx512f";
+#elifdef __AVX2__
+    return "avx2";
+#elifdef __SSE2__
+    return "sse2";
+#elifdef __ARM_FEATURE_SVE
+    return "sve";
+#elifdef __ARM_NEON
+    return "neon";
+#elifdef __riscv_v
+    return "rvv";
+#else
+    return "scalar";
+#endif
+}
+
+#ifndef SD_SRC_VARIANT
+
+SD_DECLARE(char *, GetSIMDBackend)
 
 struct LocalComponents Components;
 
@@ -80,7 +103,8 @@ void UpdateStats(ECS_Handle *self, double delta) {
     ECS_Handle *vp = ECS_GetAncestorWithComponent(self, TX_Bitmap.Viewport, true);
     TX_Viewport *c_vp = ECS_GetComponent(vp, TX_Bitmap.Viewport);
     char (*fps_str)[64] = ECS_GetComponent(self, Components.Stats);
-    SDL_snprintf(*fps_str, 64, "threefold demo | %ix%i | FPS: %.2f", c_vp->width, c_vp->height, 1.0 / delta);
+    char *simd_backend = GetSIMDBackend();
+    SDL_snprintf(*fps_str, 64, "threefold demo | %s | %ix%i | FPS: %.2f", simd_backend, c_vp->width, c_vp->height, 1.0 / delta);
     TX_SetText(self, *fps_str);
 }
 
@@ -99,3 +123,5 @@ void RegisterToECS(ECS *ecs) {
 
     ECS_RegisterSystem(TX_SystemGroups.Update, UpdateStats, Components.Stats, TX_UI.Text);
 }
+
+#endif

@@ -28,6 +28,7 @@ jobs:
           pacboy: >-
             pkg-config:p
             clang:p
+            lld:p
             sdl3:p
 
       - name: Package installation (brew)
