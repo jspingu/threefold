@@ -8,7 +8,7 @@ VECTORIZATION ?= dynamic
 CC = clang
 CFLAGS += $(shell pkg-config --cflags sdl3) -Iinclude -Wall -Wextra -Wpedantic -std=c23
 DEPFLAGS += -MMD -MP
-LDFLAGS += $(shell pkg-config --libs sdl3)
+LDFLAGS += $(shell pkg-config --libs sdl3) -Wno-lto-type-mismatch
 
 ifeq ($(BUILD),debug)
 OPTFLAGS += -Og -ggdb
@@ -16,7 +16,7 @@ CFLAGS += -fsanitize=address
 LDFLAGS += -fsanitize=address
 else
 ifeq ($(BUILD),release)
-OPTFLAGS += -O3 -ffast-math -flto
+OPTFLAGS += -O3 -ffast-math -flto=auto
 else
 $(error Invalid build option '$(BUILD)'. Valid options are 'release' or 'debug')
 endif
