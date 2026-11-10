@@ -43,12 +43,12 @@ void UpdateGrabMouse(ECS_Handle *self, double delta) {
     (void)delta;
     bool *grabbed = ECS_GetComponent(self, Components.GrabMouse);
     ECS_Handle *is = ECS_GetAncestorWithComponent(self, TX_UI.InputState, true);
-    ECS_Handle *vp = ECS_GetAncestorWithComponent(self, TX_Bitmap.Viewport, true);
-    TX_Viewport *c_vp = ECS_GetComponent(vp, TX_Bitmap.Viewport);
+    ECS_Handle *root = ECS_GetAncestorWithComponent(self, TX_Bitmap.Window, true);
+    TX_Window *window = ECS_GetComponent(root, TX_Bitmap.Window);
     
     if (TX_IsKeyJustDown(is, SDL_SCANCODE_ESCAPE)) {
         *grabbed = !*grabbed;       
-        SDL_SetWindowRelativeMouseMode(c_vp->window, *grabbed);
+        SDL_SetWindowRelativeMouseMode(window->window, *grabbed);
     }
 }
 
@@ -100,11 +100,11 @@ void UpdateFreeCam(ECS_Handle *self, double delta) {
 }
 
 void UpdateStats(ECS_Handle *self, double delta) {
-    ECS_Handle *vp = ECS_GetAncestorWithComponent(self, TX_Bitmap.Viewport, true);
-    TX_Viewport *c_vp = ECS_GetComponent(vp, TX_Bitmap.Viewport);
+    ECS_Handle *root = ECS_GetAncestorWithComponent(self, TX_Bitmap.Window, true);
+    TX_Window *window = ECS_GetComponent(root, TX_Bitmap.Window);
     char (*fps_str)[64] = ECS_GetComponent(self, Components.Stats);
     char *simd_backend = GetSIMDBackend();
-    SDL_snprintf(*fps_str, 64, "threefold demo | %s | %ix%i | FPS: %.2f", simd_backend, c_vp->width, c_vp->height, 1.0 / delta);
+    SDL_snprintf(*fps_str, 64, "threefold demo | %s | %ix%i | FPS: %.2f", simd_backend, window->width, window->height, 1.0 / delta);
     TX_SetText(self, *fps_str);
 }
 

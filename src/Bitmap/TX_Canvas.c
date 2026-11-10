@@ -70,11 +70,11 @@ exit:
 
 void SD_VARIANT(TX_PresentCanvas)(ECS_Handle *self) {
     TX_Canvas *canvas = ECS_GetComponent(self, TX_Bitmap.Canvas);
-    TX_Viewport *vp = ECS_GetComponent(self, TX_Bitmap.Viewport);
+    TX_Window *window = ECS_GetComponent(self, TX_Bitmap.Window);
     void *pixels;
     int pitch;
 
-    SDL_LockTexture(vp->texture, nullptr, (void **)&pixels, &pitch);
+    SDL_LockTexture(window->texture, nullptr, (void **)&pixels, &pitch);
     TX_CanvasThreadPool *pool = canvas->thread_pool;
     int nproc = SDL_GetNumLogicalCPUCores();
     int qot = canvas->height / nproc;
@@ -93,9 +93,9 @@ void SD_VARIANT(TX_PresentCanvas)(ECS_Handle *self) {
     for (int i = 0; i < nproc; ++i)
         SDL_WaitSemaphore(pool->worker_rest);
 
-    SDL_UnlockTexture(vp->texture);
-    SDL_RenderTexture(vp->renderer, vp->texture, nullptr, nullptr);
-    SDL_RenderPresent(vp->renderer);
+    SDL_UnlockTexture(window->texture);
+    SDL_RenderTexture(window->renderer, window->texture, nullptr, nullptr);
+    SDL_RenderPresent(window->renderer);
 }
 
 void SD_VARIANT(TX_InitCanvas)(void *component, void *args) {

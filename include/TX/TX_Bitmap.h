@@ -9,17 +9,17 @@
 
 typedef struct TX_CanvasThreadPool TX_CanvasThreadPool;
 
-typedef struct TX_Viewport {
+typedef struct TX_Window {
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *texture;
     int width, height;
-} TX_Viewport;
+} TX_Window;
 
-typedef struct TX_ViewportArgs {
+typedef struct TX_WindowArgs {
     char *title;
     int width, height;
-} TX_ViewportArgs;
+} TX_WindowArgs;
 
 typedef struct TX_CanvasTile {
     List(size_t) *triangle_idxs;
@@ -44,7 +44,7 @@ typedef struct TX_Texture {
 } TX_Texture;
 
 struct TX_Bitmap {
-    ECS_Component(TX_Viewport) *Viewport;
+    ECS_Component(TX_Window) *Window;
     ECS_Component(TX_Canvas) *Canvas;
     ECS_Component(TX_ResourceBank(TX_Texture *)) *TextureBank;
     ECS_Component(TX_ResourceBank(TX_Texture *)) *CubemapBank;

@@ -14,9 +14,9 @@ void TX_RegisterBitmapToECS(ECS *ecs) {
         .free = TX_FreeCanvas
     });
 
-    TX_Bitmap.Viewport = ECS_RegisterComponent(ecs, TX_Viewport, {
-        .init = TX_InitViewport,
-        .free = TX_FreeViewport
+    TX_Bitmap.Window = ECS_RegisterComponent(ecs, TX_Window, {
+        .init = TX_InitWindow,
+        .free = TX_FreeWindow
     });
 
     TX_Bitmap.TextureBank = ECS_RegisterComponent(ecs, TX_ResourceBank, {
@@ -29,5 +29,5 @@ void TX_RegisterBitmapToECS(ECS *ecs) {
         .detach = TX_DetachResourceBank
     });
 
-    ECS_RegisterSystem(TX_SystemGroups.RenderPresent, SD_SELECT(TX_PresentCanvas), TX_Bitmap.Viewport, TX_Bitmap.Canvas);
+    ECS_RegisterSystem(TX_SystemGroups.RenderPresent, SD_SELECT(TX_PresentCanvas), TX_Bitmap.Window, TX_Bitmap.Canvas);
 }

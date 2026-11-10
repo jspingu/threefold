@@ -33,7 +33,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     ECS_Handle *root = ECS_GetRoot(ecs);
 
     ECS_AttachComponents(root,
-        { TX_Bitmap.Viewport, &(TX_ViewportArgs) {
+        { TX_Bitmap.Window, &(TX_WindowArgs) {
             .title = "threefold",
             .width = WIDTH,
             .height = HEIGHT

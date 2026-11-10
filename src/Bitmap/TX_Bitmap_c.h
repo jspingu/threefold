@@ -20,8 +20,8 @@ typedef struct TX_CanvasThreadPool {
     SDL_Semaphore *worker_rest;
 } TX_CanvasThreadPool;
 
-void TX_InitViewport(void *component, void *args);
-void TX_FreeViewport(void *component);
+void TX_InitWindow(void *component, void *args);
+void TX_FreeWindow(void *component);
 
 SD_DECLARE_VOID_RETURN(TX_PresentCanvas, ECS_Handle *, self)
 SD_DECLARE_VOID_RETURN(TX_InitCanvas, void *, component, void *, args)
