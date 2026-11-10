@@ -33,6 +33,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     ECS_Handle *root = ECS_GetRoot(ecs);
 
     ECS_AttachComponents(root,
+        { TX_3D.RasterThreadPool, nullptr },
         { TX_Bitmap.Window, &(TX_WindowArgs) {
             .title = "threefold",
             .width = WIDTH,

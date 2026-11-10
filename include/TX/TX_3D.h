@@ -51,8 +51,8 @@ typedef struct TX_TriangleDraw {
 typedef struct TX_Rasterizer {
     ECS_Handle *world;
     ECS_Handle *target;
+    ECS_Handle *thread_pool;
     List(TX_TriangleDraw) *triangles;
-    TX_RasterThreadPool *thread_pool;
     TX_VertexProjector project;
     TX_RasterScanner scan;
     float near;
@@ -109,6 +109,7 @@ struct TX_3D {
     ECS_Component(TX_Model) *Model;
     ECS_Component(TX_ModelInstance) *ModelInstance;
 
+    ECS_Component(TX_RasterThreadPool) *RasterThreadPool;
     ECS_Component(TX_Rasterizer) *Rasterizer;
     ECS_Component(TX_ParallelProjector) *ParallelProjector;
     ECS_Component(TX_PerspectiveFOV) *PerspectiveFOV;

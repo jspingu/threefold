@@ -12,9 +12,13 @@ void TX_Register3DToECS(ECS *ecs) {
         .free = TX_FreeWorld
     });
 
+    TX_3D.RasterThreadPool = ECS_RegisterComponent(ecs, TX_RasterThreadPool, {
+        .init = TX_InitRasterThreadPool,
+        .free = TX_FreeRasterThreadPool
+    });
+
     TX_3D.Rasterizer = ECS_RegisterComponent(ecs, TX_Rasterizer, {
         .attach = TX_AttachRasterizer,
-        .detach = TX_DetachRasterizer,
         .init = TX_InitRasterizer,
         .free = TX_FreeRasterizer
     });

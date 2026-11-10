@@ -89,7 +89,8 @@ typedef struct TX_RasterThreadPool {
     SDL_AtomicInt tile;
 } TX_RasterThreadPool;
 
-void TX_Register3DToECS(ECS *ecs);
+SD_DECLARE_VOID_RETURN(TX_RenderWorld, ECS_Handle *, self)
+SD_DECLARE(int, TX_RasterWorker, void *, data)
 
 void TX_InitMeshPrimitive(void *component, void *args);
 void TX_FreeMeshPrimitive(void *component);
@@ -107,14 +108,15 @@ void TX_FreeModelInstance(void *component);
 void TX_InitWorld(void *component, void *args);
 void TX_FreeWorld(void *component);
 
-SD_DECLARE_VOID_RETURN(TX_RenderWorld, ECS_Handle *, self)
+void TX_InitRasterThreadPool(void *component, void *args);
+void TX_FreeRasterThreadPool(void *component);
+
 void TX_AttachRasterizer(ECS_Handle *self, ECS_Component(void) *component);
-void TX_DetachRasterizer(ECS_Handle *self, ECS_Component(void) *component);
 void TX_InitRasterizer(void *component, void *args);
 void TX_FreeRasterizer(void *component);
 
-SD_DECLARE(int, TX_RasterWorker, void *, data)
-
 void TX_InitPerspectiveFOV(void *component, void *args);
+
+void TX_Register3DToECS(ECS *ecs);
 
 #endif /* TX_3D_C_H */

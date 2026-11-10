@@ -69,4 +69,18 @@ xform3 TX_ComposeTransformAbsolute(ECS_Handle *self, xform3 lhs) {
     return TX_GetTransform(self);
 }
 
+void TX_SetPerspectiveFOV(ECS_Handle *self, float fov) {
+    TX_PerspectiveFOV *perspective_fov = ECS_GetComponent(self, TX_3D.PerspectiveFOV);
+    perspective_fov->fov = fov;
+    perspective_fov->tan_half_fov = SDL_tanf(fov / 2);
+}
+
+void TX_InitPerspectiveFOV(void *component, void *args) {
+    TX_PerspectiveFOV *perspective_fov = component;
+    float *fov = args;
+
+    perspective_fov->fov = *fov;
+    perspective_fov->tan_half_fov = SDL_tanf(*fov / 2);
+}
+
 #endif /* SD_SRC_VARIANT */

@@ -447,6 +447,7 @@ void SD_VARIANT(TX_RenderWorld)(ECS_Handle *self) {
     TX_Rasterizer *rasterizer = ECS_GetComponent(self, TX_3D.Rasterizer);
     TX_World *world = ECS_GetComponent(rasterizer->world, TX_3D.World);
     TX_Canvas *canvas = ECS_GetComponent(rasterizer->target, TX_Bitmap.Canvas);
+    TX_RasterThreadPool *pool = ECS_GetComponent(rasterizer->thread_pool, TX_3D.RasterThreadPool);
 
     /* Transform registered world geometry */
     List(TX_WorldGeometry *) *geometry = world->geometry;
@@ -536,7 +537,6 @@ void SD_VARIANT(TX_RenderWorld)(ECS_Handle *self) {
 
     /* Thread pool dispatch */
     int nproc = SDL_GetNumLogicalCPUCores();
-    TX_RasterThreadPool *pool = rasterizer->thread_pool;
     SDL_SetAtomicInt(&pool->tile, 0);
 
     for (int i = 0; i < nproc; ++i) {
@@ -544,6 +544,7 @@ void SD_VARIANT(TX_RenderWorld)(ECS_Handle *self) {
         pool->worker_data[i].rasterizer = rasterizer;
         pool->worker_data[i].canvas = canvas;
         pool->worker_data[i].world = world;
+        pool->worker_data[i].tile_ref = &pool->tile;
     }
 
     for (int i = 0; i < nproc; ++i)
@@ -555,14 +556,10 @@ void SD_VARIANT(TX_RenderWorld)(ECS_Handle *self) {
 
 #ifndef SD_SRC_VARIANT
 
-void TX_AttachRasterizer(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_Rasterizer *rasterizer = ECS_GetComponent(self, component);
-    rasterizer->world = ECS_GetAncestorWithComponent(self, TX_3D.World, true);
-    rasterizer->target = ECS_GetAncestorWithComponent(self, TX_Bitmap.Canvas, true);
-
+void TX_InitRasterThreadPool(void *component, void *args) {
+    (void)args;
+    TX_RasterThreadPool *pool = component;
     int nproc = SDL_GetNumLogicalCPUCores();
-    TX_RasterThreadPool *pool = SDL_malloc(sizeof(TX_RasterThreadPool));
-    rasterizer->thread_pool = pool;
     pool->threads = SDL_malloc(sizeof(SDL_Thread *) * nproc);
     pool->worker_data = SDL_malloc(sizeof(TX_RasterWorkerData) * nproc);
     pool->worker_wake = SDL_CreateSemaphore(0);
@@ -572,7 +569,6 @@ void TX_AttachRasterizer(ECS_Handle *self, ECS_Component(void) *component) {
         pool->worker_data[i] = (TX_RasterWorkerData) {
             .worker_wake = pool->worker_wake,
             .worker_rest = pool->worker_rest,
-            .tile_ref = &pool->tile,
             .exit = false
         };
 
@@ -580,9 +576,8 @@ void TX_AttachRasterizer(ECS_Handle *self, ECS_Component(void) *component) {
     }
 }
 
-void TX_DetachRasterizer(ECS_Handle *self, ECS_Component(void) *component) {
-    TX_Rasterizer *rasterizer = ECS_GetComponent(self, component);
-    TX_RasterThreadPool *pool = rasterizer->thread_pool;
+void TX_FreeRasterThreadPool(void *component) {
+    TX_RasterThreadPool *pool = component;
     int nproc = SDL_GetNumLogicalCPUCores();
 
     for (int i = 0; i < nproc; ++i)
@@ -598,7 +593,13 @@ void TX_DetachRasterizer(ECS_Handle *self, ECS_Component(void) *component) {
     SDL_DestroySemaphore(pool->worker_wake);
     SDL_free(pool->worker_data);
     SDL_free(pool->threads);
-    SDL_free(pool);
+}
+
+void TX_AttachRasterizer(ECS_Handle *self, ECS_Component(void) *component) {
+    TX_Rasterizer *rasterizer = ECS_GetComponent(self, component);
+    rasterizer->world = ECS_GetAncestorWithComponent(self, TX_3D.World, true);
+    rasterizer->target = ECS_GetAncestorWithComponent(self, TX_Bitmap.Canvas, true);
+    rasterizer->thread_pool = ECS_GetAncestorWithComponent(self, TX_3D.RasterThreadPool, true);
 }
 
 void TX_InitRasterizer(void *component, void *args) {
@@ -615,20 +616,6 @@ void TX_InitRasterizer(void *component, void *args) {
 void TX_FreeRasterizer(void *component) {
     TX_Rasterizer *rasterizer = component;
     List_Free(rasterizer->triangles);
-}
-
-void TX_SetPerspectiveFOV(ECS_Handle *self, float fov) {
-    TX_PerspectiveFOV *perspective_fov = ECS_GetComponent(self, TX_3D.PerspectiveFOV);
-    perspective_fov->fov = fov;
-    perspective_fov->tan_half_fov = SDL_tanf(fov / 2);
-}
-
-void TX_InitPerspectiveFOV(void *component, void *args) {
-    TX_PerspectiveFOV *perspective_fov = component;
-    float *fov = args;
-
-    perspective_fov->fov = *fov;
-    perspective_fov->tan_half_fov = SDL_tanf(*fov / 2);
 }
 
 #endif /* SD_SRC_VARIANT */
