@@ -7,9 +7,18 @@
 #include <TX/Collections/List.h>
 #include <TX/Math/stride.h>
 
-typedef struct TX_CanvasThreadPool TX_CanvasThreadPool;
+typedef enum TX_WindowResizeStrategy {
+    TX_WINDOW_RESIZE_EXPAND,
+    TX_WINDOW_RESIZE_KEEP_ASPECT,
+    TX_WINDOW_RESIZE_KEEP_WIDTH,
+    TX_WINDOW_RESIZE_KEEP_HEIGHT,
+    TX_WINDOW_RESIZE_KEEP_EITHER
+} TX_WindowResizeStrategy;
+
+typedef struct TX_PresentThreadPool TX_PresentThreadPool;
 
 typedef struct TX_Window {
+    TX_PresentThreadPool *pool;
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *texture;
@@ -21,6 +30,11 @@ typedef struct TX_WindowArgs {
     int width, height;
 } TX_WindowArgs;
 
+typedef struct TX_WindowResize {
+    int base_width, base_height;
+    TX_WindowResizeStrategy strategy;
+} TX_WindowResize;
+
 typedef struct TX_CanvasTile {
     List(size_t) *triangle_idxs;
     sd_int *scanlines[2];
@@ -29,7 +43,6 @@ typedef struct TX_CanvasTile {
 } TX_CanvasTile;
 
 typedef struct TX_Canvas {
-    TX_CanvasThreadPool *thread_pool;
     sd_vec3 *color;
     sd_float *depth;
     TX_CanvasTile *tiles;

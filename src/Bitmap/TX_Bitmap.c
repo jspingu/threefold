@@ -7,16 +7,14 @@
 struct TX_Bitmap TX_Bitmap;
 
 void TX_RegisterBitmapToECS(ECS *ecs) {
-    TX_Bitmap.Canvas = ECS_RegisterComponent(ecs, TX_Canvas, {
-        .attach = TX_AttachCanvas,
-        .detach = TX_DetachCanvas,
-        .init = SD_SELECT(TX_InitCanvas),
-        .free = TX_FreeCanvas
-    });
-
     TX_Bitmap.Window = ECS_RegisterComponent(ecs, TX_Window, {
         .init = TX_InitWindow,
         .free = TX_FreeWindow
+    });
+
+    TX_Bitmap.Canvas = ECS_RegisterComponent(ecs, TX_Canvas, {
+        .init = SD_SELECT(TX_InitCanvas),
+        .free = TX_FreeCanvas
     });
 
     TX_Bitmap.TextureBank = ECS_RegisterComponent(ecs, TX_ResourceBank, {
