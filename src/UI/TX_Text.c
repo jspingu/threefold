@@ -46,6 +46,7 @@ void TX_ArrangeText(ECS_Handle *self, vec2 pos, vec2 dim) {
         tc.tile_map->x = c % text->hchars;
         tc.tile_map->y = c / text->hchars;
 
+        /* Zero transform hack to hide characters past the end of the string, replace with proper visibility control for RenderInstance later */
         xform3 transform = i > len ? (xform3) {} : (xform3) { mat3x3_identity, {
             .x = start + i * text->char_width,
             .y = pos.y + dim.y / 2 - (float)text->char_height / 2 
@@ -59,7 +60,7 @@ void TX_SetText(ECS_Handle *self, char *str) {
     TX_Text *text = ECS_GetComponent(self, TX_UI.Text);
     TX_Layout *layout = ECS_GetComponent(self, TX_UI.Layout);
     size_t len = SDL_strlen(str);
-    text->str = SDL_realloc(text->str, len + 1);
+    text->str = SDL_realloc(text->str, SDL_max(len + 1, List_Length(text->chars) + 1));
     SDL_strlcpy(text->str, str, len + 1);
     TX_PropagateLayout(self, layout->pos, layout->dim);
 }
