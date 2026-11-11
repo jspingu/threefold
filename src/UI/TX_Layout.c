@@ -9,6 +9,20 @@
 
 #include "TX_UI_c.h"
 
+void TX_ResizeLayout(ECS_Handle *self, int width, int height) {
+    TX_Layout *layout = ECS_GetComponent(self, TX_UI.Layout);
+    layout->dim.x = width;
+    layout->dim.y = height;
+
+    ECS_Handle *parent = ECS_GetParent(self);
+    TX_Layout *pl = parent ? ECS_GetComponent(parent, TX_UI.Layout) : nullptr;
+
+    if (pl)
+        TX_PropagateLayout(parent, pl->pos, pl->dim);
+    else
+        TX_PropagateLayout(self, layout->pos, layout->dim);
+}
+
 void TX_PropagateLayout(ECS_Handle *self, vec2 pos, vec2 dim) {
     TX_Layout *layout = ECS_GetComponent(self, TX_UI.Layout);
     layout->pos = pos;

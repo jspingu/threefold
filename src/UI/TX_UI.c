@@ -27,5 +27,6 @@ void TX_RegisterUIToECS(ECS *ecs) {
 
     ECS_RegisterSystem(TX_SystemGroups.SDLEvent, TX_NotifyInputState, TX_UI.InputState);
     ECS_RegisterSystem(TX_SystemGroups.PostUpdate, TX_AdvanceInputState, TX_UI.InputState);
+    ECS_RegisterSystem(TX_SystemGroups.Resize, TX_ResizeLayout, TX_UI.Layout);
     ECS_RegisterSystem(TX_SystemGroups.Layout, TX_ArrangeText, TX_UI.Text);
 }

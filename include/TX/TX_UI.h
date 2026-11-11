@@ -70,6 +70,7 @@ bool TX_IsKeyJustUp(ECS_Handle *self, SDL_Scancode sc);
 vec2 TX_GetMouseMotion(ECS_Handle *self);
 vec2 TX_GetWheelMotion(ECS_Handle *self);
 
+void TX_ResizeLayout(ECS_Handle *self, int width, int height);
 void TX_PropagateLayout(ECS_Handle *self, vec2 pos, vec2 dim);
 
 void TX_SetText(ECS_Handle *self, char *str);
