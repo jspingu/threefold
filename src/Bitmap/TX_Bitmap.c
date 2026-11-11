@@ -12,6 +12,10 @@ void TX_RegisterBitmapToECS(ECS *ecs) {
         .free = TX_FreeWindow
     });
 
+    TX_Bitmap.WindowResize = ECS_RegisterComponent(ecs, TX_WindowResize, {
+        .attach = TX_AttachWindowResize
+    });
+
     TX_Bitmap.Canvas = ECS_RegisterComponent(ecs, TX_Canvas, {
         .init = SD_SELECT(TX_InitCanvas),
         .free = TX_FreeCanvas
@@ -27,5 +31,8 @@ void TX_RegisterBitmapToECS(ECS *ecs) {
         .detach = TX_DetachResourceBank
     });
 
+    ECS_RegisterSystem(TX_SystemGroups.SDLEvent, TX_NotifyWindow, TX_Bitmap.Window);
+    ECS_RegisterSystem(TX_SystemGroups.SDLEvent, TX_NotifyWindowResize, TX_Bitmap.WindowResize);
+    ECS_RegisterSystem(TX_SystemGroups.Resize, SD_SELECT(TX_ResizeCanvas), TX_Bitmap.Canvas);
     ECS_RegisterSystem(TX_SystemGroups.RenderPresent, SD_SELECT(TX_PresentCanvas), TX_Bitmap.Window, TX_Bitmap.Canvas);
 }

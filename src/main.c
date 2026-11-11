@@ -39,6 +39,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
             .width = WIDTH,
             .height = HEIGHT
         }},
+        { TX_Bitmap.WindowResize, &(TX_WindowResize) {
+            .strategy = TX_WINDOW_RESIZE_EXPAND,
+            .base_width = WIDTH,
+            .base_height = HEIGHT
+        }},
         { TX_UI.InputState, nullptr },
         { TX_Bitmap.TextureBank, nullptr },
         { TX_Bitmap.CubemapBank, nullptr },

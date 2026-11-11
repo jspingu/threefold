@@ -10,8 +10,6 @@
 typedef enum TX_WindowResizeStrategy {
     TX_WINDOW_RESIZE_EXPAND,
     TX_WINDOW_RESIZE_KEEP_ASPECT,
-    TX_WINDOW_RESIZE_KEEP_WIDTH,
-    TX_WINDOW_RESIZE_KEEP_HEIGHT,
     TX_WINDOW_RESIZE_KEEP_EITHER
 } TX_WindowResizeStrategy;
 
@@ -31,8 +29,9 @@ typedef struct TX_WindowArgs {
 } TX_WindowArgs;
 
 typedef struct TX_WindowResize {
-    int base_width, base_height;
+    SDL_WindowID id;
     TX_WindowResizeStrategy strategy;
+    int base_width, base_height;
 } TX_WindowResize;
 
 typedef struct TX_CanvasTile {
@@ -58,6 +57,7 @@ typedef struct TX_Texture {
 
 struct TX_Bitmap {
     ECS_Component(TX_Window) *Window;
+    ECS_Component(TX_WindowResize) *WindowResize;
     ECS_Component(TX_Canvas) *Canvas;
     ECS_Component(TX_ResourceBank(TX_Texture *)) *TextureBank;
     ECS_Component(TX_ResourceBank(TX_Texture *)) *CubemapBank;
@@ -142,5 +142,7 @@ static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
 
     return TX_SampleNearest(texture, uts);
 }
+
+SD_DECLARE_VOID_RETURN(TX_ResizeCanvas, ECS_Handle *, self, int, width, int, height)
 
 #endif /* TX_BITMAP_H */

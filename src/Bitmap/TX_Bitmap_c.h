@@ -24,8 +24,13 @@ typedef struct TX_PresentThreadPool {
 SD_DECLARE_VOID_RETURN(TX_PresentCanvas, ECS_Handle *, self)
 SD_DECLARE(int, TX_PresentWorker, void *, data)
 
+void TX_NotifyWindow(ECS_Handle *self, SDL_Event *ev);
+void TX_NotifyWindowResize(ECS_Handle *self, SDL_Event *ev);
+
 void TX_InitWindow(void *component, void *args);
 void TX_FreeWindow(void *component);
+
+void TX_AttachWindowResize(ECS_Handle *self, ECS_Component(void) *component);
 
 SD_DECLARE_VOID_RETURN(TX_InitCanvas, void *, component, void *, args)
 void TX_FreeCanvas(void *component);

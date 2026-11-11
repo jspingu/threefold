@@ -99,22 +99,24 @@ void SD_VARIANT(TX_PresentCanvas)(ECS_Handle *self) {
 
 #ifndef SD_SRC_VARIANT
 
-void TX_ResizeWindow(ECS_Handle *self, int width, int height) {
+void TX_NotifyWindow(ECS_Handle *self, SDL_Event *ev) {
     TX_Window *window = ECS_GetComponent(self, TX_Bitmap.Window);
-    window->width = width;
-    window->height = height;
+    SDL_WindowID id = SDL_GetWindowID(window->window);
+
+    if (ev->type != SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || ev->window.windowID != id)
+        return;
 
     SDL_DestroyTexture(window->texture);
+    window->width = ev->window.data1;
+    window->height = ev->window.data2;
 
     window->texture = SDL_CreateTexture(
         window->renderer,
         SDL_PIXELFORMAT_BGRX32,
         SDL_TEXTUREACCESS_STREAMING,
-        width,
-        height
+        window->width,
+        window->height
     );
-
-    SDL_SetTextureScaleMode(window->texture, SDL_SCALEMODE_PIXELART);
 }
 
 void TX_InitWindow(void *component, void *args) {
@@ -132,6 +134,9 @@ void TX_InitWindow(void *component, void *args) {
         &window->renderer
     );
 
+    SDL_SetRenderVSync(window->renderer, 0);
+    SDL_SetDefaultTextureScaleMode(window->renderer, SDL_SCALEMODE_PIXELART);
+
     window->texture = SDL_CreateTexture(
         window->renderer,
         SDL_PIXELFORMAT_BGRX32,
@@ -139,9 +144,6 @@ void TX_InitWindow(void *component, void *args) {
         window->width,
         window->height
     );
-
-    SDL_SetRenderVSync(window->renderer, 0);
-    SDL_SetTextureScaleMode(window->texture, SDL_SCALEMODE_PIXELART);
 
     TX_PresentThreadPool *pool = SDL_malloc(sizeof(TX_PresentThreadPool));
     int nproc = SDL_GetNumLogicalCPUCores();
