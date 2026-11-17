@@ -43,6 +43,7 @@ typedef struct TX_TextArgs {
     char *str;
     char *spritefont_path;
     int hchars, vchars;
+    TX_LayoutAlign align[2];
 } TX_TextArgs;
 
 typedef struct TX_Text {
@@ -53,6 +54,7 @@ typedef struct TX_Text {
     List(TX_TextCharacter) *chars;
     int hchars, vchars;
     int char_width, char_height;
+    TX_LayoutAlign align[2];
 } TX_Text;
 
 struct TX_UI {

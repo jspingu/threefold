@@ -50,7 +50,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         { TX_Bitmap.Canvas, &(TX_Canvas) {}},
         { Components.GrabMouse, &(bool) {}},
         { TX_UI.Layout, &(TX_Layout) {
-            .dim = { .x = WIDTH, .y = HEIGHT },
             .align = { TX_LAYOUT_ALIGN_START, TX_LAYOUT_ALIGN_END }
         }}
     );
@@ -62,6 +61,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 { TX_UI.Layout, &(TX_Layout) {
                     .grow = { .x = 1 },
                     .dim = { .y = 64 },
+                    .pad = { .x = 8, .y = 8 },
                     .flow = TX_LAYOUT_FLOW_HORIZONTAL,
                     .align = { TX_LAYOUT_ALIGN_START, TX_LAYOUT_ALIGN_END }
                 }}
@@ -86,7 +86,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                         { TX_UI.Text, &(TX_TextArgs) {
                             .spritefont_path = "assets/txmono-9x16.png",
                             .hchars = 19,
-                            .vchars = 5
+                            .vchars = 5,
+                            .align = { TX_LAYOUT_ALIGN_CENTER, TX_LAYOUT_ALIGN_END }
                         }},
                         { Components.Stats, nullptr }
                     )

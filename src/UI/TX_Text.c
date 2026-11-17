@@ -38,7 +38,17 @@ void TX_ArrangeText(ECS_Handle *self, vec2 pos, vec2 dim) {
         }
     }
 
-    float start = pos.x - dim.x / 2 + (float)text->char_width / 2;
+    float start_x = (float [3]) {
+        pos.x - (dim.x - text->char_width) / 2,                          // TX_LAYOUT_ALIGN_START
+        pos.x - (float)(len + 1) * text->char_width / 2,                 // TX_LAYOUT_ALIGN_CENTER
+        pos.x + (dim.x + text->char_width) / 2 - len * text->char_width  // TX_LAYOUT_ALIGN_END
+    }[text->align[0]];
+
+    float start_y = (float [3]) {
+        pos.y - (dim.y - text->char_height) / 2,  // TX_LAYOUT_ALIGN_START
+        pos.y,                                    // TX_LAYOUT_ALIGN_CENTER
+        pos.y + (dim.y - text->char_height) / 2   // TX_LAYOUT_ALIGN_END
+    }[text->align[1]];
 
     for (size_t i = 0; i < List_Length(text->chars); ++i) {
         TX_TextCharacter tc = List_Get(text->chars, i);
@@ -48,8 +58,8 @@ void TX_ArrangeText(ECS_Handle *self, vec2 pos, vec2 dim) {
 
         /* Zero transform hack to hide characters past the end of the string, replace with proper visibility control for RenderInstance later */
         xform3 transform = i > len ? (xform3) {} : (xform3) { mat3x3_identity, {
-            .x = start + i * text->char_width,
-            .y = pos.y + dim.y / 2 - (float)text->char_height / 2 
+            .x = start_x + i * text->char_width,
+            .y = start_y
         }};
 
         TX_SetGeometryTransform(tc.geometry, transform);
@@ -98,6 +108,7 @@ void TX_InitText(void *component, void *args) {
     text->hchars = text_args->hchars;
     text->vchars = text_args->vchars;
     text->chars = List_Create(TX_TextCharacter);
+    SDL_memcpy(text->align, text_args->align, sizeof(TX_LayoutAlign [2]));
 }
 
 void TX_FreeText(void *component) {
