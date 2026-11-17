@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <TX/ECS.h>
+#include <TX/Math/linalg.h>
 #include <TX/Math/stride.h>
 
 #include "TX_Bitmap_c.h"
@@ -34,9 +35,9 @@ static void TX_ResizeCanvasInternal(TX_Canvas *canvas, int width, int height) {
             };
 }
 
-void SD_VARIANT(TX_ResizeCanvas)(ECS_Handle *self, int width, int height) {
+void SD_VARIANT(TX_ResizeCanvas)(ECS_Handle *self, vec2 dim) {
     TX_Canvas *canvas = ECS_GetComponent(self, TX_Bitmap.Canvas);
-    TX_ResizeCanvasInternal(canvas, width, height);
+    TX_ResizeCanvasInternal(canvas, dim.x, dim.y);
 }
 
 void SD_VARIANT(TX_InitCanvas)(void *component, void *args) {

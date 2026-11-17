@@ -13,19 +13,15 @@ void TX_NotifyWindowResize(ECS_Handle *self, SDL_Event *ev) {
     float new_aspect = (float)ev->window.data1 / ev->window.data2;
     bool wider = new_aspect > aspect;
 
-    int new_width = (int [3]) {
-        ev->window.data1,                                              // TX_WINDOW_RESIZE_EXPAND
-        wider ? ev->window.data2 * aspect : ev->window.data1,          // TX_WINDOW_RESIZE_KEEP_ASPECT
-        wider ? resize->base_height * new_aspect : resize->base_width  // TX_WINDOW_RESIZE_KEEP_EITHER
+    vec2 new_dim = (vec2 [3]) {
+        { .x = ev->window.data1, .y = ev->window.data2 },                                   // TX_WINDOW_RESIZE_EXPAND
+        wider ? (vec2) { .x = ev->window.data2 * aspect, .y = ev->window.data2 }            // TX_WINDOW_RESIZE_KEEP_ASPECT
+              : (vec2) { .x = ev->window.data1, .y = ev->window.data1 / aspect },
+        wider ? (vec2) { .x = resize->base_height * new_aspect, .y = resize->base_height }  // TX_WINDOW_RESIZE_KEEP_EITHER
+              : (vec2) { .x = resize->base_width, .y = resize->base_width / new_aspect }
     }[resize->strategy];
 
-    int new_height = (int [3]) {
-        ev->window.data2,                                              // TX_WINDOW_RESIZE_EXPAND
-        wider ? ev->window.data2 : ev->window.data1 / aspect,          // TX_WINDOW_RESIZE_KEEP_ASPECT
-        wider ? resize->base_height : resize->base_width / new_aspect  // TX_WINDOW_RESIZE_KEEP_EITHER
-    }[resize->strategy];
-
-    ECS_ProcessEntitySystemGroup(self, TX_SystemGroups.Resize, new_width, new_height);
+    ECS_ProcessEntitySystemGroup(self, TX_SystemGroups.Resize, new_dim);
 }
 
 void TX_AttachWindowResize(ECS_Handle *self, ECS_Component(void) *component) {

@@ -5,6 +5,7 @@
 #include <TX/ECS.h>
 #include <TX/TX_Resource.h>
 #include <TX/Collections/List.h>
+#include <TX/Math/linalg.h>
 #include <TX/Math/stride.h>
 
 typedef enum TX_WindowResizeStrategy {
@@ -143,6 +144,6 @@ static inline sd_vec4 TX_SampleCubemap(TX_Texture *texture, sd_vec3 dir) {
     return TX_SampleNearest(texture, uts);
 }
 
-SD_DECLARE_VOID_RETURN(TX_ResizeCanvas, ECS_Handle *, self, int, width, int, height)
+SD_DECLARE_VOID_RETURN(TX_ResizeCanvas, ECS_Handle *, self, vec2, dim)
 
 #endif /* TX_BITMAP_H */

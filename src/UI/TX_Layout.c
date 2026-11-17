@@ -9,10 +9,9 @@
 
 #include "TX_UI_c.h"
 
-void TX_ResizeLayout(ECS_Handle *self, int width, int height) {
+void TX_ResizeLayout(ECS_Handle *self, vec2 dim) {
     TX_Layout *layout = ECS_GetComponent(self, TX_UI.Layout);
-    layout->dim.x = width;
-    layout->dim.y = height;
+    layout->dim = dim;
 
     ECS_Handle *parent = ECS_GetParent(self);
     TX_Layout *pl = parent ? ECS_GetComponent(parent, TX_UI.Layout) : nullptr;
@@ -110,14 +109,11 @@ void TX_AttachLayout(ECS_Handle *self, ECS_Component(void) *component) {
     ECS_Handle *parent = ECS_GetParent(self);
     TX_Layout *pl = parent ? ECS_GetComponent(parent, component) : nullptr;
 
-    if (pl) {
+    if (pl)
         List_Push(pl->cls, self);
-        TX_PropagateLayout(parent, pl->pos, pl->dim);
-    }
-    else {
-        TX_Layout *layout = ECS_GetComponent(self, component);
-        TX_PropagateLayout(self, layout->pos, layout->dim);
-    }
+
+    TX_Layout *layout = ECS_GetComponent(self, component);
+    TX_ResizeLayout(self, layout->dim);
 }
 
 void TX_DetachLayout(ECS_Handle *self, ECS_Component(void) *component) {

@@ -47,10 +47,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         { TX_UI.InputState, nullptr },
         { TX_Bitmap.TextureBank, nullptr },
         { TX_Bitmap.CubemapBank, nullptr },
-        { TX_Bitmap.Canvas, &(TX_Canvas) {
-            .width = WIDTH,
-            .height = HEIGHT
-        }},
+        { TX_Bitmap.Canvas, &(TX_Canvas) {}},
         { Components.GrabMouse, &(bool) {}},
         { TX_UI.Layout, &(TX_Layout) {
             .dim = { .x = WIDTH, .y = HEIGHT },
