@@ -955,24 +955,45 @@ static inline sd_int sd_int_sel(sd_mask mask, sd_int fg, sd_int bg) {
 #endif
 }
 
-static inline sd_int sd_int_gather_u8(const uint8_t *buf, sd_int index) {
+static inline sd_int sd_int_gather(int32_t *src, sd_int index) {
 #ifdef __AVX512F__
-    return _mm512_i32gather_epi32(index, buf, 1);
+    return _mm512_i32gather_epi32(index, src, 4);
 #elifdef __AVX2__
-    return _mm256_i32gather_epi32((int const *)buf, index, 1);
+    return _mm256_i32gather_epi32(src, index, 4);
 #elifdef __SSE2__
     alignas(SD_ALIGN) int32_t idxs[4];
     SDL_memcpy(idxs, &index, sizeof(sd_int));
-    return _mm_set_epi32(buf[idxs[3]], buf[idxs[2]], buf[idxs[1]], buf[idxs[0]]);
+    return _mm_set_epi32(src[idxs[3]], src[idxs[2]], src[idxs[1]], src[idxs[0]]);
 #elifdef __ARM_FEATURE_SVE
-    return svld1ub_gather_offset_s32(svptrue_b32(), buf, index);
+    return svld1_gather_index(svptrue_b32(), src, index);
 #elifdef __ARM_NEON
-    return (sd_int) { buf[index[0]], buf[index[1]], buf[index[2]], buf[index[3]] };
+    return (sd_int) { src[index[0]], src[index[1]], src[index[2]], src[index[3]] };
 #elifdef __riscv_v
-    vuint8mf2_t u8 = __riscv_vluxei32(buf, __riscv_vreinterpret_u32m2(index), sd_length());
+    vuint32m2_t byte_offset = __riscv_vsll(__riscv_vreinterpret_u32m2(index), 2, sd_length());
+    return __riscv_vluxei32(src, byte_offset, sd_length());
+#else
+    return src[index];
+#endif
+}
+
+static inline sd_int sd_int_gather_u8(const uint8_t *src, sd_int index) {
+#ifdef __AVX512F__
+    return _mm512_i32gather_epi32(index, src, 1);
+#elifdef __AVX2__
+    return _mm256_i32gather_epi32(src, index, 1);
+#elifdef __SSE2__
+    alignas(SD_ALIGN) int32_t idxs[4];
+    SDL_memcpy(idxs, &index, sizeof(sd_int));
+    return _mm_set_epi32(src[idxs[3]], src[idxs[2]], src[idxs[1]], src[idxs[0]]);
+#elifdef __ARM_FEATURE_SVE
+    return svld1ub_gather_offset_s32(svptrue_b32(), src, index);
+#elifdef __ARM_NEON
+    return (sd_int) { src[index[0]], src[index[1]], src[index[2]], src[index[3]] };
+#elifdef __riscv_v
+    vuint8mf2_t u8 = __riscv_vluxei32(src, __riscv_vreinterpret_u32m2(index), sd_length());
     return __riscv_vreinterpret_i32m2(__riscv_vzext_vf4(u8, sd_length()));
 #else
-    return buf[index];
+    return src[index];
 #endif
 }
 
@@ -994,8 +1015,22 @@ static inline int32_t sd_int_first(sd_int i) {
 #endif
 }
 
-static inline int32_t sd_int_loads(sd_int *src, size_t index) {
-    return ((int32_t *)src)[index];
+static inline sd_int sd_int_load(sd_int *src, size_t index) {
+#ifdef __AVX512F__
+    return _mm512_load_si512(src + index);
+#elifdef __AVX2__
+    return _mm256_load_si256(src + index);
+#elifdef __SSE2__
+    return _mm_load_si128(src + index);
+#elifdef __ARM_FEATURE_SVE
+    return svld1_vnum(svptrue_b32(), (int32_t *)src, index);
+#elifdef __ARM_NEON
+    return vld1q_s32((int32_t *)src + index * sd_length());
+#elifdef __riscv_v
+    return __riscv_vle32_v_i32m2((int32_t *)src + index * sd_length(), sd_length());
+#else
+    return src[index];
+#endif
 }
 
 static inline void sd_int_store(sd_int *dst, size_t index, sd_int i) {
@@ -1018,7 +1053,7 @@ static inline void sd_int_store(sd_int *dst, size_t index, sd_int i) {
 
 static inline void sd_int_storeu(int32_t *dst, sd_int i) {
 #ifdef __AVX512F__
-    _mm512_storeu_epi32(dst, i);
+    _mm512_storeu_si512(dst, i);
 #elifdef __AVX2__
     _mm256_storeu_si256((__m256i *)dst, i);
 #elifdef __SSE2__
@@ -1032,6 +1067,14 @@ static inline void sd_int_storeu(int32_t *dst, sd_int i) {
 #else
     *dst = i;
 #endif
+}
+
+static inline int32_t sd_int_loads(sd_int *src, size_t index) {
+    return ((int32_t *)src)[index];
+}
+
+static inline void sd_int_stores(sd_int *dst, size_t index, int32_t i) {
+    ((int32_t *)dst)[index] = i;
 }
 
 static inline sd_int sd_float_toi(sd_float f) {
@@ -1584,73 +1627,73 @@ static inline sd_float sd_float_range(void) {
 
 SD_DEFINE_VECFNS_NULLARY(range, range)
 
-static inline sd_float sd_float_gather(float *buf, sd_int index) {
+static inline sd_float sd_float_gather(float *src, sd_int index) {
 #ifdef __AVX512F__
-    return _mm512_i32gather_ps(index, buf, 4);
+    return _mm512_i32gather_ps(index, src, 4);
 #elifdef __AVX2__
-    return _mm256_i32gather_ps(buf, index, 4);
+    return _mm256_i32gather_ps(src, index, 4);
 #elifdef __SSE2__
     alignas(SD_ALIGN) int32_t idxs[4];
     SDL_memcpy(idxs, &index, sizeof(sd_int));
-    return _mm_set_ps(buf[idxs[3]], buf[idxs[2]], buf[idxs[1]], buf[idxs[0]]);
+    return _mm_set_ps(src[idxs[3]], src[idxs[2]], src[idxs[1]], src[idxs[0]]);
 #elifdef __ARM_FEATURE_SVE
-    return svld1_gather_index(svptrue_b32(), buf, index);
+    return svld1_gather_index(svptrue_b32(), src, index);
 #elifdef __ARM_NEON
-    return (sd_float) { buf[index[0]], buf[index[1]], buf[index[2]], buf[index[3]] };
+    return (sd_float) { src[index[0]], src[index[1]], src[index[2]], src[index[3]] };
 #elifdef __riscv_v
     vuint32m2_t byte_offset = __riscv_vsll(__riscv_vreinterpret_u32m2(index), 2, sd_length());
-    return __riscv_vluxei32(buf, byte_offset, sd_length());
+    return __riscv_vluxei32(src, byte_offset, sd_length());
 #else
-    return buf[index];
+    return src[index];
 #endif
 }
 
-static inline sd_vec2 sd_vec2_gather(float *buf, sd_int index) {
+static inline sd_vec2 sd_vec2_gather(float *src, sd_int index) {
 #ifdef __riscv_v
     vuint32m2_t byte_offset = __riscv_vsll(__riscv_vreinterpret_u32m2(index), 3, sd_length());
-    return __riscv_vluxseg2ei32_v_f32m2x2(buf, byte_offset, sd_length());
+    return __riscv_vluxseg2ei32_v_f32m2x2(src, byte_offset, sd_length());
 #else
     sd_int base = sd_int_shl(index, 1);
 
     return sd_vec2_create(
-        sd_float_gather(buf + 0, base),
-        sd_float_gather(buf + 1, base)
+        sd_float_gather(src + 0, base),
+        sd_float_gather(src + 1, base)
     );
 #endif
 }
 
-static inline sd_vec3 sd_vec3_gather(float *buf, sd_int index) {
+static inline sd_vec3 sd_vec3_gather(float *src, sd_int index) {
 #ifdef __riscv_v
     vuint32m2_t byte_offset = __riscv_vmul(__riscv_vreinterpret_u32m2(index), 12, sd_length());
-    return __riscv_vluxseg3ei32_v_f32m2x3(buf, byte_offset, sd_length());
+    return __riscv_vluxseg3ei32_v_f32m2x3(src, byte_offset, sd_length());
 #else
     sd_int base = sd_int_add(index, sd_int_shl(index, 1));
 
     return sd_vec3_create(
-        sd_float_gather(buf + 0, base),
-        sd_float_gather(buf + 1, base),
-        sd_float_gather(buf + 2, base)
+        sd_float_gather(src + 0, base),
+        sd_float_gather(src + 1, base),
+        sd_float_gather(src + 2, base)
     );
 #endif
 }
 
-static inline sd_vec4 sd_vec4_gather(float *buf, sd_int index) {
+static inline sd_vec4 sd_vec4_gather(float *src, sd_int index) {
 #ifdef __riscv_v
     vuint32m2_t byte_offset = __riscv_vsll(__riscv_vreinterpret_u32m2(index), 4, sd_length());
-    return __riscv_vluxseg4ei32_v_f32m2x4(buf, byte_offset, sd_length());
+    return __riscv_vluxseg4ei32_v_f32m2x4(src, byte_offset, sd_length());
 #else
     sd_int base = sd_int_shl(index, 2);
 
     return sd_vec4_create(
-        sd_float_gather(buf + 0, base),
-        sd_float_gather(buf + 1, base),
-        sd_float_gather(buf + 2, base),
-        sd_float_gather(buf + 3, base)
+        sd_float_gather(src + 0, base),
+        sd_float_gather(src + 1, base),
+        sd_float_gather(src + 2, base),
+        sd_float_gather(src + 3, base)
     );
 #endif
 }
 
-static inline sd_vec2 sd_vec2_gather_strided(sd_vec3 *buf, sd_int index) {
+static inline sd_vec2 sd_vec2_gather_strided(sd_vec3 *src, sd_int index) {
     sd_int rem_mask = sd_int_set(sd_length() - 1);
     sd_int rem = sd_int_and(index, rem_mask);
     sd_int idx = sd_int_and(index, sd_int_not(rem_mask));
@@ -1658,12 +1701,12 @@ static inline sd_vec2 sd_vec2_gather_strided(sd_vec3 *buf, sd_int index) {
            idx = sd_int_add(idx, rem);
 
     return sd_vec2_create(
-        sd_float_gather((float *)buf + sd_length() * 0, idx),
-        sd_float_gather((float *)buf + sd_length() * 1, idx)
+        sd_float_gather((float *)src + sd_length() * 0, idx),
+        sd_float_gather((float *)src + sd_length() * 1, idx)
     );
 }
 
-static inline sd_vec3 sd_vec3_gather_strided(sd_vec3 *buf, sd_int index) {
+static inline sd_vec3 sd_vec3_gather_strided(sd_vec3 *src, sd_int index) {
     sd_int rem_mask = sd_int_set(sd_length() - 1);
     sd_int rem = sd_int_and(index, rem_mask);
     sd_int idx = sd_int_and(index, sd_int_not(rem_mask));
@@ -1671,13 +1714,13 @@ static inline sd_vec3 sd_vec3_gather_strided(sd_vec3 *buf, sd_int index) {
            idx = sd_int_add(idx, rem);
 
     return sd_vec3_create(
-        sd_float_gather((float *)buf + sd_length() * 0, idx),
-        sd_float_gather((float *)buf + sd_length() * 1, idx),
-        sd_float_gather((float *)buf + sd_length() * 2, idx)
+        sd_float_gather((float *)src + sd_length() * 0, idx),
+        sd_float_gather((float *)src + sd_length() * 1, idx),
+        sd_float_gather((float *)src + sd_length() * 2, idx)
     );
 }
 
-static inline sd_vec4 sd_vec4_gather_strided(sd_vec4 *buf, sd_int index) {
+static inline sd_vec4 sd_vec4_gather_strided(sd_vec4 *src, sd_int index) {
     sd_int rem_mask = sd_int_set(sd_length() - 1);
     sd_int rem = sd_int_and(index, rem_mask);
     sd_int idx = sd_int_and(index, sd_int_not(rem_mask));
@@ -1685,10 +1728,10 @@ static inline sd_vec4 sd_vec4_gather_strided(sd_vec4 *buf, sd_int index) {
            idx = sd_int_add(idx, rem);
 
     return sd_vec4_create(
-        sd_float_gather((float *)buf + sd_length() * 0, idx),
-        sd_float_gather((float *)buf + sd_length() * 1, idx),
-        sd_float_gather((float *)buf + sd_length() * 2, idx),
-        sd_float_gather((float *)buf + sd_length() * 3, idx)
+        sd_float_gather((float *)src + sd_length() * 0, idx),
+        sd_float_gather((float *)src + sd_length() * 1, idx),
+        sd_float_gather((float *)src + sd_length() * 2, idx),
+        sd_float_gather((float *)src + sd_length() * 3, idx)
     );
 }
 
@@ -1736,7 +1779,7 @@ static inline sd_vec4_scalar sd_vec4_first(sd_vec4 v) {
 
 static inline sd_float sd_float_load(sd_float *src, size_t index) {
 #ifdef __AVX512F__
-    return _mm512_load_ps((float *)src + index * sd_length());
+    return _mm512_load_ps(src + index);
 #elifdef __AVX2__
     return _mm256_load_ps((float *)src + index * sd_length());
 #elifdef __SSE2__
@@ -1784,7 +1827,7 @@ static inline sd_vec4 sd_vec4_load(sd_vec4 *src, size_t index) {
 
 static inline void sd_float_store(sd_float *dst, size_t index, sd_float f) {
 #ifdef __AVX512F__
-    _mm512_store_ps((float *)dst + index * sd_length(), f);
+    _mm512_store_ps(dst + index, f);
 #elifdef __AVX2__
     _mm256_store_ps((float *)dst + index * sd_length(), f);
 #elifdef __SSE2__
