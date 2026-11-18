@@ -1605,20 +1605,6 @@ static inline sd_float sd_float_gather(float *buf, sd_int index) {
 #endif
 }
 
-static inline sd_vec3 sd_vec3_gather_strided(sd_vec3 *buf, sd_int index) {
-    sd_int sd_qot = sd_int_shr(index, sd_log_length());
-    sd_int sd_rem = sd_int_and(index, sd_int_set(sd_length() - 1));
-    sd_int sd_idx = sd_int_add(sd_qot, sd_int_shl(sd_qot, 1));
-           sd_idx = sd_int_shl(sd_idx, sd_log_length());
-           sd_idx = sd_int_add(sd_idx, sd_rem);
-
-    return sd_vec3_create(
-        sd_float_gather((float *)&buf + sd_length() * 0, sd_idx),
-        sd_float_gather((float *)&buf + sd_length() * 1, sd_idx),
-        sd_float_gather((float *)&buf + sd_length() * 2, sd_idx)
-    );
-}
-
 static inline sd_vec4 sd_vec4_gather(float *buf, sd_int index) {
 #ifdef __riscv_v
     vuint32m2_t byte_offset = __riscv_vsll(__riscv_vreinterpret_u32m2(index), 4, sd_length());
@@ -1633,6 +1619,20 @@ static inline sd_vec4 sd_vec4_gather(float *buf, sd_int index) {
         sd_float_gather(buf + 3, base)
     );
 #endif
+}
+
+static inline sd_vec3 sd_vec3_gather_strided(sd_vec3 *buf, sd_int index) {
+    sd_int rem_mask = sd_int_set(sd_length() - 1);
+    sd_int rem = sd_int_and(index, rem_mask);
+    sd_int idx = sd_int_and(index, sd_int_not(rem_mask));
+           idx = sd_int_add(idx, sd_int_shl(rem, 1));
+           idx = sd_int_add(idx, rem);
+
+    return sd_vec3_create(
+        sd_float_gather((float *)buf + sd_length() * 0, idx),
+        sd_float_gather((float *)buf + sd_length() * 1, idx),
+        sd_float_gather((float *)buf + sd_length() * 2, idx)
+    );
 }
 
 static inline float sd_float_first(sd_float f) {
