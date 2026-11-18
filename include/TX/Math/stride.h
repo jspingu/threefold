@@ -3,15 +3,17 @@
  *
  * Supported extensions:
  *  - x86: SSE2, AVX2, AVX512F
- *  - ARM: NEON(v7), SVE
- *  - RISC-V: RVV(V)
+ *  - ARM: NEON (v7), SVE
+ *  - RISC-V: RVV (V)
+ *
+ *  Untested:
+ *  - WASM: SIMD128 (relaxed)
  */
 
 #ifndef STRIDE_H
 #define STRIDE_H
 
 #include <SDL3/SDL.h>
-#include <limits.h>
 
 #ifdef __SSE2__
 #include <immintrin.h>
@@ -27,6 +29,10 @@
 
 #ifdef __riscv_v_intrinsic
 #include <riscv_vector.h>
+#endif
+
+#ifdef __wasm_relaxed_simd__
+#include <wasm_simd128.h>
 #endif
 
 #ifdef __x86_64__
@@ -100,6 +106,10 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
     #define SD_VARIANT(fnname)  fnname##_rvv
     SD_DEFINE_TYPES_SCALABLE(rvv, vfloat32m2_t, vfloat32m2x2_t, vfloat32m2x3_t, vfloat32m2x4_t, vint32m2_t, vbool16_t)
     SD_TYPEDEFS(rvv)
+#elifdef __wasm_relaxed_simd__
+    #define SD_VARIANT(fnname)  fnname##_simd128
+    SD_DEFINE_TYPES_FIXED(simd128, v128_t, v128_t, v128_t)
+    SD_TYPEDEFS(simd128)
 #else
     #define SD_VARIANT(fnname)  fnname##_scalar
     SD_TYPEDEFS(scalar)
@@ -139,6 +149,8 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
     #define SD_SELECT(fnname)  ( fnname##_neon )
 #elifdef __riscv_v
     #define SD_SELECT(fnname)  ( fnname##_rvv )
+#elifdef __wasm_relaxed_simd__
+    #define SD_SELECT(fnname)  ( fnname##_simd128 )
 #else
     #define SD_SELECT(fnname)  ( fnname##_scalar )
 #endif
@@ -181,7 +193,11 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
 
 #ifdef __riscv
     #error "Dynamic dispatch for RISC-V is not supported yet. Please configure static dispatch for RISC-V targets"
-#endif
+#endif /* __riscv */
+
+#ifdef __wasm_relaxed_simd__
+    #define SD_SELECT(fnname)  ( fnname##_simd128 )
+#endif /* __wasm_relaxed_simd__ */
 
 #ifndef SD_SELECT
     #define SD_SELECT(fnname)  ( fnname##_scalar )
@@ -199,6 +215,7 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
     attr typeof(rettype) fnname##_sve(SD_PARAMS(__VA_ARGS__));           \
     attr typeof(rettype) fnname##_neon(SD_PARAMS(__VA_ARGS__));          \
     attr typeof(rettype) fnname##_rvv(SD_PARAMS(__VA_ARGS__));           \
+    attr typeof(rettype) fnname##_simd128(SD_PARAMS(__VA_ARGS__));       \
     attr typeof(rettype) fnname##_scalar(SD_PARAMS(__VA_ARGS__));        \
     attr static inline typeof(rettype) fnname(SD_PARAMS(__VA_ARGS__)) {  \
         typeof(&fnname) sd_fn = SD_SELECT(fnname);                       \
@@ -214,6 +231,7 @@ SD_DEFINE_TYPES_FIXED(scalar, float, int32_t, bool)
     void fnname##_sve(SD_PARAMS(__VA_ARGS__));           \
     void fnname##_neon(SD_PARAMS(__VA_ARGS__));          \
     void fnname##_rvv(SD_PARAMS(__VA_ARGS__));           \
+    void fnname##_simd128(SD_PARAMS(__VA_ARGS__));       \
     void fnname##_scalar(SD_PARAMS(__VA_ARGS__));        \
     static inline void fnname(SD_PARAMS(__VA_ARGS__)) {  \
         typeof(&fnname) sd_fn = SD_SELECT(fnname);       \
@@ -473,6 +491,8 @@ static inline size_t sd_log_length(void) {
     return 2;
 #elifdef __riscv_v
     return __builtin_ctz(sd_length());
+#elifdef __wasm_relaxed_simd__
+    return 2;
 #else
     return 0;
 #endif
@@ -550,6 +570,8 @@ static inline sd_mask sd_mask_set(bool b) {
     return vtstq_u32(tst, tst);
 #elifdef __riscv_v
     return __riscv_vmsgtu(__riscv_vmv_v_x_u32m2(b, sd_length()), 0, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_u32x4_gt(wasm_u32x4_splat(b), wasm_u32x4_splat(0));
 #else
     return b;
 #endif
@@ -568,6 +590,8 @@ static inline sd_mask sd_mask_and(sd_mask lhs, sd_mask rhs) {
     return vandq_u32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmand(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_and(lhs, rhs);
 #else
     return lhs && rhs;
 #endif
@@ -586,6 +610,8 @@ static inline sd_mask sd_mask_or(sd_mask lhs, sd_mask rhs) {
     return vorrq_u32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmor(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_or(lhs, rhs);
 #else
     return lhs || rhs;
 #endif
@@ -604,6 +630,8 @@ static inline sd_mask sd_mask_not(sd_mask m) {
     return vmvnq_u32(m);
 #elifdef __riscv_v
     return __riscv_vmnot(m, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_not(m);
 #else
     return !m;
 #endif
@@ -622,6 +650,8 @@ static inline sd_mask sd_mask_andn(sd_mask lhs, sd_mask rhs) {
     return vbicq_u32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmandn(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_andnot(lhs, rhs);
 #else
     return lhs && !rhs;
 #endif
@@ -640,6 +670,8 @@ static inline sd_int sd_int_set(int32_t i) {
     return vdupq_n_s32(i);
 #elifdef __riscv_v
     return __riscv_vmv_v_x_i32m2(i, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_splat(i);
 #else
     return i;
 #endif
@@ -658,6 +690,8 @@ static inline sd_int sd_int_add(sd_int lhs, sd_int rhs) {
     return vaddq_s32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vadd(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_add(lhs, rhs);
 #else
     return lhs + rhs;
 #endif
@@ -676,6 +710,8 @@ static inline sd_int sd_int_sub(sd_int lhs, sd_int rhs) {
     return vsubq_s32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vsub(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_sub(lhs, rhs);
 #else
     return lhs - rhs;
 #endif
@@ -702,6 +738,8 @@ static inline sd_int sd_int_mul(sd_int lhs, sd_int rhs) {
     return vmulq_s32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmul(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_mul(lhs, rhs);
 #else
     return lhs * rhs;
 #endif
@@ -744,6 +782,8 @@ static inline sd_mask sd_int_lt(sd_int lhs, sd_int rhs) {
     return vcltq_s32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmslt(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_lt(lhs, rhs);
 #else
     return lhs < rhs;
 #endif
@@ -762,6 +802,8 @@ static inline sd_mask sd_int_le(sd_int lhs, sd_int rhs) {
     return vcleq_s32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmsle(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_le(lhs, rhs);
 #else
     return lhs <= rhs;
 #endif
@@ -780,6 +822,8 @@ static inline sd_mask sd_int_eq(sd_int lhs, sd_int rhs) {
     return vceqq_s32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmseq(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_eq(lhs, rhs);
 #else
     return lhs == rhs;
 #endif
@@ -798,6 +842,8 @@ static inline sd_mask sd_int_ne(sd_int lhs, sd_int rhs) {
     return vmvnq_u32(vceqq_s32(lhs, rhs));
 #elifdef __riscv_v
     return __riscv_vmsne(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_ne(lhs, rhs);
 #else
     return lhs != rhs;
 #endif
@@ -816,6 +862,8 @@ static inline sd_mask sd_int_ge(sd_int lhs, sd_int rhs) {
     return vcgeq_s32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmsge(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_ge(lhs, rhs);
 #else
     return lhs <= rhs;
 #endif
@@ -834,6 +882,8 @@ static inline sd_mask sd_int_gt(sd_int lhs, sd_int rhs) {
     return vcgtq_s32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmsgt(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_gt(lhs, rhs);
 #else
     return lhs > rhs;
 #endif
@@ -852,6 +902,8 @@ static inline sd_int sd_int_and(sd_int lhs, sd_int rhs) {
     return vandq_s32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vand(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_and(lhs, rhs);
 #else
     return lhs & rhs;
 #endif
@@ -870,6 +922,8 @@ static inline sd_int sd_int_or(sd_int lhs, sd_int rhs) {
     return vorrq_s32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vor(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_or(lhs, rhs);
 #else
     return lhs | rhs;
 #endif
@@ -888,6 +942,8 @@ static inline sd_int sd_int_not(sd_int i) {
     return vmvnq_s32(i);
 #elifdef __riscv_v
     return __riscv_vnot(i, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_not(i);
 #else
     return ~i;
 #endif
@@ -907,6 +963,8 @@ static inline sd_int sd_int_shl(sd_int i, int shift) {
     return vshlq_s32(i, shiftv);
 #elifdef __riscv_v
     return __riscv_vsll(i, shift, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_shl(i, shift);
 #else
     return i << shift;
 #endif
@@ -926,6 +984,8 @@ static inline sd_int sd_int_shr(sd_int i, int shift) {
     return vshlq_s32(i, shiftv);
 #elifdef __riscv_v
     return __riscv_vsra(i, shift, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_shr(i, shift);
 #else
     return i >> shift;
 #endif
@@ -950,6 +1010,8 @@ static inline sd_int sd_int_sel(sd_mask mask, sd_int fg, sd_int bg) {
     return vbslq_s32(mask, fg, bg);
 #elifdef __riscv_v
     return __riscv_vmerge(bg, fg, mask, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_bitselect(fg, bg, mask);
 #else
     return mask ? fg : bg;
 #endif
@@ -971,6 +1033,13 @@ static inline sd_int sd_int_gather(int32_t *src, sd_int index) {
 #elifdef __riscv_v
     vuint32m2_t byte_offset = __riscv_vsll(__riscv_vreinterpret_u32m2(index), 2, sd_length());
     return __riscv_vluxei32(src, byte_offset, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_make(
+        src[wasm_i32x4_extract_lane(index, 0)],
+        src[wasm_i32x4_extract_lane(index, 1)],
+        src[wasm_i32x4_extract_lane(index, 2)],
+        src[wasm_i32x4_extract_lane(index, 3)]
+    );
 #else
     return src[index];
 #endif
@@ -992,6 +1061,13 @@ static inline sd_int sd_int_gather_u8(const uint8_t *src, sd_int index) {
 #elifdef __riscv_v
     vuint8mf2_t u8 = __riscv_vluxei32(src, __riscv_vreinterpret_u32m2(index), sd_length());
     return __riscv_vreinterpret_i32m2(__riscv_vzext_vf4(u8, sd_length()));
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_make(
+        src[wasm_i32x4_extract_lane(index, 0)],
+        src[wasm_i32x4_extract_lane(index, 1)],
+        src[wasm_i32x4_extract_lane(index, 2)],
+        src[wasm_i32x4_extract_lane(index, 3)]
+    );
 #else
     return src[index];
 #endif
@@ -1010,6 +1086,8 @@ static inline int32_t sd_int_first(sd_int i) {
     return vgetq_lane_s32(i, 0);
 #elifdef __riscv_v
     return __riscv_vmv_x(i);
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_extract_lane(i, 0);
 #else
     return i;
 #endif
@@ -1028,6 +1106,8 @@ static inline sd_int sd_int_load(sd_int *src, size_t index) {
     return vld1q_s32((int32_t *)src + index * sd_length());
 #elifdef __riscv_v
     return __riscv_vle32_v_i32m2((int32_t *)src + index * sd_length(), sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_load(src + index);
 #else
     return src[index];
 #endif
@@ -1046,6 +1126,8 @@ static inline void sd_int_store(sd_int *dst, size_t index, sd_int i) {
     vst1q_s32((int32_t *)dst + index * sd_length(), i);
 #elifdef __riscv_v
     __riscv_vse32((int32_t *)dst + index * sd_length(), i, sd_length());
+#elifdef __wasm_relaxed_simd__
+    wasm_v128_store(dst + index, i);
 #else
     dst[index] = i;
 #endif
@@ -1064,6 +1146,8 @@ static inline void sd_int_storeu(int32_t *dst, sd_int i) {
     vst1q_s32(dst, i);
 #elifdef __riscv_v
     __riscv_vse32(dst, i, sd_length());
+#elifdef __wasm_relaxed_simd__
+    wasm_v128_store(dst, i);
 #else
     *dst = i;
 #endif
@@ -1090,6 +1174,8 @@ static inline sd_int sd_float_toi(sd_float f) {
     return vcvtq_s32_f32(f);
 #elifdef __riscv_v
     return __riscv_vfcvt_rtz_x(f, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_i32x4_relaxed_trunc_f32x4(f);
 #else
     return (int32_t)f;
 #endif
@@ -1108,6 +1194,8 @@ static inline sd_float sd_int_tof(sd_int i) {
     return vcvtq_f32_s32(i);
 #elifdef __riscv_v
     return __riscv_vfcvt_f(i, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_convert_i32x4(i);
 #else
     return (float)i;
 #endif
@@ -1126,6 +1214,8 @@ static inline sd_float sd_float_set(float f) {
     return vdupq_n_f32(f);
 #elifdef __riscv_v
     return __riscv_vfmv_v_f_f32m2(f, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_splat(f);
 #else
     return f;
 #endif
@@ -1180,6 +1270,8 @@ static inline sd_float sd_float_add(sd_float lhs, sd_float rhs) {
     return vaddq_f32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vfadd(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_add(lhs, rhs);
 #else
     return lhs + rhs;
 #endif
@@ -1201,6 +1293,8 @@ static inline sd_float sd_float_sub(sd_float lhs, sd_float rhs) {
     return vsubq_f32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vfsub(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_sub(lhs, rhs);
 #else
     return lhs - rhs;
 #endif
@@ -1222,6 +1316,8 @@ static inline sd_float sd_float_mul(sd_float lhs, sd_float rhs) {
     return vmulq_f32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vfmul(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_mul(lhs, rhs);
 #else
     return lhs * rhs;
 #endif
@@ -1247,6 +1343,8 @@ static inline sd_float sd_float_abs(sd_float f) {
     return vabsq_f32(f);
 #elifdef __riscv_v
     return __riscv_vfabs(f, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_abs(f);
 #else
     return SDL_fabsf(f);
 #endif
@@ -1267,6 +1365,8 @@ static inline sd_float sd_float_negate(sd_float f) {
     return vnegq_f32(f);
 #elifdef __riscv_v
     return __riscv_vfneg(f, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_neg(f);
 #else
     return -f;
 #endif
@@ -1297,6 +1397,8 @@ static inline sd_float sd_float_rcp(sd_float f) {
     vfloat32m2_t est = __riscv_vfrec7(f, sd_length());
     vfloat32m2_t two = sd_float_set(2);
     return __riscv_vfmul(est, __riscv_vfnmsub(f, est, two, sd_length()), sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_div(wasm_f32x4_splat(1), f);
 #else
     return 1 / f;
 #endif
@@ -1338,6 +1440,8 @@ static inline sd_float sd_float_rsqrt(sd_float f) {
     vfloat32m2_t sqrest = __riscv_vfmul(est, est, sd_length());
     vfloat32m2_t three = sd_float_set(3);
     return __riscv_vfmul(hlfest, __riscv_vfnmsub(f, sqrest, three, sd_length()), sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_div(wasm_f32x4_splat(1), wasm_f32x4_sqrt(f));
 #else
     return 1 / SDL_sqrtf(f);
 #endif
@@ -1368,6 +1472,8 @@ static inline sd_float sd_float_mla(sd_float addend, sd_float multiplicand, sd_f
     return vmlaq_f32(addend, multiplicand, multiplier);
 #elifdef __riscv_v
     return __riscv_vfmacc(addend, multiplicand, multiplier, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_relaxed_madd(multiplicand, multiplier, addend);
 #else
     return sd_float_add(addend, sd_float_mul(multiplicand, multiplier));
 #endif
@@ -1387,6 +1493,8 @@ static inline sd_float sd_float_mls(sd_float minuend, sd_float multiplicand, sd_
     return vmlsq_f32(minuend, multiplicand, multiplier);
 #elifdef __riscv_v
     return __riscv_vfnmsub(minuend, multiplicand, multiplier, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_relaxed_nmadd(multiplicand, multiplier, minuend);
 #else
     return sd_float_sub(minuend, sd_float_mul(multiplicand, multiplier));
 #endif
@@ -1415,6 +1523,8 @@ static inline sd_float sd_float_min(sd_float lhs, sd_float rhs) {
     return vminq_f32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vfmin(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_relaxed_min(lhs, rhs);
 #else
     return SDL_min(lhs, rhs);
 #endif
@@ -1436,6 +1546,8 @@ static inline sd_float sd_float_max(sd_float lhs, sd_float rhs) {
     return vmaxq_f32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vfmax(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_relaxed_max(lhs, rhs);
 #else
     return SDL_max(lhs, rhs);
 #endif
@@ -1464,6 +1576,8 @@ static inline sd_mask sd_float_lt(sd_float lhs, sd_float rhs) {
     return vcltq_f32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmflt(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_lt(lhs, rhs);
 #else
     return lhs < rhs;
 #endif
@@ -1482,6 +1596,8 @@ static inline sd_mask sd_float_le(sd_float lhs, sd_float rhs) {
     return vcleq_f32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmfle(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_le(lhs, rhs);
 #else
     return lhs <= rhs;
 #endif
@@ -1500,6 +1616,8 @@ static inline sd_mask sd_float_eq(sd_float lhs, sd_float rhs) {
     return vceqq_f32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmfeq(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_eq(lhs, rhs);
 #else
     return lhs == rhs;
 #endif
@@ -1518,6 +1636,8 @@ static inline sd_mask sd_float_ne(sd_float lhs, sd_float rhs) {
     return vmvnq_u32(vceqq_f32(lhs, rhs));
 #elifdef __riscv_v
     return __riscv_vmfne(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_ne(lhs, rhs);
 #else
     return lhs != rhs;
 #endif
@@ -1536,6 +1656,8 @@ static inline sd_mask sd_float_ge(sd_float lhs, sd_float rhs) {
     return vcgeq_f32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmfge(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_ge(lhs, rhs);
 #else
     return lhs >= rhs;
 #endif
@@ -1554,6 +1676,8 @@ static inline sd_mask sd_float_gt(sd_float lhs, sd_float rhs) {
     return vcgtq_f32(lhs, rhs);
 #elifdef __riscv_v
     return __riscv_vmfgt(lhs, rhs, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_gt(lhs, rhs);
 #else
     return lhs > rhs;
 #endif
@@ -1578,6 +1702,8 @@ static inline sd_float sd_float_sel(sd_mask mask, sd_float fg, sd_float bg) {
     return vbslq_f32(mask, fg, bg);
 #elifdef __riscv_v
     return __riscv_vmerge(bg, fg, mask, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_bitselect(fg, bg, mask);
 #else
     return mask ? fg : bg;
 #endif
@@ -1620,6 +1746,8 @@ static inline sd_float sd_float_range(void) {
     return (sd_float) { 0, 1, 2, 3 };
 #elifdef __riscv_v
     return __riscv_vfcvt_f(__riscv_vid_v_u32m2(sd_length()), sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_make(0, 1, 2, 3);
 #else
     return 0;
 #endif
@@ -1643,6 +1771,13 @@ static inline sd_float sd_float_gather(float *src, sd_int index) {
 #elifdef __riscv_v
     vuint32m2_t byte_offset = __riscv_vsll(__riscv_vreinterpret_u32m2(index), 2, sd_length());
     return __riscv_vluxei32(src, byte_offset, sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_make(
+        src[wasm_i32x4_extract_lane(index, 0)],
+        src[wasm_i32x4_extract_lane(index, 1)],
+        src[wasm_i32x4_extract_lane(index, 2)],
+        src[wasm_i32x4_extract_lane(index, 3)]
+    );
 #else
     return src[index];
 #endif
@@ -1748,6 +1883,8 @@ static inline float sd_float_first(sd_float f) {
     return vgetq_lane_f32(f, 0);
 #elifdef __riscv_v
     return __riscv_vfmv_f(f);
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_extract_lane(f, 0);
 #else
     return f;
 #endif
@@ -1790,6 +1927,8 @@ static inline sd_float sd_float_load(sd_float *src, size_t index) {
     return vld1q_f32((float *)src + index * sd_length());
 #elifdef __riscv_v
     return __riscv_vle32_v_f32m2((float *)src + index * sd_length(), sd_length());
+#elifdef __wasm_relaxed_simd__
+    return wasm_v128_load(src + index);
 #else
     return src[index];
 #endif
@@ -1838,6 +1977,8 @@ static inline void sd_float_store(sd_float *dst, size_t index, sd_float f) {
     vst1q_f32((float *)dst + index * sd_length(), f);
 #elifdef __riscv_v
     __riscv_vse32((float *)dst + index * sd_length(), f, sd_length());
+#elifdef __wasm_relaxed_simd__
+    wasm_v128_store(dst + index, f);
 #else
     dst[index] = f;
 #endif
