@@ -1635,6 +1635,21 @@ static inline sd_vec3 sd_vec3_gather_strided(sd_vec3 *buf, sd_int index) {
     );
 }
 
+static inline sd_vec4 sd_vec4_gather_strided(sd_vec4 *buf, sd_int index) {
+    sd_int rem_mask = sd_int_set(sd_length() - 1);
+    sd_int rem = sd_int_and(index, rem_mask);
+    sd_int idx = sd_int_and(index, sd_int_not(rem_mask));
+           idx = sd_int_shl(idx, 2);
+           idx = sd_int_add(idx, rem);
+
+    return sd_vec4_create(
+        sd_float_gather((float *)buf + sd_length() * 0, idx),
+        sd_float_gather((float *)buf + sd_length() * 1, idx),
+        sd_float_gather((float *)buf + sd_length() * 2, idx),
+        sd_float_gather((float *)buf + sd_length() * 3, idx)
+    );
+}
+
 static inline float sd_float_first(sd_float f) {
 #ifdef __AVX512F__
     return _mm512_cvtss_f32(f);
