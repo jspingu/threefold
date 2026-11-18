@@ -875,6 +875,24 @@ static inline sd_int sd_int_or(sd_int lhs, sd_int rhs) {
 #endif
 }
 
+static inline sd_int sd_int_not(sd_int i) {
+#ifdef __AVX512F__
+    return _mm512_xor_si512(i, _mm512_set1_epi32(-1));
+#elifdef __AVX2__
+    return _mm256_xor_si256(i, _mm256_set1_epi32(-1));
+#elifdef __SSE2__
+    return _mm_xor_si128(i, _mm_set1_epi32(-1));
+#elifdef __ARM_FEATURE_SVE
+    return svnot_x(svptrue_b32(), i);
+#elifdef __ARM_NEON
+    return vmvnq_s32(i);
+#elifdef __riscv_v
+    return __riscv_vnot(i, sd_length());
+#else
+    return ~i;
+#endif
+}
+
 static inline sd_int sd_int_shl(sd_int i, int shift) {
 #ifdef __AVX512F__
     return _mm512_slli_epi32(i, shift);
