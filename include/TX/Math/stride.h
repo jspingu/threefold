@@ -865,7 +865,7 @@ static inline sd_mask sd_int_ge(sd_int lhs, sd_int rhs) {
 #elifdef __wasm_relaxed_simd__
     return wasm_i32x4_ge(lhs, rhs);
 #else
-    return lhs <= rhs;
+    return lhs >= rhs;
 #endif
 }
 
