@@ -558,20 +558,20 @@ static inline sd_vec4 sd_vec4_create2(sd_vec3 xyz, sd_float w) {
 
 static inline sd_mask sd_mask_set(bool b) {
 #ifdef __AVX512F__
-    return _mm512_int2mask(-(b > 0));
+    return _mm512_int2mask(-b);
 #elifdef __AVX2__
-    return _mm256_cmpgt_epi32(_mm256_set1_epi32(b), _mm256_setzero_si256());
+    return _mm256_set1_epi32(-b);
 #elifdef __SSE2__
-    return _mm_cmpgt_epi32(_mm_set1_epi32(b), _mm_setzero_si128());
+    return _mm_set1_epi32(-b);
 #elifdef __ARM_FEATURE_SVE
     return svdup_b32(b);
 #elifdef __ARM_NEON
     uint32x4_t tst = vdupq_n_u32(b);
     return vtstq_u32(tst, tst);
 #elifdef __riscv_v
-    return __riscv_vmsgtu(__riscv_vmv_v_x_u32m2(b, sd_length()), 0, sd_length());
+    return __riscv_vreinterpret_b16(__riscv_vmv_v_x_u16m1(-b, sd_length()));
 #elifdef __wasm_relaxed_simd__
-    return wasm_u32x4_gt(wasm_u32x4_splat(b), wasm_u32x4_splat(0));
+    return wasm_u32x4_splat(-b);
 #else
     return b;
 #endif
