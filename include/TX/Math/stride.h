@@ -1450,7 +1450,17 @@ static inline sd_float sd_float_rsqrt(sd_float f) {
 SD_DEFINE_VECFNS_UNARY(rsqrt, rsqrt)
 
 static inline sd_float sd_float_trunc(sd_float f) {
+#ifdef __AVX512F__
+    return _mm512_roundscale_ps(f, _MM_FROUND_TO_ZERO);
+#elifdef __AVX2__
+    return _mm256_round_ps(f, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+#elifdef __ARM_FEATURE_SVE
+    return svrintz_x(svptrue_b32(), f);
+#elifdef __wasm_relaxed_simd__
+    return wasm_f32x4_trunc(f);
+#else
     return sd_int_tof(sd_float_toi(f));
+#endif
 }
 
 SD_DEFINE_VECFNS_UNARY(trunc, trunc)
