@@ -90,6 +90,8 @@ endif
 
 ifeq ($(TARGET_ARCH),arm)
 POSSIBLE_SIMD_EXTENSIONS = NEON
+# On 32-bit ARM, we need to enable the FPU for vectorized objects while respecting the floating-point calling convention
+ARM_VECTORIZATION_FLOAT_ABI = $(word 2,$(findstring __ARM_PCS_VFP,$(PREDEFINED_MACROS)) hard softfp)
 endif
 
 ifeq ($(TARGET_ARCH),riscv)
@@ -148,7 +150,7 @@ $(OBJS_VECTORIZE_SVE): $(BLDDIR)/%_sve.o: %.c
 
 $(OBJS_VECTORIZE_NEON): $(BLDDIR)/%_neon.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(OPTFLAGS) $(DEPFLAGS) -march=armv7 -DSD_DISPATCH_DYNAMIC -DSD_SRC_VARIANT -c $< -o $@
+	$(CC) $(CFLAGS) $(OPTFLAGS) $(DEPFLAGS) -march=armv7 -mfloat-abi=$(ARM_VECTORIZATION_FLOAT_ABI) -DSD_DISPATCH_DYNAMIC -DSD_SRC_VARIANT -c $< -o $@
 
 $(OBJS_VECTORIZE_RVV): $(BLDDIR)/%_rvv.o: %.c
 	@mkdir -p $(dir $@)
