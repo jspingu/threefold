@@ -1838,11 +1838,11 @@ static inline sd_vec4 sd_vec4_gather(float *src, sd_int index) {
 #endif
 }
 
-static inline sd_vec2 sd_vec2_gather_strided(sd_vec3 *src, sd_int index) {
+static inline sd_vec2 sd_vec2_gather_strided(sd_vec2 *src, sd_int index) {
     sd_int rem_mask = sd_int_set(sd_length() - 1);
     sd_int rem = sd_int_and(index, rem_mask);
     sd_int idx = sd_int_and(index, sd_int_not(rem_mask));
-           idx = sd_int_shl(rem, 1);
+           idx = sd_int_shl(idx, 1);
            idx = sd_int_add(idx, rem);
 
     return sd_vec2_create(
@@ -1855,7 +1855,7 @@ static inline sd_vec3 sd_vec3_gather_strided(sd_vec3 *src, sd_int index) {
     sd_int rem_mask = sd_int_set(sd_length() - 1);
     sd_int rem = sd_int_and(index, rem_mask);
     sd_int idx = sd_int_and(index, sd_int_not(rem_mask));
-           idx = sd_int_add(idx, sd_int_shl(rem, 1));
+           idx = sd_int_add(idx, sd_int_shl(idx, 1));
            idx = sd_int_add(idx, rem);
 
     return sd_vec3_create(
